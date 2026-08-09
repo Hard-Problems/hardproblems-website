@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import PodcastGuestForm from './PodcastGuestForm';
 import styles from './page.module.scss';
 
 const EPISODE_TITLES = [
@@ -68,16 +69,11 @@ export default function Page() {
 
         <h3 className="space-top-large">We need your help</h3>
         <p>
-          Know someone who we should interview? Please fill out this Google Form
-          and let us know. Thanks!
+          Know someone who we should interview? Tell us about them and
+          why they&rsquo;d make a great guest.
         </p>
         <p>
-          <Link
-            href="https://forms.gle/fK7LrCLNzckobynh7"
-            className="black-button"
-          >
-            Suggest a guest <span aria-hidden="true">→</span>
-          </Link>
+          <PodcastGuestForm />
         </p>
 
         <h3 className="divider">Who makes a good guest?</h3>

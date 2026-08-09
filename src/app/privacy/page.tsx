@@ -39,6 +39,19 @@ export default function Page() {
           <br /><span className="tag">Email addresses</span>
           <br /><span className="tag">Saved job-filter preferences</span>
         </p>
+        <p>
+          We collect or use the following personal information from people applying to use the Hard Problems coworking space:
+          <br /><span className="tag">Names and contact details</span>
+          <br /><span className="tag">Professional profile URLs (LinkedIn or website)</span>
+          <br /><span className="tag">A description of the &lsquo;hard problem&rsquo; you work on</span>
+          <br /><span className="tag">Your organisation and free-form scheduling notes</span>
+        </p>
+        <p>
+          We collect or use the following personal information from people suggesting a podcast guest:
+          <br /><span className="tag">Your name and (optionally) your email</span>
+          <br /><span className="tag">The suggested guest&rsquo;s name and profile URL</span>
+          <br /><span className="tag">A short recommendation you provide</span>
+        </p>
         <p>We collect or use the following personal information for dealing with queries, complaints or claims:
           <br /><span className="tag">Names and contact details</span>
         </p>

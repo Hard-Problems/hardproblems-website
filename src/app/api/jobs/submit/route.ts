@@ -8,7 +8,7 @@ import {
   rateLimit
 } from '../../../../lib/alerts/http';
 import { isAllowedByRateLimit } from '../../../../lib/alerts/rate-limit';
-import { postToSlackWebsite } from '../../../../lib/slack';
+import { postToSlackForms } from '../../../../lib/slack';
 import { logError } from '../../../../lib/posthog-server';
 
 // POST /api/jobs/submit
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await postToSlackWebsite({
+    await postToSlackForms({
       text: `:briefcase: New job submission from ${email}: ${url}`,
       unfurl_links: true
     });

@@ -44,7 +44,7 @@
   padding: 4px 4px 4px 0.75rem;
   background: #fff;
   border: 1px solid #84d9a6;
-  border-radius: 100px;
+  border-radius: 5px;
   transition: border-color 0.15s ease;
   box-sizing: border-box;
 }
@@ -71,7 +71,8 @@
 }
 
 .input::placeholder {
-  color: color-mix(in srgb, var(--color-mid-green) 60%, transparent);
+  color: var(--color-dark-green);
+  opacity: 0.75;
 }
 
 // Icon-only submit button — sits inside the pill at the right edge,
@@ -252,6 +253,10 @@
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  // Safety net: if a specific viewport still overflows past the
+  // modal's own scroll, the backdrop itself scrolls rather than
+  // clipping.
+  overflow-y: auto;
   background: rgba(15, 23, 20, 0.55);
   animation: alerts-modal-fade 0.15s ease-out;
 }
@@ -261,6 +266,13 @@
   width: 100%;
   max-width: 420px;
   padding: 1.5rem 1.25rem 1.25rem;
+  // Cap to viewport height so short windows don't clip the modal —
+  // `100dvh` handles mobile browser chrome collapse; `100vh` above
+  // is the fallback for older engines.
+  max-height: calc(100vh - 5rem);
+  max-height: calc(100dvh - 5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
