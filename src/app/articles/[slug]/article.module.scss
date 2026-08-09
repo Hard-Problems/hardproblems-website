@@ -198,6 +198,14 @@
   line-height: 1.6;
   color: var(--color-text);
 
+  // Bump body copy one step (base → md, 16px → 18px) on mobile so
+  // paragraphs read comfortably at arm's length. Headings, intro,
+  // and captions already use absolute rem-based tokens so they don't
+  // scale with this — only paragraph and inline body text does.
+  @media only screen and (max-width: 999px) {
+    font-size: var(--font-size-md);
+  }
+
   // Lede paragraph — matches the site-wide `p.intro` style used on
   // /about, /jobs, etc. The `<em>` wrapper from markdown source
   // (`*text*{.intro}`) is overridden so it doesn't render italic, and
