@@ -13,8 +13,7 @@ type Status = 'idle' | 'submitting' | 'sent' | 'error';
 const DESK_TYPES = [
   'Free long-term desk',
   'Paid long-term desk',
-  'Drop-in desk for 1-5 days',
-  'Drop-in desk for more than 5 days'
+  'Drop-in desk for 1-5 days'
 ] as const;
 
 // Modal replacement for the "Apply for a desk" Google Form previously

@@ -32,8 +32,7 @@ const MAX_LONG = 4000;
 const DESK_TYPES: readonly string[] = [
   'Free long-term desk',
   'Paid long-term desk',
-  'Drop-in desk for 1-5 days',
-  'Drop-in desk for more than 5 days'
+  'Drop-in desk for 1-5 days'
 ];
 
 function pick(rec: Record<string, unknown>, key: string): string {
