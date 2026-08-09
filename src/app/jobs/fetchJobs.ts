@@ -195,10 +195,14 @@ export async function fetchJobs(): Promise<SerializedJob[]> {
     now.getUTCDate()
   );
   const recentJobs = jobs.filter((j) => {
-    // Column T expiry — if the sheet has an expiration date and it's
-    // already passed (or matches today), hide the job. Comparison is
-    // in UTC days so "expired today" means the whole day is over from
-    // the sheet's point of view.
+    // Column T expiry — hide the job the day AFTER its expiry date.
+    // The one-day grace absorbs timezone drift: parseDate treats the
+    // sheet's YYYY-MM-DD as UTC midnight, which is already
+    // yesterday's evening in the Americas. Comparing strictly less
+    // than (not less-than-or-equal) means a job dated 2026-08-15
+    // stays visible ALL of Aug 15 UTC and disappears at midnight
+    // UTC on Aug 16 — safe across every timezone the sheet's editors
+    // might be in.
     if (j.expiresAt) {
       const e = new Date(j.expiresAt);
       const expiryUTC = Date.UTC(
@@ -206,7 +210,7 @@ export async function fetchJobs(): Promise<SerializedJob[]> {
         e.getUTCMonth(),
         e.getUTCDate()
       );
-      if (expiryUTC <= todayUTC) return false;
+      if (expiryUTC < todayUTC) return false;
     }
     if (!j.date) return true;
     const d = new Date(j.date);

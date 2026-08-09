@@ -32,13 +32,19 @@ function isRemote(remote: string): boolean {
 // (per-job expiry, passed in as `expiresAt`) when present; otherwise
 // fall back to `datePosted + 45 days` so we match the default board
 // lifetime. Returns undefined if we can't produce either.
+//
+// For explicit `expiresAt`, we add 1 day so Google removes the
+// listing at the same moment the board does — see the matching
+// one-day grace in fetchJobs.ts's expiry filter.
 function validThrough(
   datePosted: string | null,
   expiresAt: string | null
 ): string | undefined {
   if (expiresAt) {
     const e = new Date(expiresAt);
-    if (!Number.isNaN(e.getTime())) return e.toISOString();
+    if (!Number.isNaN(e.getTime())) {
+      return new Date(e.getTime() + 24 * 3600 * 1000).toISOString();
+    }
   }
   if (!datePosted) return undefined;
   const posted = new Date(datePosted);
