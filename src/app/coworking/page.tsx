@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { coworkingTeams as teams } from '../../lib/coworkingTeams';
+import DeskApplicationForm from './DeskApplicationForm';
 import styles from './page.module.scss';
 
 export default function Page() {
@@ -46,14 +47,9 @@ export default function Page() {
         </div>
 
         <h3 className="space-top-small">How to apply for a desk?</h3>
-        <p>Please complete this Google Form:</p>
+        <p>Tell us a bit about you and the hard problem you work on:</p>
         <p>
-          <Link
-            href="https://forms.gle/BFESE6iHh6pppUGXA"
-            className="black-button"
-          >
-            Apply for a desk <span aria-hidden="true">→</span>
-          </Link>
+          <DeskApplicationForm />
         </p>
 
         <h3 className="space-top-large">Photos</h3>

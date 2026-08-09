@@ -52,6 +52,11 @@
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  // Safety net: if a specific viewport still overflows past the
+  // modal's own scroll, the backdrop itself scrolls rather than
+  // clipping. Combined with `align-items: center`, short viewports
+  // top-align via the flex container's own scroll.
+  overflow-y: auto;
   background: rgba(15, 23, 20, 0.55);
   animation: submit-modal-fade 0.15s ease-out;
 }
@@ -61,6 +66,16 @@
   width: 100%;
   max-width: 420px;
   padding: 1.5rem 1.25rem 1.25rem;
+  // Cap the modal to the viewport height (minus the backdrop's 1rem
+  // padding top + bottom) and scroll its own content when the form
+  // is longer than the viewport allows — otherwise the last fields
+  // and the submit button slip below the fold on short windows.
+  // `100dvh` accounts for mobile browser chrome collapsing/expanding;
+  // the `100vh` line above it is the fallback for older engines.
+  max-height: calc(100vh - 5rem);
+  max-height: calc(100dvh - 5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
@@ -142,13 +157,34 @@
   padding: 4px 0.75rem;
   background: #fff;
   border: 1px solid #84d9a6;
-  border-radius: 100px;
+  border-radius: 5px;
   transition: border-color 0.15s ease;
   box-sizing: border-box;
 }
 
 .field:focus-within {
   border-color: var(--color-mid-green);
+}
+
+// Label-above-input variant. Used by the coworking + podcast modals
+// (not the two shorter jobs modals) where each field gets a small
+// bold visible label sitting above the input. Wraps the .field pill.
+.labeledField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.fieldLabel {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-dark-green);
+  letter-spacing: 0.01em;
+  // Extra breathing room above each label so successive fields don't
+  // feel cramped. Stacks with .form's own gap (0.5rem) → ~1rem total
+  // between the previous field's input and the next field's label.
+  margin-top: 0.5rem;
 }
 
 .fieldIcon {
@@ -169,7 +205,8 @@
 }
 
 .input::placeholder {
-  color: color-mix(in srgb, var(--color-mid-green) 60%, transparent);
+  color: var(--color-dark-green);
+  opacity: 0.75;
 }
 
 // Full-width submit button below the URL + email fields. Matches the

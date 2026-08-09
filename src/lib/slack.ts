@@ -36,8 +36,9 @@ async function postToWebhook(
   }
 }
 
-// Post to the #website channel. Used by user-facing form submissions
-// (job submissions, contact-form hits, etc.).
+// Post to the #website channel. Legacy sink — kept so any external
+// consumer with the old env var wired up still works. New form
+// handlers should use `postToSlackForms` instead.
 export async function postToSlackWebsite(
   payload: SlackPayload
 ): Promise<void> {
@@ -45,6 +46,24 @@ export async function postToSlackWebsite(
   if (!url) {
     console.warn(
       '[slack] SLACK_WEBSITE_WEBHOOK_URL not set — skipping notification'
+    );
+    return;
+  }
+  await postToWebhook(url, payload);
+}
+
+// Post to the private "forms" channel — receives every user-submitted
+// form on the site: new job listings, coworking desk applications,
+// podcast guest suggestions. Kept separate from #website so form
+// noise stays contained and the private channel can be restricted to
+// people who need to triage submissions.
+export async function postToSlackForms(
+  payload: SlackPayload
+): Promise<void> {
+  const url = process.env.SLACK_FORMS_WEBHOOK_URL;
+  if (!url) {
+    console.warn(
+      '[slack] SLACK_FORMS_WEBHOOK_URL not set — skipping notification'
     );
     return;
   }
