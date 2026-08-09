@@ -10,6 +10,7 @@ import {
 import { isAllowedByRateLimit } from '../../../../lib/alerts/rate-limit';
 import { alertsDb } from '../../../../lib/alerts/supabase';
 import { postToSlackForms } from '../../../../lib/slack';
+import { validateAndNormalizeUrl } from '../../../../lib/validateUrl';
 import { logError } from '../../../../lib/posthog-server';
 
 // POST /api/podcast/suggest
@@ -96,12 +97,17 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  if (!guestProfileUrl) {
+  const guestProfileUrlCheck = validateAndNormalizeUrl(guestProfileUrl);
+  if (!guestProfileUrlCheck.ok) {
     return NextResponse.json(
-      { ok: false, error: "Please add the guest's LinkedIn or website URL." },
+      {
+        ok: false,
+        error: "Please add a valid LinkedIn or website URL for the guest."
+      },
       { status: 400 }
     );
   }
+  const normalizedGuestProfileUrl = guestProfileUrlCheck.url;
   if (!reason) {
     return NextResponse.json(
       { ok: false, error: 'Please explain why you recommend this guest.' },
@@ -116,7 +122,7 @@ export async function POST(request: Request) {
         suggester_name: suggesterName,
         suggester_email: suggesterEmail || null,
         guest_name: guestName,
-        guest_profile_url: guestProfileUrl,
+        guest_profile_url: normalizedGuestProfileUrl,
         recommendation_reason: reason,
         source: 'website'
       });
@@ -144,7 +150,7 @@ export async function POST(request: Request) {
         `:microphone: *New podcast guest suggestion*\n` +
         `*Suggested by:* ${fromLine}\n` +
         `*Guest:* ${guestName}\n` +
-        `*Guest profile:* ${guestProfileUrl}\n` +
+        `*Guest profile:* ${normalizedGuestProfileUrl}\n` +
         `*Why:* ${reason}`,
       unfurl_links: false
     });

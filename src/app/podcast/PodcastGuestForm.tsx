@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, Loader2, X } from 'lucide-react';
 import styles from '../jobs/jobSubmit.module.scss';
+import { isValidUrl } from '../../lib/validateUrl';
 
 type Status = 'idle' | 'submitting' | 'sent' | 'error';
 
@@ -55,8 +56,13 @@ export default function PodcastGuestForm() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (status === 'submitting') return;
-    setStatus('submitting');
     setError(null);
+    if (!isValidUrl(guestProfileUrl)) {
+      setError("Please enter a valid URL for the guest, like https://linkedin.com/in/them");
+      setStatus('error');
+      return;
+    }
+    setStatus('submitting');
     try {
       const res = await fetch('/api/podcast/suggest', {
         method: 'POST',
@@ -168,7 +174,7 @@ export default function PodcastGuestForm() {
         <span className={styles.field}>
           <textarea
             required
-            rows={5}
+            rows={4}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             disabled={status === 'submitting'}

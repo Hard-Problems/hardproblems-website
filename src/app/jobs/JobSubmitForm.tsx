@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Link as LinkIcon, Mail, Check, Loader2, X } from 'lucide-react';
 import styles from './jobSubmit.module.scss';
+import { isValidUrl } from '../../lib/validateUrl';
 
 type Status = 'idle' | 'submitting' | 'sent' | 'error';
 
@@ -57,8 +58,13 @@ export default function JobSubmitForm() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (status === 'submitting') return;
-    setStatus('submitting');
     setError(null);
+    if (!isValidUrl(url)) {
+      setError('Please enter a valid URL for the job listing.');
+      setStatus('error');
+      return;
+    }
+    setStatus('submitting');
     try {
       const res = await fetch('/api/jobs/submit', {
         method: 'POST',
