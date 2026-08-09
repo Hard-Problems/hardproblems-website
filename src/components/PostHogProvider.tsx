@@ -172,6 +172,21 @@ if (typeof window !== 'undefined') {
         ) {
           return null;
         }
+        // SEO / JSON-LD reader browser extensions (SEO Meta in 1
+        // Click, SEO Quake, JSON-LD viewer, rich-results scrapers)
+        // walk the page's `<script type="application/ld+json">` blocks
+        // and call `.toLowerCase()` on every node's `@context`. Our
+        // /jobs page emits a valid JobPosting array where nested
+        // objects (hiringOrganization, jobLocation, baseSalary, …)
+        // legitimately have no `@context` — schema.org only requires
+        // it at the top level. The walker crashes on the first
+        // descent. Not our bug and not something we can fix without
+        // bloating the JSON-LD payload with redundant fields. The
+        // `["@context"].toLowerCase` pattern is a distinctive
+        // fingerprint no legit page code would emit.
+        if (/["'`]@context["'`]\]\.toLowerCase/i.test(value)) {
+          return null;
+        }
         // Windows security-suite extensions (McAfee WebAdvisor,
         // Norton Safe Web, etc.) throw a distinctively-shaped
         // promise rejection when their in-page bridge can't find
