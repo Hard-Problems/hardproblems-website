@@ -16,6 +16,12 @@ export type SerializedJob = {
   role: string;
   dateCreated: string | null;
   seniority: string;
+  // Optional per-job expiry from Column T. When present, hides the
+  // job from the board on-or-after this date and feeds the
+  // JobPosting schema's `validThrough` field so Google removes it
+  // from search at the same time. Blank for older jobs listed
+  // before the column was added.
+  expiresAt: string | null;
 };
 
 const SHEET_CSV_URL =
@@ -126,6 +132,11 @@ export async function fetchJobs(): Promise<SerializedJob[]> {
   const jobs = dataRows.map((r) => {
     const date = parseDate(r[0] ?? '');
     const dateCreated = parseDateTime(r[15] ?? '');
+    // Column T (index 19) — optional per-job expiry date. Blank on
+    // older rows added before the column existed; parseDate returns
+    // null for empty strings and any unparseable value, so we treat
+    // missing-or-malformed as "no expiry set".
+    const expiresAt = parseDate(r[19] ?? '');
     return {
       date: date ? date.toISOString() : null,
       url: (r[1] ?? '').trim(),
@@ -146,7 +157,8 @@ export async function fetchJobs(): Promise<SerializedJob[]> {
       // Column R (index 17) — "Seniority". Free-form text from the
       // sheet; matchesSeniority() classifies it into the filter
       // buckets at render time.
-      seniority: (r[17] ?? '').trim()
+      seniority: (r[17] ?? '').trim(),
+      expiresAt: expiresAt ? expiresAt.toISOString() : null
     } satisfies SerializedJob;
   });
 
@@ -183,6 +195,19 @@ export async function fetchJobs(): Promise<SerializedJob[]> {
     now.getUTCDate()
   );
   const recentJobs = jobs.filter((j) => {
+    // Column T expiry — if the sheet has an expiration date and it's
+    // already passed (or matches today), hide the job. Comparison is
+    // in UTC days so "expired today" means the whole day is over from
+    // the sheet's point of view.
+    if (j.expiresAt) {
+      const e = new Date(j.expiresAt);
+      const expiryUTC = Date.UTC(
+        e.getUTCFullYear(),
+        e.getUTCMonth(),
+        e.getUTCDate()
+      );
+      if (expiryUTC <= todayUTC) return false;
+    }
     if (!j.date) return true;
     const d = new Date(j.date);
     const jobUTC = Date.UTC(
