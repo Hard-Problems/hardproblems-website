@@ -9,6 +9,7 @@ import {
 } from '../../../../lib/alerts/http';
 import { isAllowedByRateLimit } from '../../../../lib/alerts/rate-limit';
 import { postToSlackForms } from '../../../../lib/slack';
+import { validateAndNormalizeUrl } from '../../../../lib/validateUrl';
 import { logError } from '../../../../lib/posthog-server';
 
 // POST /api/jobs/submit
@@ -19,7 +20,7 @@ import { logError } from '../../../../lib/posthog-server';
 // the queue. Same origin / bot / rate-limit protections as the
 // subscribe routes.
 
-const URL_RE = /^https?:\/\/[^\s]{4,2048}$/i;
+const MAX_URL = 2048;
 
 export async function POST(request: Request) {
   if (!isAllowedOrigin(request)) {
@@ -60,16 +61,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  const url = String(rec.url ?? '').trim();
-  if (!url || !URL_RE.test(url)) {
+  const url = String(rec.url ?? '').trim().slice(0, MAX_URL);
+  const urlCheck = validateAndNormalizeUrl(url);
+  if (!urlCheck.ok) {
     return NextResponse.json(
       {
         ok: false,
-        error: 'Please paste a full URL (starting with http:// or https://).'
+        error: 'Please enter a valid URL for the job listing.'
       },
       { status: 400 }
     );
   }
+  const normalizedUrl = urlCheck.url;
 
   const email = String(rec.email ?? '').trim();
   if (
@@ -85,11 +88,14 @@ export async function POST(request: Request) {
 
   try {
     await postToSlackForms({
-      text: `:briefcase: New job submission from ${email}: ${url}`,
+      text: `:briefcase: New job submission from ${email}: ${normalizedUrl}`,
       unfurl_links: true
     });
   } catch (err) {
-    logError('[jobs/submit] slack post failed', err, { url, email });
+    logError('[jobs/submit] slack post failed', err, {
+      url: normalizedUrl,
+      email
+    });
     return NextResponse.json(
       { ok: false, error: "We couldn't submit that right now. Please try again." },
       { status: 502 }

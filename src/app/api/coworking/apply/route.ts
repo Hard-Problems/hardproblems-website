@@ -10,6 +10,7 @@ import {
 import { isAllowedByRateLimit } from '../../../../lib/alerts/rate-limit';
 import { alertsDb } from '../../../../lib/alerts/supabase';
 import { postToSlackForms } from '../../../../lib/slack';
+import { validateAndNormalizeUrl } from '../../../../lib/validateUrl';
 import { logError } from '../../../../lib/posthog-server';
 
 // POST /api/coworking/apply
@@ -30,6 +31,7 @@ const MAX_LONG = 4000;
 // bot or a malformed client; reject rather than store unknown types.
 const DESK_TYPES: readonly string[] = [
   'Free long-term desk',
+  'Paid long-term desk',
   'Drop-in desk for 1-5 days',
   'Drop-in desk for more than 5 days'
 ];
@@ -95,12 +97,17 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  if (!profileUrl) {
+  const profileUrlCheck = validateAndNormalizeUrl(profileUrl);
+  if (!profileUrlCheck.ok) {
     return NextResponse.json(
-      { ok: false, error: 'Please add a LinkedIn or website URL.' },
+      {
+        ok: false,
+        error: 'Please add a valid LinkedIn or website URL.'
+      },
       { status: 400 }
     );
   }
+  const normalizedProfileUrl = profileUrlCheck.url;
   if (!DESK_TYPES.includes(deskType)) {
     return NextResponse.json(
       { ok: false, error: 'Please choose the type of desk you are applying for.' },
@@ -121,7 +128,7 @@ export async function POST(request: Request) {
     const { error } = await alertsDb().from('desk_applications').insert({
       email,
       full_name: fullName,
-      profile_url: profileUrl,
+      profile_url: normalizedProfileUrl,
       desk_type: deskType,
       hard_problem: hardProblem,
       organization: organization || null,
@@ -153,7 +160,7 @@ export async function POST(request: Request) {
       text:
         `:office: *New coworking desk application*\n` +
         `*Name:* ${fullName} <${email}>\n` +
-        `*Profile:* ${profileUrl}\n` +
+        `*Profile:* ${normalizedProfileUrl}\n` +
         `*Type:* ${deskType}\n` +
         `*Hard problem:* ${hardProblem}` +
         orgLine +

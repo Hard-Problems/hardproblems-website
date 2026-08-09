@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, Loader2, X } from 'lucide-react';
 import styles from '../jobs/jobSubmit.module.scss';
+import { isValidUrl } from '../../lib/validateUrl';
 
 type Status = 'idle' | 'submitting' | 'sent' | 'error';
 
@@ -11,6 +12,7 @@ type Status = 'idle' | 'submitting' | 'sent' | 'error';
 // anything else. Order here is the order the dropdown renders.
 const DESK_TYPES = [
   'Free long-term desk',
+  'Paid long-term desk',
   'Drop-in desk for 1-5 days',
   'Drop-in desk for more than 5 days'
 ] as const;
@@ -70,8 +72,13 @@ export default function DeskApplicationForm() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (status === 'submitting') return;
-    setStatus('submitting');
     setError(null);
+    if (!isValidUrl(profileUrl)) {
+      setError('Please enter a valid URL, like https://linkedin.com/in/you');
+      setStatus('error');
+      return;
+    }
+    setStatus('submitting');
     try {
       const res = await fetch('/api/coworking/apply', {
         method: 'POST',
@@ -194,7 +201,7 @@ export default function DeskApplicationForm() {
         <span className={styles.field}>
           <textarea
             required
-            rows={4}
+            rows={3}
             value={hardProblem}
             onChange={(e) => setHardProblem(e.target.value)}
             disabled={status === 'submitting'}
@@ -217,16 +224,14 @@ export default function DeskApplicationForm() {
         </span>
       </label>
       <label className={styles.labeledField}>
-        <span className={styles.fieldLabel}>
-          When do you need a desk? For how long? Any details you want
-          to add… (optional)
-        </span>
+        <span className={styles.fieldLabel}>Other info (optional)</span>
         <span className={styles.field}>
           <textarea
             rows={3}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             disabled={status === 'submitting'}
+            placeholder="When do you need a desk? For how long? Any other details..."
             className={styles.input}
           />
         </span>

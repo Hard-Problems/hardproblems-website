@@ -176,6 +176,19 @@
   width: 100%;
 }
 
+// Podcast + coworking modals have far more fields than the two jobs
+// modals; shrink the input chrome so the whole form still fits
+// comfortably on a laptop viewport without scrolling. Only overrides
+// padding + font-size — border/color inherited from .field / .input.
+.labeledField .field {
+  padding: 1px 0.6rem;
+}
+
+.labeledField .input {
+  padding: 0.25rem 0;
+  font-size: var(--font-size-xs);
+}
+
 .fieldLabel {
   font-size: var(--font-size-xs);
   font-weight: 600;

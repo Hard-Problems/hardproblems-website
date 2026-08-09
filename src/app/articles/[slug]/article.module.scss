@@ -131,6 +131,13 @@
   .byline > span > span[aria-hidden='true'] {
     display: none;
   }
+
+  // Drop the date + reading-time spans to xs so the meta line reads
+  // as secondary to the author. First span is always the author (with
+  // avatar) — leave that at the default sm size.
+  .byline > span:not(:first-child) {
+    font-size: var(--font-size-xs);
+  }
 }
 
 // Author byline link — keeps the byline's gray color (the wrapping
