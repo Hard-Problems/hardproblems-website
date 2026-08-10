@@ -187,6 +187,20 @@ if (typeof window !== 'undefined') {
         if (/["'`]@context["'`]\]\.toLowerCase/i.test(value)) {
           return null;
         }
+        // PostHog's exception autocapture wraps any non-Error value it
+        // catches — a raw DOM Event, a Promise rejected with a
+        // browser event, an object literal — as
+        // `<ConstructorName> captured as exception with keys: <keys>`.
+        // Common sources: <video>/<audio> autoplay error events, an
+        // `EventSource`/`WebSocket` `error` event, third-party SDKs
+        // rejecting a promise with the browser Event object.
+        // There's no real Error, so the stack is empty and the
+        // message carries no fix-able signal. The
+        // "captured as exception with keys" phrasing is a PostHog-
+        // specific fingerprint that no first-party code would emit.
+        if (/captured as exception with keys/i.test(value)) {
+          return null;
+        }
         // Windows security-suite extensions (McAfee WebAdvisor,
         // Norton Safe Web, etc.) throw a distinctively-shaped
         // promise rejection when their in-page bridge can't find
