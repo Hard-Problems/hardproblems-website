@@ -219,9 +219,9 @@
 
 // Trigger button — the on-page entry point to the alerts form. Sits
 // inline in the `.jobActionRow` at the top of the jobs list next to
-// the "Submit a job" trigger. The row wrapper owns the pale-green
-// top border and the vertical padding; this class only styles the
-// inline link text + icon.
+// the "Submit a job" trigger. The row wrapper owns the top border
+// and the vertical padding; this class only styles the inline link
+// text + icon.
 .mobileLink {
   display: inline-flex;
   align-items: center;
@@ -306,9 +306,9 @@
   outline: none;
 }
 
-// The modal reuses .header from the inline wrapper for consistency.
-// Keep the inner content edges tight since the modal has its own
-// padding rather than sitting inside a pale-green panel.
+// Modal-specific overrides on .header — the modal has its own
+// padding, so the inner content sits flush without needing the
+// spacing the base .header rule provides.
 .modal .header {
   margin-bottom: 1rem;
   padding-right: 2rem; // clear the close button

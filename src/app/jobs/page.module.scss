@@ -142,7 +142,7 @@
   height: 16px;
   flex-shrink: 0;
   box-sizing: border-box;
-  border: 1.5px solid #aed8c1;
+  border: 1px solid #aed8c1;
   border-radius: 5px;
   background: #fff;
   transition:
@@ -364,8 +364,8 @@
 
 // Row that holds the two board-level actions (alerts trigger on the
 // left, submit trigger on the right). Sits directly above the .jobs
-// list and carries the same pale-green top border every job row uses,
-// so it visually reads as the first row of the list.
+// list and carries the same softened checkbox-stroke top border every
+// job row uses, so it visually reads as the first row of the list.
 .jobActionRow {
   display: flex;
   align-items: center;
@@ -373,7 +373,7 @@
   gap: 1rem;
   padding: 1.1rem 0;
   margin: 0.5rem 0 0 0;
-  border-top: 1px solid var(--color-pale-green);
+  border-top: 1px solid color-mix(in srgb, #aed8c1 60%, transparent);
   flex-wrap: wrap;
 }
 
@@ -391,11 +391,15 @@
   gap: 1.5rem;
   padding: 1.1rem 0;
   margin: 0;
-  border-bottom: 1px solid var(--color-pale-green);
+  // Same hex as the checkbox stroke in the filter column
+  // (.checkboxBox uses #aed8c1) but softened to ~60% opacity — the
+  // divider spans the full page width, so at full strength it read
+  // too heavy next to the small 16px checkboxes.
+  border-bottom: 1px solid color-mix(in srgb, #aed8c1 60%, transparent);
 }
 
 .job:first-child {
-  border-top: 1px solid var(--color-pale-green);
+  border-top: 1px solid color-mix(in srgb, #aed8c1 60%, transparent);
 }
 
 // Modifier — applied on the /jobs/[location] SEO pages via

@@ -434,7 +434,10 @@
     text-align: left;
     vertical-align: top;
     padding: 0.6rem 0.8rem;
-    border-bottom: 1px solid var(--color-pale-green);
+    // Matches the softened checkbox-stroke divider used between
+    // jobs on /jobs — same hue at ~60% opacity so long horizontal
+    // lines don't overpower the small type inside table cells.
+    border-bottom: 1px solid color-mix(in srgb, #aed8c1 60%, transparent);
   }
 
   th {
