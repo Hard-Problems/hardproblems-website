@@ -10,6 +10,7 @@
 // which usually clears whatever transient state triggered the crash.
 
 import { useEffect } from 'react';
+import posthog from 'posthog-js';
 
 export default function JobsError({
   error,
@@ -22,8 +23,32 @@ export default function JobsError({
   // exception capture (which listens on window.onerror). The `digest`
   // is a hashed identifier Next.js generates in prod so a user's
   // support message can be matched back to the server log entry.
+  //
+  // Also ping PostHog with the URL + a compact snapshot of `error`
+  // fields as its own event. Route-level React errors reach here
+  // without the URL context PostHog's autocapture keeps at the
+  // `$exception` level, so we tag one manually to make future triage
+  // of the same crash actionable (which page path? which query? was
+  // it a stack overflow, a syntax error, or something else?).
   useEffect(() => {
     console.error('[JobsError]', error);
+    try {
+      const url = typeof window !== 'undefined' ? window.location.href : '';
+      const query =
+        typeof window !== 'undefined' ? window.location.search : '';
+      posthog?.capture?.('jobs_route_error', {
+        error_name: error?.name ?? 'Error',
+        error_message: error?.message ?? String(error ?? ''),
+        error_stack_head: error?.stack?.split('\n').slice(0, 8).join('\n'),
+        digest: error?.digest ?? null,
+        page_url: url,
+        page_query: query,
+        user_agent:
+          typeof navigator !== 'undefined' ? navigator.userAgent : ''
+      });
+    } catch {
+      // Never let the error handler itself throw.
+    }
   }, [error]);
 
   return (
