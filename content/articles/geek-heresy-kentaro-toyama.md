@@ -1,5 +1,5 @@
 ---
-title: 'Geek Heresy by Kentaro Toyama'
+title: '_Geek Heresy_ by Kentaro Toyama'
 slug: 'geek-heresy-kentaro-toyama'
 
 excerpt: 'Well-intentioned technology doesn’t always solve the problems it’s meant to address. Toyama explains why, and tells us what we should do instead.'
@@ -45,7 +45,7 @@ seoDescription: "Kentaro Toyama's Geek Heresy argues that technology alone can't
 canonicalUrl: ''
 ---
 
-# Geek Heresy by Kentaro Toyama {#geek-heresy-kentaro-toyama}
+# _Geek Heresy_ by Kentaro Toyama {#geek-heresy-kentaro-toyama}
 
 _Well-intentioned technology doesn't always solve the problems it's meant to address. Toyama explains why, and tells us what we should do instead._{.intro}
 

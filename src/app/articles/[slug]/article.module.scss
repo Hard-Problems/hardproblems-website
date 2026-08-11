@@ -742,15 +742,18 @@
 }
 
 // Small ALL CAPS label above the tag pills, matching the site-wide <h3>
-// section-heading treatment from globals.css. 4em top margin separates
-// the label from the article body.
+// section-heading treatment from globals.css. 5rem top margin gives
+// the "Related content…" section clear separation from the body copy
+// above.
 .tagsLabel {
-  margin: 1.5em 0 0.6rem 0;
+  margin: 5rem 0 0.6rem 0;
 }
 
 .topics {
   list-style: none;
-  margin: 1.5rem 0 1rem 0;
+  // 5rem bottom margin mirrors the .tagsLabel top margin so the whole
+  // Related content block sits inside a symmetric 5rem gutter.
+  margin: 1.5rem 0 5rem 0;
   padding: 0;
 }
 

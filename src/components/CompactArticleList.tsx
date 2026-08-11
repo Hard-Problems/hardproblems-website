@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Article } from '../lib/articles';
+import { renderTitleWithItalics } from '../lib/articleTitle';
 import styles from '../app/articles/page.module.scss';
 
 // Very compact article listing — one row per article with a small
@@ -44,7 +45,9 @@ export default function CompactArticleList({
                   {article.readingTime} min {unit}
                 </span>
               )}
-              <h4 className={styles.compactListTitle}>{article.title}</h4>
+              <h4 className={styles.compactListTitle}>
+                {renderTitleWithItalics(article.title)}
+              </h4>
             </Link>
           </li>
         );
