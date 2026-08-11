@@ -6,6 +6,7 @@ import {
   articleTypeSlug,
   formatPublishedDate
 } from '../lib/articles';
+import { renderTitleWithItalics, titleAsText } from '../lib/articleTitle';
 import styles from '../app/articles/page.module.scss';
 
 // Shared card used by both /articles (full listing) and
@@ -89,7 +90,7 @@ export default function ArticleCard({
                 muted
                 playsInline
                 preload="metadata"
-                aria-label={article.imageAlt ?? article.title}
+                aria-label={article.imageAlt ?? titleAsText(article.title)}
               >
                 {article.thumbnailVideoWebm && (
                   <source src={article.thumbnailVideoWebm} type="video/webm" />
@@ -146,7 +147,9 @@ export default function ArticleCard({
               )}
             </p>
           )}
-          <h3 className={styles.articleCardTitle}>{article.title}</h3>
+          <h3 className={styles.articleCardTitle}>
+            {renderTitleWithItalics(article.title)}
+          </h3>
           {article.excerpt && (
             <p className={styles.articleCardExcerpt}>{article.excerpt}</p>
           )}

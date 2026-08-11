@@ -1,5 +1,5 @@
 ---
-title: 'Moral Ambition by Rutger Bregman'
+title: '_Moral Ambition_ by Rutger Bregman'
 slug: 'moral-ambition-rutger-bregman'
 
 excerpt: 'A timely provocation for those of us seeking to center our professional lives on problems that matter.'

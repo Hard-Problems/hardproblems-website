@@ -19,6 +19,7 @@ import {
   getAuthorByName,
   getAuthorUrl
 } from '../../../lib/authors';
+import { titleAsText } from '../../../lib/articleTitle';
 import styles from './article.module.scss';
 
 // Regenerate at most every hour so a scheduled article's own URL
@@ -76,8 +77,8 @@ export async function generateMetadata({
   if (!article || article.status !== 'published') {
     return { title: 'Article — Hard Problems' };
   }
-  const title =
-    article.seoTitle ?? `${article.title} — Hard Problems`;
+  const plainTitle = titleAsText(article.title);
+  const title = article.seoTitle ?? `${plainTitle} — Hard Problems`;
   const description = article.seoDescription || article.excerpt;
   return {
     title,
@@ -87,7 +88,7 @@ export async function generateMetadata({
       : undefined,
     openGraph: {
       type: 'article',
-      title: article.title,
+      title: plainTitle,
       description,
       publishedTime: article.publishedAt || undefined,
       modifiedTime: article.updatedAt || undefined,
@@ -96,7 +97,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title: article.title,
+      title: plainTitle,
       description,
       images: article.image ? [article.image] : undefined
     }
@@ -159,7 +160,7 @@ export default async function ArticlePage({ params }: Props) {
   const articleJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
-    headline: article.title,
+    headline: titleAsText(article.title),
     description: article.excerpt || article.seoDescription || undefined,
     image: article.image
       ? [`https://hardproblems.com${article.image}`]
