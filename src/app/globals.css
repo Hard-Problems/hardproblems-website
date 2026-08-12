@@ -671,6 +671,16 @@ nav.site-nav-bar {
   margin: 0 0 2rem 0;
   border-bottom: 1px solid #b7ddc8;
   overflow-x: auto;
+  /* `overflow-x: auto` promotes `overflow-y` from `visible` to `auto`
+     per the CSS overflow spec, and the active-tab underline
+     pseudo-element (`bottom: -1px; height: 3px`) intentionally
+     protrudes 1px below the link — enough for Chrome mobile touch
+     scroll heuristics to register a scrollable vertical axis and
+     allow a few-pixel finger drag. Locking overflow-y to hidden
+     clips only the padding-box; the border-bottom sits outside it,
+     so the intentional 1px overlap between underline and border
+     still renders identically. */
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
