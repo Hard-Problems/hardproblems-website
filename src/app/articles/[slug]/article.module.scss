@@ -1,25 +1,3 @@
-// Article-page-specific styling for the NewsletterModule sitting at the
-// top of every article. Only override the properties asked for; leave
-// width/margins alone. The wrapper uses `display: contents` so it
-// doesn't introduce a new flex/box layer under `.container`.
-.newsletterWrap {
-  display: contents;
-}
-
-.newsletterWrap :global(.newsletter-module) {
-  background: var(--color-pale-green);
-  border-top: none;
-  border-bottom: none;
-  border-radius: 0;
-  // Pull up by the nav's 2rem bottom margin so the module sits flush
-  // beneath the site nav.
-  margin-top: -2rem;
-}
-
-.newsletterWrap :global(.newsletter-module-inner) {
-  padding: 0.75rem 0;
-}
-
 // Full-width wrapper holding the green divider so it spans the same width
 // as the line on /jobs, /about, etc. The .article inside is centered on a
 // narrower reading column for legible body text.

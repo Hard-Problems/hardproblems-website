@@ -205,9 +205,7 @@ export default async function ArticlePage({ params }: Props) {
         // user input reaches this string.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
       />
-      <div className={styles.newsletterWrap}>
-        <NewsletterModule />
-      </div>
+      <NewsletterModule variant="under-nav" />
       <section className={styles.articleWrap}>
         <article className={styles.article}>
         <header className={styles.header}>

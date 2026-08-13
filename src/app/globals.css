@@ -983,6 +983,24 @@ ul ul li {
   width: 100%;
 }
 
+/* Modifier: banner variant used directly under the site nav on the
+   article pages and /jobs. Consumer opts in via
+   `<NewsletterModule variant="under-nav" />`. Pale-green fill and no
+   borders so it reads as part of the header stack; the -2rem margin
+   cancels the site nav's 2rem bottom margin so the two sit flush. */
+.newsletter-module.newsletter-module--under-nav {
+  background: var(--color-pale-green);
+  border-top: none;
+  border-bottom: none;
+  border-radius: 0;
+  margin-top: -2rem;
+}
+
+.newsletter-module.newsletter-module--under-nav
+  .newsletter-module-inner {
+  padding: 0.75rem 0;
+}
+
 .newsletter-module-inner {
   max-width: 640px;
   margin: 0 auto;

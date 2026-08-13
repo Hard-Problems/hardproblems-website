@@ -5,6 +5,7 @@ import JobsList from './JobsList';
 import { fetchJobs } from './fetchJobs';
 import JobPostingSchema from './JobPostingSchema';
 import ArticleCard from '../../components/ArticleCard';
+import NewsletterModule from '../../components/NewsletterModule';
 import { getAllArticles } from '../../lib/articles';
 import articleStyles from '../articles/page.module.scss';
 import styles from './page.module.scss';
@@ -65,6 +66,7 @@ export default async function Page() {
           Rendered up front so it's in the SSR HTML before the
           client-side JobsList hydrates. */}
       <JobPostingSchema jobs={jobs} />
+      <NewsletterModule variant="under-nav" />
       <section className={styles.board}>
         {jobs.length === 0 ? (
           <p>
