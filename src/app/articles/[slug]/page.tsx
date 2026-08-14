@@ -228,7 +228,9 @@ export default async function ArticlePage({ params }: Props) {
 
         {(article.articleType || article.topics.length > 0) && (
           <>
-            <h2 className={styles.tagsLabel}>Related content&hellip;</h2>
+            <h2 className={`${styles.tagsLabel} section-label`}>
+              Related content&hellip;
+            </h2>
             <ul className={styles.topics}>
               {article.articleType && (
                 <li>
@@ -275,7 +277,9 @@ export default async function ArticlePage({ params }: Props) {
 
         {topArticles.length > 0 && (
           <aside className={styles.topArticles}>
-            <h2 className={styles.topArticlesHeading}>Top articles</h2>
+            <h2 className={`${styles.topArticlesHeading} section-label`}>
+              Top articles
+            </h2>
             <ul className={styles.topArticlesList}>
               {topArticles.map((a) => (
                 <ArticleCard key={a.slug} article={a} />
