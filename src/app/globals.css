@@ -640,6 +640,29 @@ h4 + p {
   margin-top: 0.3em;
 }
 
+/* Reusable "section-label" modifier for headings that need a small,
+   dense, sans-serif treatment rather than the site's default serif
+   heading look. Meant for secondary section labels like "Related
+   content", "Top articles" — labels that sit alongside the primary
+   article content and shouldn't compete visually with the article's
+   own h2 section headings. Combine with any heading tag (h2..h5);
+   the class only overrides typography, so callers keep their own
+   spacing / positioning classes. */
+.section-label {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 1.3rem;
+  line-height: 1.2;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* Slightly tighter tracking at the h2 size — 1.3rem sans-serif
+   semibold reads a hair loose at the default 0 letter-spacing. */
+h2.section-label {
+  letter-spacing: -0.025em;
+}
+
 nav {
   margin: 0;
 }
