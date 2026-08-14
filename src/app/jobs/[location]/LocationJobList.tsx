@@ -94,11 +94,10 @@ export default function LocationJobList({
         const relativeLabel = formatRelativeDate(job.date);
         const isNewToday = relativeLabel === 'Today';
         const faviconUrl = buildFaviconUrl(job.companyUrl);
-        const companyHref = job.companyUrl
-          ? job.companyUrl.startsWith('http')
-            ? job.companyUrl
-            : `https://${job.companyUrl}`
-          : null;
+        // `job.companyUrl` is pre-sanitized by fetchJobs — it's
+        // either a valid `https://…` URL or an empty string. No
+        // protocol-prefixing needed here.
+        const companyHref = job.companyUrl || null;
         const globe = (
           <Earth
             className={styles.companyFavicon}

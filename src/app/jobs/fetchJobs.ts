@@ -1,3 +1,17 @@
+import { validateAndNormalizeUrl } from '../../lib/validateUrl';
+
+// Sanitize a raw URL string from the sheet into either a valid,
+// normalized URL or an empty string. Empty is safe for every consumer
+// (every render site treats `!job.url` / `!job.companyUrl` as
+// "render plain text instead of a Link"), which prevents malformed
+// entries like a bare "https://" from reaching Next.js's `<Link>`
+// prefetch — that throws
+// `Cannot prefetch 'X' because it cannot be converted to a URL.`
+function sanitizeSheetUrl(raw: string): string {
+  const result = validateAndNormalizeUrl(raw);
+  return result.ok ? result.url : '';
+}
+
 export type SerializedJob = {
   date: string | null;
   url: string;
@@ -139,12 +153,12 @@ export async function fetchJobs(): Promise<SerializedJob[]> {
     const expiresAt = parseDate(r[19] ?? '');
     return {
       date: date ? date.toISOString() : null,
-      url: (r[1] ?? '').trim(),
+      url: sanitizeSheetUrl(r[1] ?? ''),
       title: (r[2] ?? '').trim(),
       company: (r[3] ?? '').trim(),
       typeOfOrg: (r[4] ?? '').trim(),
       goodForWorld: (r[5] ?? '').trim(),
-      companyUrl: (r[6] ?? '').trim(),
+      companyUrl: sanitizeSheetUrl(r[6] ?? ''),
       country: (r[7] ?? '').trim(),
       city: (r[8] ?? '').trim(),
       remote: (r[9] ?? '').trim(),

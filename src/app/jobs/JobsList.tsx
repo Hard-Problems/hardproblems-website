@@ -944,11 +944,10 @@ export default function JobsList({
             const hasSalary = job.salary && job.salary.toLowerCase() !== 'n/a';
 
             const faviconUrl = buildFaviconUrl(job.companyUrl);
-            const companyHref = job.companyUrl
-              ? job.companyUrl.startsWith('http')
-                ? job.companyUrl
-                : `https://${job.companyUrl}`
-              : null;
+            // `job.companyUrl` is pre-sanitized by fetchJobs — it's
+            // either a valid `https://…` URL or an empty string. No
+            // protocol-prefixing needed here.
+            const companyHref = job.companyUrl || null;
             const typeLabel = orgTypeDisplay(job.typeOfOrg);
             const goodForWorldScore = parseFloat(job.goodForWorld);
             const isStaffPick =
