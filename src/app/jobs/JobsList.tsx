@@ -36,6 +36,7 @@ import {
   parseWorkStyleParam,
   splitCountries
 } from './filters';
+import { canonicalCountryName } from './countryAliases';
 import styles from './page.module.scss';
 
 export type { SerializedJob } from './fetchJobs';
@@ -471,7 +472,9 @@ export default function JobsList({
         // the "Region" optgroup above — hide them from the country
         // list so the dropdown doesn't list them twice.
         if (META_REGION_NAMES.has(c)) continue;
-        set.add(c);
+        // Canonicalize so alternate spellings ("USA" vs
+        // "United States") collapse into one dropdown option.
+        set.add(canonicalCountryName(c));
       }
     }
     return Array.from(set).sort((a, b) => a.localeCompare(b));
