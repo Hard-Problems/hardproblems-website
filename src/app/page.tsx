@@ -69,7 +69,7 @@ export default async function Home() {
                     aside further down. */}
                 {i === 2 && (
                   <li className={styles.newsletterModuleRowMobile}>
-                    <NewsletterModule />
+                    <NewsletterModule variant="inline" />
                   </li>
                 )}
                 {/* Mobile-only "More content" heading right before the
@@ -91,7 +91,7 @@ export default async function Home() {
                     Hidden on mobile via CSS. */}
                 {i === 3 && (
                   <li className={styles.newsletterModuleRow}>
-                    <NewsletterModule />
+                    <NewsletterModule variant="inline" />
                   </li>
                 )}
                 {i === 3 && (

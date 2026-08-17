@@ -4,23 +4,32 @@ import NewsletterForm from './NewsletterForm';
 // Wraps the shared NewsletterForm and locks in the marketing label used
 // on the homepage / anywhere else it's dropped in.
 //
-// `variant="under-nav"` swaps the default light-green-with-borders band
-// for the flush-under-nav treatment used on article pages and /jobs:
-// pale-green fill, no borders/radius, and a -2rem pull that cancels
-// the site nav's 2rem bottom margin so the banner sits flush against
-// the nav. Styles live in globals.css alongside the base .newsletter-module
-// rules.
+// Variants:
+//   `default`   — light-green top+bottom borders on a transparent
+//                 background. Used at page ends and anywhere the
+//                 module needs to sit quietly inside body flow.
+//   `under-nav` — pale-green fill, no borders, -2rem pull that
+//                 cancels the site nav's 2rem bottom margin so the
+//                 banner sits flush against the nav. Used at the top
+//                 of article pages and /jobs.
+//   `inline`    — light-green fill, no borders. Used mid-article-grid
+//                 on the homepage so the banner reads as a distinct
+//                 filled card rather than a dividing rule.
+// Styles for each variant live in globals.css alongside the base
+// .newsletter-module rules.
 export default function NewsletterModule({
   variant = 'default'
 }: {
-  variant?: 'default' | 'under-nav';
+  variant?: 'default' | 'under-nav' | 'inline';
 } = {}) {
-  const className =
+  const modifier =
     variant === 'under-nav'
-      ? 'newsletter-module newsletter-module--under-nav'
-      : 'newsletter-module';
+      ? ' newsletter-module--under-nav'
+      : variant === 'inline'
+        ? ' newsletter-module--inline'
+        : '';
   return (
-    <div className={className}>
+    <div className={`newsletter-module${modifier}`}>
       <div className="newsletter-module-inner">
         <NewsletterForm labelSuffix=" for weekly news and meaningful jobs." />
       </div>

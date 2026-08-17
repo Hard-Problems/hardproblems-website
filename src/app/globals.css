@@ -1024,6 +1024,23 @@ ul ul li {
   padding: 0.75rem 0;
 }
 
+/* Modifier: inline variant used between articles on the homepage.
+   Horizontal gradient — white at the left/right edges, pale-green
+   through the middle third — so the copy sits inside a soft
+   spotlight that fades cleanly into the surrounding page. Keeps the
+   default top+bottom light-green borders; their #d9eee2 color is
+   subtle enough at the white ends that they read as fading into the
+   background without any explicit border-image work. */
+.newsletter-module.newsletter-module--inline {
+  background: linear-gradient(
+    to right,
+    #fff 0%,
+    var(--color-pale-green) 30%,
+    var(--color-pale-green) 70%,
+    #fff 100%
+  );
+}
+
 .newsletter-module-inner {
   max-width: 640px;
   margin: 0 auto;
