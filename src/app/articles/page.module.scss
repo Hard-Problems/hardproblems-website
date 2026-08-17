@@ -1021,32 +1021,6 @@
   min-width: 0;
 }
 
-// Small-caps heading above the articles grid. Typography comes from
-// the shared `.small-header` global class; this rule only owns the
-// spacing that aligns it with the sidebar's first entry.
-// Hidden on mobile — the categories sidebar (which stacks above the
-// list there) already communicates the active category, so a second
-// heading would just add noise.
-.typeHeading {
-  margin: 0 0 0.75rem 0;
-  padding-top: 0;
-}
-
-@media only screen and (max-width: 999px) {
-  .typeHeading {
-    display: none;
-  }
-}
-
-@media only screen and (min-width: 1000px) {
-  // On desktop, add the same top padding used by `.filterCount` so the
-  // heading vertically aligns with the first filter label in the left
-  // column.
-  .typeHeading {
-    padding-top: 2.2em;
-  }
-}
-
 @media only screen and (min-width: 1000px) {
   .typeLayout {
     display: grid;

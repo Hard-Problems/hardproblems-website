@@ -153,7 +153,10 @@ export default async function TypePage({ params }: Props) {
           />
         </aside>
         <div className={styles.typeResults}>
-          <h2 className={`${styles.typeHeading} small-header`}>{label}</h2>
+          {/* Visually hidden — the categories sidebar already flags the
+              active type visually. Keeps the heading landmark for
+              screen readers and search crawlers. */}
+          <h2 className="sr-only">{label}</h2>
           <ul
             className={`${styles.articleList} ${styles.articleListTwoCol}`}
           >

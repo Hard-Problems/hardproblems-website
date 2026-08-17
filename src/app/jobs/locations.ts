@@ -4,6 +4,7 @@
 
 import type { SerializedJob } from './fetchJobs';
 import { META_REGIONS, matchesCountry, splitCountries } from './filters';
+import { canonicalCountryName } from './countryAliases';
 
 // Any country with at least this many active jobs (past 45 days, per
 // fetchJobs's own filter) gets a page. Countries below the threshold
@@ -94,12 +95,16 @@ export function resolveLocationSlug(
 
 // Extract the set of DISTINCT country strings appearing in the active
 // jobs list, split on the compound-country separators (comma, slash,
-// "or", "and") so a single "UK, USA" row contributes to both.
+// "or", "and") so a single "UK, USA" row contributes to both. Each
+// name is canonicalized through the alias table so alternate spellings
+// ("USA" / "United States") collapse to a single entry — this stops
+// duplicate location pages being generated for the same underlying
+// country.
 export function distinctCountries(jobs: SerializedJob[]): Set<string> {
   const set = new Set<string>();
   for (const j of jobs) {
     for (const c of splitCountries(j.country)) {
-      set.add(c);
+      set.add(canonicalCountryName(c));
     }
   }
   return set;

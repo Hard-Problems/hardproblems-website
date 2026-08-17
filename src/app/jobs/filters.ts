@@ -5,6 +5,7 @@
 
 import type { SerializedJob } from './fetchJobs';
 import { OrgCategory, orgCategory } from './orgType';
+import { aliasesFor } from './countryAliases';
 
 export type WorkStyle = 'remote' | 'hybrid' | 'onsite';
 
@@ -329,22 +330,31 @@ export function splitCountries(s: string): string[] {
     .filter((t) => t.length > 0);
 }
 
+// Build a case-insensitive regex that matches any alias of `name` as
+// a whole word. Extracted so both the direct country filter and the
+// meta-region loop below can benefit from alias support (a job listed
+// as "United States" matches a "USA" filter, a "North America" region
+// filter, or vice versa).
+function aliasRegex(name: string): RegExp {
+  const pattern = aliasesFor(name)
+    .map((alias) => `\\b${escapeRegex(alias)}\\b`)
+    .join('|');
+  return new RegExp(pattern, 'i');
+}
+
 export function matchesCountry(jobCountry: string, selected: string): boolean {
   if (selected === 'all') return true;
   // "Global" roles are location-agnostic — they should appear in every
   // country filter so a user looking at e.g. Germany still sees them.
   if (/\bGlobal\b/i.test(jobCountry)) return true;
   // Meta region (Europe, South America, Africa, Middle East, Asia) —
-  // matches if the job's country field mentions any country or alias
-  // in the region's list.
+  // matches if the job's country field mentions any country in the
+  // region's list, OR any known alias of those countries.
   const region = META_REGIONS.find((r) => r.name === selected);
   if (region) {
-    return region.countries.some((name) =>
-      new RegExp(`\\b${escapeRegex(name)}\\b`, 'i').test(jobCountry)
-    );
+    return region.countries.some((name) => aliasRegex(name).test(jobCountry));
   }
-  const re = new RegExp(`\\b${escapeRegex(selected)}\\b`, 'i');
-  return re.test(jobCountry);
+  return aliasRegex(selected).test(jobCountry);
 }
 
 export function matchesWorkStyle(remote: string, filter: WorkStyle): boolean {
