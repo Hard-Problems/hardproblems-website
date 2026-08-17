@@ -38,9 +38,3 @@ yarn-error.log*
 # Claude Code — per-user settings (permissions, prefs). Shared files
 # in .claude/ (launch.json, agents, workflows) stay tracked.
 .claude/settings.local.json
-
-# Playwright — test artifacts / reports / traces (regenerated per run).
-/playwright-report
-/test-results
-/blob-report
-/playwright/.cache
