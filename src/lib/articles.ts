@@ -132,6 +132,13 @@ export type Article = {
   authorSlug?: string;
   publishedAt: string; // ISO date string (YYYY-MM-DD)
   updatedAt: string;
+  // Optional auto-removal date (YYYY-MM-DD). When set, the article is
+  // hidden from all listings AND its canonical URL 404s starting the
+  // day AFTER `expiresAt` — visible ALL day on the expiry date UTC,
+  // gone at midnight UTC the next day. Same one-day grace pattern as
+  // the jobs sheet's Column T. Used for time-limited posts like job
+  // openings with a hard application deadline.
+  expiresAt?: string;
   status: ArticleStatus;
   articleType: string; // e.g. "Article", "Book Review", "Podcast"
   topics: string[];
@@ -223,6 +230,7 @@ function readArticleFile(filename: string): Article | null {
     authorSlug: data.authorSlug,
     publishedAt: data.publishedAt ?? '',
     updatedAt: data.updatedAt ?? data.publishedAt ?? '',
+    expiresAt: data.expiresAt,
     status: (data.status as ArticleStatus) ?? 'draft',
     articleType: data.articleType ?? 'Article',
     topics: Array.isArray(data.topics) ? data.topics : [],
@@ -274,16 +282,33 @@ function estimateReadingTime(content: string): number {
 // so authors don't have to backfill a date on legacy content.
 export function isArticleLiveNow(article: Article): boolean {
   if (article.status !== 'published') return false;
-  const raw = (article.publishedAt || '').trim();
-  if (!raw) return true;
-  const publishMs = Date.parse(raw);
-  if (Number.isNaN(publishMs)) return true;
   const now = new Date();
   const todayUTC = Date.UTC(
     now.getUTCFullYear(),
     now.getUTCMonth(),
     now.getUTCDate()
   );
+  // Optional auto-removal: article disappears the day AFTER
+  // `expiresAt`. Mirrors the jobs-sheet Column T expiry pattern in
+  // fetchJobs.ts — strictly less than, so a 2026-09-15 expiry stays
+  // visible ALL of Sept 15 UTC and drops at midnight UTC on Sept 16.
+  const expiryRaw = (article.expiresAt || '').trim();
+  if (expiryRaw) {
+    const expiryMs = Date.parse(expiryRaw);
+    if (!Number.isNaN(expiryMs)) {
+      const e = new Date(expiryMs);
+      const expiryUTC = Date.UTC(
+        e.getUTCFullYear(),
+        e.getUTCMonth(),
+        e.getUTCDate()
+      );
+      if (expiryUTC < todayUTC) return false;
+    }
+  }
+  const raw = (article.publishedAt || '').trim();
+  if (!raw) return true;
+  const publishMs = Date.parse(raw);
+  if (Number.isNaN(publishMs)) return true;
   return publishMs <= todayUTC;
 }
 

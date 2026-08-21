@@ -53,3 +53,22 @@ export async function postToSlackForms(
   }
   await postToWebhook(url, payload);
 }
+
+// Post to the private "job-applicants" channel — receives every
+// application submitted through a Hard Problems hiring form
+// (currently the design-intern role at /articles/design-intern; add
+// more as roles open up). Kept separate from the general forms
+// channel so hiring-relevant chatter isn't mixed with the site's
+// other form noise, and access can be scoped to the hiring group.
+export async function postToSlackJobApplicants(
+  payload: SlackPayload
+): Promise<void> {
+  const url = process.env.SLACK_JOB_APPLICANTS_WEBHOOK_URL;
+  if (!url) {
+    console.warn(
+      '[slack] SLACK_JOB_APPLICANTS_WEBHOOK_URL not set — skipping notification'
+    );
+    return;
+  }
+  await postToWebhook(url, payload);
+}

@@ -1,0 +1,108 @@
+// Wrapper spacing for the inline design-intern application form.
+// The form sits directly inside the article `.body` under "How to
+// apply", so it needs its own top/bottom breathing room since none
+// of the surrounding paragraphs / lists provide it.
+.wrap {
+  margin: 2.5rem 0 2.5rem 0;
+  padding: 1.5rem 1.25rem;
+  background: var(--color-pale-green);
+  border-radius: 12px;
+}
+
+// Loosen the gap between fields in this long form (12 questions).
+// The shared `.form` class ships with 0.5rem gap, which reads too
+// tight over this many rows. `.wrap form` (specificity 0,1,1) beats
+// the shared `.form` (0,1,0) so the override applies.
+.wrap form {
+  gap: 1rem;
+}
+
+// Give the confirmation panel's body paragraph more room from the
+// "Application received" heading above it — the shared `.sentBody`
+// class sets margin-top: 0.15rem, which reads too tight here.
+// `.wrap [role="status"] p` (specificity 0,2,1) beats the shared
+// `.sentBody` (0,1,0) so the override applies to this form only.
+.wrap [role='status'] p {
+  margin-top: 0.5rem;
+}
+
+// Header sitting at the top of the green form wrapper. Uses the
+// site's serif heading style (matches article H3s) but the compound
+// `.wrap .formTitle` selector wins over `.body h3` (which would
+// otherwise apply a 2rem top margin) so the title sits flush with
+// the wrapper's own top padding.
+.wrap .formTitle {
+  font-family: var(--font-instrument-serif), Georgia, 'Times New Roman', serif;
+  font-size: var(--font-size-xl);
+  font-weight: 400;
+  color: var(--color-dark-green);
+  line-height: 1.2;
+  margin: 0 0 1.25rem 0;
+}
+
+// Yes/No radio group — one <label> per option, native radio input +
+// visible label text side-by-side. Deliberately native inputs (no
+// custom-styled dots) so the site's a11y story is clean without
+// extra pattern code. 2rem left padding indents the row so the first
+// radio button doesn't sit flush against the field-label above it.
+.radioGroup {
+  display: flex;
+  gap: 1.25rem;
+  padding: 0.25rem 0 0.25rem 0.5rem;
+}
+
+.radioOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.radioOption input[type='radio'] {
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--color-mid-green);
+}
+
+// Small inline "(optional)" hint after a field label. Same colour as
+// the surrounding label but lighter weight so it reads as secondary
+// metadata rather than part of the question.
+.optionalHint {
+  font-weight: 400;
+  opacity: 0.7;
+  margin-left: 0.35em;
+}
+
+// Small hint text shown below an input, for supplementary guidance
+// that doesn't belong in the label itself and shouldn't sit inside
+// the field as ghost placeholder text. Displayed as a block so it
+// wraps naturally; muted color so it reads as secondary.
+.fieldHint {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+  opacity: 0.65;
+  line-height: 1.4;
+}
+
+// Red asterisk after a required field's label. Same red as the
+// site's `.error` text so the two live in a consistent palette. The
+// span carries `aria-label="required"` in the JSX so screen readers
+// announce it as words rather than reading a bare star glyph.
+.requiredMark {
+  color: #b23a2a;
+  font-weight: 400;
+  margin-left: 0.25em;
+}
+
+// Local margin-top bump for the submit button — the shared
+// `.formSubmit` class ships with 0.25rem, which reads too tight in
+// this long inline form where the last radio group sits directly
+// above. `.wrap .submitButton` (specificity 0,2,0) wins over the
+// module-hashed `.formSubmit` (0,1,0) applied alongside it.
+.wrap .submitButton {
+  margin-top: 1rem;
+}
