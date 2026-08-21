@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { BookOpen } from 'lucide-react';
 import ArticleCard from '../../../components/ArticleCard';
+import DesignInternApplicationForm from '../../../components/DesignInternApplicationForm';
 import NewsletterModule from '../../../components/NewsletterModule';
 import {
   articleTypeSlug,
@@ -64,6 +65,28 @@ function splitForByline(html: string): { before: string; after: string } {
   return { before: '', after: html };
 }
 
+// Split around a `<div id="...">` slot marker so a React component
+// can be rendered inline at that position. Returns { before, after }
+// with the marker itself dropped, or null if the marker isn't
+// present. Used for embedding the design-intern application form
+// inline in its article body via the marker
+// `<div id="design-intern-application-form"></div>`.
+function splitAtSlot(
+  html: string,
+  slotId: string
+): { before: string; after: string } | null {
+  const re = new RegExp(
+    `<div\\s+id=["']${slotId}["']\\s*>\\s*</div>`,
+    'i'
+  );
+  const m = re.exec(html);
+  if (!m) return null;
+  return {
+    before: html.slice(0, m.index),
+    after: html.slice(m.index + m[0].length)
+  };
+}
+
 // Pre-render every published article at build time. New articles ship by
 // adding a .md file under content/articles/.
 export function generateStaticParams() {
@@ -114,10 +137,36 @@ export default async function ArticlePage({ params }: Props) {
   // listings and search until their date arrives, so a direct link
   // (from an author preview, an early recipient, or a scheduled tweet)
   // continues to work.
+  //
+  // Articles with an `expiresAt` in the past also 404 — the field is
+  // meant for hard-deadline posts (job openings with an application
+  // cutoff, event listings, etc.) where continuing to serve the URL
+  // would invite late applications after the role's closed.
+  const isExpired =
+    !!article?.expiresAt &&
+    (() => {
+      const raw = article.expiresAt!.trim();
+      const ms = Date.parse(raw);
+      if (Number.isNaN(ms)) return false;
+      const now = new Date();
+      const todayUTC = Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate()
+      );
+      const e = new Date(ms);
+      const expiryUTC = Date.UTC(
+        e.getUTCFullYear(),
+        e.getUTCMonth(),
+        e.getUTCDate()
+      );
+      return expiryUTC < todayUTC;
+    })();
   if (
     !article ||
     (article.status !== 'published' &&
-      process.env.NODE_ENV !== 'development')
+      process.env.NODE_ENV !== 'development') ||
+    (isExpired && process.env.NODE_ENV !== 'development')
   )
     notFound();
 
@@ -223,10 +272,44 @@ export default async function ArticlePage({ params }: Props) {
         <div className={styles.body}>
           <div dangerouslySetInnerHTML={{ __html: before }} />
           <ArticleByline article={article} />
-          <div dangerouslySetInnerHTML={{ __html: after }} />
+          {(() => {
+            const formSlot = splitAtSlot(
+              after,
+              'design-intern-application-form'
+            );
+            if (!formSlot) {
+              return (
+                <div dangerouslySetInnerHTML={{ __html: after }} />
+              );
+            }
+            return (
+              <>
+                <div
+                  dangerouslySetInnerHTML={{ __html: formSlot.before }}
+                />
+                <DesignInternApplicationForm />
+                <div
+                  dangerouslySetInnerHTML={{ __html: formSlot.after }}
+                />
+              </>
+            );
+          })()}
         </div>
 
-        {(article.articleType || article.topics.length > 0) && (
+        {(() => {
+          // Only render "Related content…" if at least one tag row
+          // would land on a listing page with articles other than
+          // this one. If every tag row's count is 1 (i.e. this
+          // article is the sole occupant of each category it belongs
+          // to — common for a first-of-its-kind post like a job
+          // opening), the section would just point back to itself
+          // and adds no navigation value, so hide it.
+          const hasSiblingContent =
+            (!!article.articleType &&
+              (typeCounts.get(article.articleType) ?? 0) > 1) ||
+            article.topics.some((t) => (topicCounts.get(t) ?? 0) > 1);
+          return hasSiblingContent;
+        })() && (
           <>
             <h2 className={`${styles.tagsLabel} section-label`}>
               Related content&hellip;
