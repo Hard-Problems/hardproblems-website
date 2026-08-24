@@ -109,8 +109,17 @@ if (typeof window !== 'undefined') {
         // impact; the new page just loads. `AbortError` is the DOM
         // exception; "The operation was aborted" is the WebKit
         // wording. Both cover the same class.
+        //
+        // Also covers posthog-js's OWN internal request timeouts
+        // (`"PostHog request timed out after 3000ms"`) which fire
+        // when the user's browser can't reach the PostHog ingest
+        // endpoint within 3s — usually a flaky WiFi / VPN / mobile
+        // network. posthog-js then captures its own abort as an
+        // exception and ships it back on the next reachable request,
+        // creating a self-referential noise loop we can't fix
+        // upstream.
         if (
-          /^AbortError\b|The operation was aborted|signal is aborted without reason/i.test(
+          /^AbortError\b|The operation was aborted|signal is aborted without reason|PostHog request timed out/i.test(
             value
           )
         ) {
