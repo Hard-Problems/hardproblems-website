@@ -8,7 +8,7 @@ author: 'Daniel Burka'
 authorSlug: 'daniel-burka'
 
 publishedAt: '2026-08-24'
-updatedAt: '2026-08-24'
+updatedAt: '2026-08-24T13:17:50Z'
 # Hard removal date. Article and its URL disappear at 00:00 UTC on
 # 2026-09-16 (i.e. visible ALL of Sept 15). Applications close on the
 # same day.
