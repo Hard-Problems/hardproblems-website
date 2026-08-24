@@ -7,15 +7,8 @@ excerpt: 'A 9-month paid internship in Shoreditch, London — design, writing, a
 author: 'Daniel Burka'
 authorSlug: 'daniel-burka'
 
-## LIVE-BUT-HIDDEN: `publishedAt` is set to a far-future date so
-## the direct URL (/articles/design-intern) still serves the article
-## — safe to share the link with candidates — but the article stays
-## OUT of every listing (homepage, /articles, category pages, RSS,
-## sitemap). To make it publicly discoverable, change `publishedAt`
-## back to the real launch date (e.g. today's date). See
-## `isArticleLiveNow` in src/lib/articles.ts for the logic.
-publishedAt: '2099-01-01'
-updatedAt: '2026-08-21'
+publishedAt: '2026-08-24'
+updatedAt: '2026-08-24'
 # Hard removal date. Article and its URL disappear at 00:00 UTC on
 # 2026-09-16 (i.e. visible ALL of Sept 15). Applications close on the
 # same day.
@@ -87,7 +80,7 @@ You don't need a design degree or previous internships. Show us things you've ma
 
 ## Who you'll work with {#who-youll-work-with}
 
-You'll work directly with Hard Problems' small founding team: Elyce Cole (org psychologist), Mahima Chandak (designer), and Daniel Burka (designer). There's no layer of management between you and the people making decisions. It is currently just the three of us and you.
+You'll work directly with Hard Problems' small founding team: [Elyce Cole](/authors/elyce-cole) (org psychologist), [Mahima Chandak](/authors/mahima-chandak) (designer), and [Daniel Burka](/authors/daniel-burka) (designer). There's no layer of management between you and the people making decisions. It is currently just the three of us and you.
 
 You'll report directly to one of the co-founders, [Daniel Burka](/authors/daniel-burka), who has a long history in design at organisations like Google Ventures, Mozilla, and Resolve to Save Lives. Expect regular one-to-ones and frequent feedback on your work.
 
@@ -102,6 +95,22 @@ You'll report directly to one of the co-founders, [Daniel Burka](/authors/daniel
   - **Pension:** Workplace pension with employer contributions
 - **Equipment:** We'll provide a Mac laptop and a large monitor if you don't already have them.
 - **Right to work:** You must have the right to work in the UK. We cannot sponsor visas for this role.
+
+## FAQ {#faq}
+
+<dl class="faq">
+  <dt>Is this role open to students?</dt>
+  <dd>Yes, if you have a work permit in the UK and you can carve out 3–4 hours per day to work on Hard Problems, we can be flexible to work around your university schedule.</dd>
+
+  <dt>Can I work remotely?</dt>
+  <dd>No, sorry. We prefer someone who can work from our office in London at least a few times per week.</dd>
+
+  <dt>Will this turn into a full-time role?</dt>
+  <dd>Likely not. You will be our first paid employee (the 3 founders are all volunteers). We don&rsquo;t have a precedent of full-time staff.</dd>
+
+  <dt>Will I be able to put my Hard Problems work in my portfolio?</dt>
+  <dd>Of course! Nothing we do is secret.</dd>
+</dl>
 
 ## How to apply {#how-to-apply}
 
