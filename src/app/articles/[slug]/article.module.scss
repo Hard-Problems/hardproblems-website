@@ -242,12 +242,12 @@
   }
 
   h3 {
-    font-family: var(--font-instrument-serif), Georgia, 'Times New Roman', serif;
-    font-size: var(--font-size-lg);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-md);
     line-height: 1.2;
     text-transform: none;
     letter-spacing: 0;
-    font-weight: 400;
+    font-weight: 600;
     color: var(--color-mid-green);
     margin: 4rem 0 0.2rem 0;
   }
@@ -360,6 +360,54 @@
   // etc.) comes from the site-wide `blockquote` rule in globals.css.
   blockquote {
     margin: 2.5em 0;
+  }
+
+  // FAQ list — `<dl class="faq">` in markdown. Small circular Q / A
+  // markers sit in the left gutter, absolutely positioned so wrapped
+  // lines stay flush with the first line's text rather than sliding
+  // under the marker. Circle dimensions are in rem so the marker
+  // stays a consistent size regardless of surrounding text sizing.
+  :global(.faq) dt,
+  :global(.faq) dd {
+    position: relative;
+    margin-left: 2rem;
+  }
+
+  :global(.faq) dd {
+    margin-top: 0.4rem;
+  }
+
+  // Larger between-pair gap than the site-wide `dt { margin-top }`
+  // — the FAQ list benefits from more breathing room so each
+  // question reads as its own block.
+  :global(.faq) dt {
+    margin-top: 2.5rem;
+  }
+
+  :global(.faq) dt::before,
+  :global(.faq) dd::before {
+    position: absolute;
+    left: -2rem;
+    top: 0.05em;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    font-weight: 600;
+    font-size: 0.75rem;
+    line-height: 1.5rem;
+    text-align: center;
+  }
+
+  :global(.faq) dt::before {
+    content: 'Q';
+    color: var(--color-mid-green);
+    background: var(--color-light-green);
+  }
+
+  :global(.faq) dd::before {
+    content: 'A';
+    color: #b58900;
+    background: #faf0cc;
   }
 
   // Note banner — yellow background with a lightbulb icon. Use by wrapping

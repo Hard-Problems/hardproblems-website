@@ -935,18 +935,21 @@ dd a {
   font-weight: 400;
 }
 
-dl dd {
-  margin: 0.2em 0 1em;
-}
-
-dt {
-  position: absolute;
-  left: 40px;
-  padding-top: 2px;
-}
-
+/* Reset the browser default 40px left indent on <dd> so definition
+   entries align flush with their <dt> — matches the vertical-stack
+   pattern the FAQ list uses on /articles/design-intern and the
+   updated dl blocks on /events and /privacy. */
 dd {
-  padding-left: 5em;
+  margin-left: 0;
+  padding-left: 0;
+}
+
+/* Bolder weight on <dt> so the term reads as a header for the
+   definition below; 0.5rem top margin gives each entry breathing
+   room from the previous <dd>. */
+dt {
+  margin-top: 1.5rem;
+  font-weight: 600;
 }
 
 .desktop {
@@ -1449,10 +1452,6 @@ ul ul li {
 .event {
   position: relative;
   margin: 1em 0 5em 0;
-}
-
-.event dt {
-  left: 0;
 }
 
 .event-image {
