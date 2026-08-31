@@ -37,7 +37,9 @@ export async function GET(request: Request) {
     );
   }
 
-  const csv = await fetchSheetCsv();
+  // true = bypass the Next Data Cache. Non-negotiable here: without it
+  // this cron re-reads the stale entry it exists to replace.
+  const csv = await fetchSheetCsv(true);
   if (csv === null) {
     // Leave the existing snapshot in place — a stale board beats an
     // empty one, and the TTL gives us hours of runway to notice.

@@ -56,7 +56,10 @@ function getDb(): SupabaseClient | null {
   bootstrapped = true;
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SECRET_KEY;
-  if (!url || !key) return null;
+  if (!url || !key) {
+    console.warn('[jobsSnapshot] SUPABASE_URL/SECRET_KEY unset, skipping');
+    return null;
+  }
   // Guard against a present-but-unusable value. `vercel env pull`
   // writes the literal placeholder "[SENSITIVE]" for variables marked
   // Sensitive, and createClient THROWS on a malformed URL — which
@@ -68,7 +71,17 @@ function getDb(): SupabaseClient | null {
   }
   try {
     cached = createClient(url, key, {
-      auth: { persistSession: false, autoRefreshToken: false }
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: {
+        // supabase-js issues ordinary fetch GETs, which Next is free to
+        // put in its Data Cache — the exact mechanism this whole change
+        // exists to remove. If the first read happened before the cron
+        // ever wrote a row, a cached empty result would pin
+        // readJobsSnapshot() to null indefinitely. Opt out explicitly
+        // rather than relying on route-level `force-dynamic`.
+        fetch: (input: RequestInfo | URL, init?: RequestInit) =>
+          fetch(input, { ...init, cache: 'no-store' })
+      }
     });
   } catch (err) {
     console.warn('[jobsSnapshot] could not create Supabase client', err);
@@ -94,11 +107,21 @@ export async function readJobsSnapshot(): Promise<JobsSnapshot | null> {
       console.warn('[jobsSnapshot] read failed:', error.message);
       return null;
     }
-    if (!data || !Array.isArray(data.jobs)) return null;
+    if (!data) {
+      console.warn('[jobsSnapshot] no snapshot row found');
+      return null;
+    }
+    if (!Array.isArray(data.jobs)) {
+      console.warn(`[jobsSnapshot] jobs column is ${typeof data.jobs}, not array`);
+      return null;
+    }
     // An empty array is a valid parse in principle but always means
     // something went wrong upstream, and serving it would blank the
     // board. Treat it as "no snapshot" so the caller falls back.
-    if (data.jobs.length === 0) return null;
+    if (data.jobs.length === 0) {
+      console.warn('[jobsSnapshot] snapshot row has zero jobs');
+      return null;
+    }
 
     const syncedAt = data.synced_at as string;
     const age = Date.now() - new Date(syncedAt).getTime();
@@ -107,6 +130,9 @@ export async function readJobsSnapshot(): Promise<JobsSnapshot | null> {
       return null;
     }
 
+    console.log(
+      `[jobsSnapshot] read ok: ${data.jobs.length} jobs, synced ${syncedAt}`
+    );
     return { syncedAt, jobs: data.jobs as SerializedJob[] };
   } catch (err) {
     console.warn('[jobsSnapshot] read threw, falling back to sheet', err);

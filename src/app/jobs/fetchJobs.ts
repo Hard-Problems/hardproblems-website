@@ -141,9 +141,24 @@ function parseDate(s: string): Date | null {
 //
 // Only the cron and the fallback path call this. It is deliberately NOT
 // on the normal render path any more — see jobsSnapshot.ts for why.
-export async function fetchSheetCsv(): Promise<string | null> {
+export async function fetchSheetCsv(
+  // The sync cron MUST pass true. With the default caching this
+  // function re-read the very Data Cache entry the cron exists to
+  // bypass: it fetched, got the stale cached CSV, and wrote stale jobs
+  // into the snapshot — which is exactly how a working pipeline ended
+  // up faithfully serving a board that was missing a whole day.
+  //
+  // It is not the default because `/` and `/sitemap.xml` render
+  // statically at build time, and a no-store fetch makes Next bail out
+  // of static generation for them. Those callers only ever reach this
+  // via the rare fallback path, where a cached CSV is acceptable.
+  bypassCache = false
+): Promise<string | null> {
   try {
-    const res = await fetch(SHEET_CSV_URL, { next: { revalidate: 60 } });
+    const res = await fetch(
+      SHEET_CSV_URL,
+      bypassCache ? { cache: 'no-store' } : { next: { revalidate: 60 } }
+    );
     if (res.ok) return await res.text();
     console.warn(`[fetchJobs] sheet fetch not ok: ${res.status}`);
   } catch (err) {
