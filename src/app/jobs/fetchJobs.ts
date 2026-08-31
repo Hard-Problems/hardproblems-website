@@ -1,4 +1,5 @@
 import { validateAndNormalizeUrl } from '../../lib/validateUrl';
+import { readJobsSnapshot } from './jobsSnapshot';
 
 // Sanitize a raw URL string from the sheet into either a valid,
 // normalized URL or an empty string. Empty is safe for every consumer
@@ -43,6 +44,16 @@ const SHEET_CSV_URL =
 
 // Hide jobs once this many days have passed since their listed date.
 const MAX_AGE_DAYS = 45;
+
+// Last CSV body that parsed successfully, guarding the DIRECT-FETCH
+// fallback only — the normal path reads the Redis snapshot and never
+// touches this. When that fallback's sheet fetch fails we re-parse this
+// instead of returning [], because a stale board beats an empty one.
+//
+// Per-instance memory, not a durable cache: a cold lambda has nothing
+// to fall back on and still returns []. The durable equivalent is the
+// snapshot in jobsSnapshot.ts.
+let lastGoodCsv: string | null = null;
 
 function parseCSV(text: string): string[][] {
   const rows: string[][] = [];
@@ -125,16 +136,30 @@ function parseDate(s: string): Date | null {
   return null;
 }
 
-export async function fetchJobs(): Promise<SerializedJob[]> {
-  // 60s Data Cache TTL. Balances two things: the jobs board
-  // (`force-dynamic` — re-renders on every request) sees a Sheet at
-  // most 1 minute stale, AND Google Sheets is hit at most once a
-  // minute regardless of traffic. The homepage teaser sits inside a
-  // 1-hour ISR page, so it's fine with an hour of staleness in
-  // practice — it just uses whichever cached CSV is fresh at render.
-  const res = await fetch(SHEET_CSV_URL, { next: { revalidate: 60 } });
-  if (!res.ok) return [];
-  const text = await res.text();
+// Fetch the raw Sheet CSV. Returns null on a non-ok response or a
+// thrown network error; callers decide what to fall back to.
+//
+// Only the cron and the fallback path call this. It is deliberately NOT
+// on the normal render path any more — see jobsSnapshot.ts for why.
+export async function fetchSheetCsv(): Promise<string | null> {
+  try {
+    const res = await fetch(SHEET_CSV_URL, { next: { revalidate: 60 } });
+    if (res.ok) return await res.text();
+    console.warn(`[fetchJobs] sheet fetch not ok: ${res.status}`);
+  } catch (err) {
+    console.warn('[fetchJobs] sheet fetch threw:', err);
+  }
+  return null;
+}
+
+// Parse a Sheet CSV body into sorted jobs.
+//
+// Deliberately does NOT apply the date window — that has to be
+// evaluated against the CURRENT time at read, not at sync time, so a
+// snapshot written 15 minutes ago still hides a job that expired since.
+// Returns [] for a body that isn't a usable sheet, which callers treat
+// as "don't persist this".
+export function parseJobsCsv(text: string): SerializedJob[] {
   const rows = parseCSV(text).filter((r) => r.some((c) => c.trim().length > 0));
   if (rows.length < 2) return [];
 
@@ -193,22 +218,29 @@ export async function fetchJobs(): Promise<SerializedJob[]> {
     return bc - ac;
   });
 
-  // Hide jobs whose listed date is either OLDER than MAX_AGE_DAYS or
-  // in the FUTURE — the latter gives us proper scheduling (a job with
-  // a future date stays hidden until that day arrives, at which point
-  // it appears on the board and in the next digest).
-  //
-  // Comparison is done in UTC days so it matches the relative date
-  // labels ("Today", "Yesterday", "N days ago"). Jobs without a
-  // parseable date are kept so a missing value doesn't silently drop
-  // a listing.
+  return jobs;
+}
+
+// Hide jobs whose listed date is either OLDER than MAX_AGE_DAYS or
+// in the FUTURE — the latter gives us proper scheduling (a job with
+// a future date stays hidden until that day arrives, at which point
+// it appears on the board and in the next digest).
+//
+// Comparison is done in UTC days so it matches the relative date
+// labels ("Today", "Yesterday", "N days ago"). Jobs without a
+// parseable date are kept so a missing value doesn't silently drop
+// a listing.
+//
+// Runs on every read, never at sync time — that is what lets a cached
+// snapshot stay correct as the clock moves.
+export function applyDateWindow(jobs: SerializedJob[]): SerializedJob[] {
   const now = new Date();
   const todayUTC = Date.UTC(
     now.getUTCFullYear(),
     now.getUTCMonth(),
     now.getUTCDate()
   );
-  const recentJobs = jobs.filter((j) => {
+  return jobs.filter((j) => {
     // Column T expiry — hide the job the day AFTER its expiry date.
     // The one-day grace absorbs timezone drift: parseDate treats the
     // sheet's YYYY-MM-DD as UTC midnight, which is already
@@ -236,6 +268,31 @@ export async function fetchJobs(): Promise<SerializedJob[]> {
     const days = Math.round((todayUTC - jobUTC) / 86400000);
     return days >= 0 && days < MAX_AGE_DAYS;
   });
+}
 
-  return recentJobs;
+export async function fetchJobs(): Promise<SerializedJob[]> {
+  // Primary path: the snapshot written by /api/cron/sync-jobs. This is
+  // a single fast Redis GET, which keeps the 1.6MB Google fetch off the
+  // request path — that fetch running inside a force-dynamic render is
+  // what blew Vercel's 15s function limit and left the Data Cache
+  // permanently stale.
+  const snapshot = await readJobsSnapshot();
+  if (snapshot) return applyDateWindow(snapshot.jobs);
+
+  // Fallback: no usable snapshot (first deploy before the cron has run,
+  // `next build`, local dev without Upstash, or a Redis outage). Pull
+  // the sheet directly — the pre-existing behaviour, kept so none of
+  // those cases produce an empty board.
+  const fresh = await fetchSheetCsv();
+  if (fresh === null && lastGoodCsv !== null) {
+    console.warn('[fetchJobs] serving last known good CSV');
+  }
+  const text = fresh ?? lastGoodCsv;
+  if (text === null) return [];
+  const jobs = parseJobsCsv(text);
+  if (jobs.length === 0) return [];
+  // Only promote a body that actually parsed, so a 200 carrying a
+  // truncated response or an HTML error page can't poison the fallback.
+  if (fresh !== null) lastGoodCsv = fresh;
+  return applyDateWindow(jobs);
 }

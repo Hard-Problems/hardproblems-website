@@ -6,6 +6,11 @@ import { orgTypeDisplay } from '../orgType';
 // Cache aligned with fetchJobs(): re-render the feed at most every 10 min.
 export const revalidate = 600;
 
+// Same fallback-path headroom as the jobs page — this route shares
+// fetchJobs(), so it inherits the same worst case if the snapshot is
+// missing.
+export const maxDuration = 60;
+
 const FEED_TITLE = 'Hard Problems — Job board';
 const FEED_DESCRIPTION =
   'Jobs at organizations working on the hard problems: climate change, health, public services, and education.';

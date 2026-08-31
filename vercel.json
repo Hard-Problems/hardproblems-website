@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/send-alerts",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/sync-jobs",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
