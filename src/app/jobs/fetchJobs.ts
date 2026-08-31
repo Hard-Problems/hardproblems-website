@@ -272,17 +272,17 @@ export function applyDateWindow(jobs: SerializedJob[]): SerializedJob[] {
 
 export async function fetchJobs(): Promise<SerializedJob[]> {
   // Primary path: the snapshot written by /api/cron/sync-jobs. This is
-  // a single fast Redis GET, which keeps the 1.6MB Google fetch off the
-  // request path — that fetch running inside a force-dynamic render is
-  // what blew Vercel's 15s function limit and left the Data Cache
+  // a single indexed row read, which keeps the 1.6MB Google fetch off
+  // the request path — that fetch running inside a force-dynamic render
+  // is what blew Vercel's 15s function limit and left the Data Cache
   // permanently stale.
   const snapshot = await readJobsSnapshot();
   if (snapshot) return applyDateWindow(snapshot.jobs);
 
   // Fallback: no usable snapshot (first deploy before the cron has run,
-  // `next build`, local dev without Upstash, or a Redis outage). Pull
-  // the sheet directly — the pre-existing behaviour, kept so none of
-  // those cases produce an empty board.
+  // `next build`, local dev without Supabase, or a database problem).
+  // Pull the sheet directly — the pre-existing behaviour, kept so none
+  // of those cases produce an empty board.
   const fresh = await fetchSheetCsv();
   if (fresh === null && lastGoodCsv !== null) {
     console.warn('[fetchJobs] serving last known good CSV');

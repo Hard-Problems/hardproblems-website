@@ -5,7 +5,7 @@
 
 import type { SerializedJob } from './fetchJobs';
 import { OrgCategory, orgCategory } from './orgType';
-import { aliasesFor } from './countryAliases';
+import { aliasesFor, canonicalCountryName } from './countryAliases';
 
 export type WorkStyle = 'remote' | 'hybrid' | 'onsite';
 
@@ -319,6 +319,30 @@ export const META_REGIONS: MetaRegion[] = [
 
 export const META_REGION_NAMES = new Set(META_REGIONS.map((r) => r.name));
 
+// Lower-cased region-name lookup. The sheet's country column isn't
+// case-normalized, so region tags are compared case-insensitively —
+// otherwise an "africa" row would leak into the country dropdown and
+// miss the region fan-out below.
+const REGION_BY_LOWER_NAME = new Map(
+  META_REGIONS.map((r) => [r.name.toLowerCase(), r] as const)
+);
+
+// True when a country-column token is a meta-region tag ("Africa",
+// "middle east") rather than an actual country. The dropdown uses this
+// to keep regions in the "Region" optgroup only.
+export function isMetaRegionName(value: string): boolean {
+  return REGION_BY_LOWER_NAME.has(value.trim().toLowerCase());
+}
+
+// Whether `country` is one of the region's member countries, compared
+// through the alias table so "USA" and "United States" both resolve.
+function regionIncludes(region: MetaRegion, country: string): boolean {
+  const target = canonicalCountryName(country).toLowerCase();
+  return region.countries.some(
+    (c) => canonicalCountryName(c).toLowerCase() === target
+  );
+}
+
 export function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -354,7 +378,17 @@ export function matchesCountry(jobCountry: string, selected: string): boolean {
   if (region) {
     return region.countries.some((name) => aliasRegex(name).test(jobCountry));
   }
-  return aliasRegex(selected).test(jobCountry);
+  if (aliasRegex(selected).test(jobCountry)) return true;
+  // A job tagged with a bare region name ("Africa") is open across that
+  // whole region, so it also belongs under each member country the
+  // dropdown happens to offer — the dropdown is built from the jobs
+  // data, so this never invents countries nobody is hiring in.
+  // Compared token-by-token rather than as a substring so a job in
+  // "South Africa" isn't mistaken for a continent-wide listing.
+  return splitCountries(jobCountry).some((tag) => {
+    const tagged = REGION_BY_LOWER_NAME.get(tag.trim().toLowerCase());
+    return tagged ? regionIncludes(tagged, selected) : false;
+  });
 }
 
 export function matchesWorkStyle(remote: string, filter: WorkStyle): boolean {

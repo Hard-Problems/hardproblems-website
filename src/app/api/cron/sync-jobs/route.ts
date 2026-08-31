@@ -5,8 +5,9 @@ import { isCronAuthorized } from '../../../../lib/cronAuth';
 
 // GET /api/cron/sync-jobs
 //
-// Pulls the Google Sheet, parses it, and writes the result to Redis for
-// fetchJobs() to read. Called by Vercel Cron (see vercel.json).
+// Pulls the Google Sheet, parses it, and writes the result to the
+// jobs_snapshot table for fetchJobs() to read. Called by Vercel Cron
+// (see vercel.json).
 //
 // This exists to keep the ~1.6MB Sheet fetch off the request path. It
 // used to run inside the `force-dynamic` jobs render via Next's
@@ -58,8 +59,9 @@ export async function GET(request: Request) {
 
   const written = await writeJobsSnapshot(jobs);
   if (!written) {
-    // Upstash unconfigured or erroring. fetchJobs() still works via its
-    // direct-fetch fallback, so this is degraded rather than broken.
+    // Supabase unconfigured or erroring. fetchJobs() still works via
+    // its direct-fetch fallback, so this is degraded rather than
+    // broken.
     console.warn('[jobs/sync] snapshot write failed');
     return NextResponse.json(
       { ok: false, error: 'snapshot-write-failed', parsed: jobs.length },

@@ -38,3 +38,5 @@ yarn-error.log*
 # Claude Code — per-user settings (permissions, prefs). Shared files
 # in .claude/ (launch.json, agents, workflows) stay tracked.
 .claude/settings.local.json
+.vercel
+.env*

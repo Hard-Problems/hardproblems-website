@@ -3,7 +3,12 @@
 // in one place.
 
 import type { SerializedJob } from './fetchJobs';
-import { META_REGIONS, matchesCountry, splitCountries } from './filters';
+import {
+  META_REGIONS,
+  isMetaRegionName,
+  matchesCountry,
+  splitCountries
+} from './filters';
 import { canonicalCountryName } from './countryAliases';
 
 // Any country with at least this many active jobs (past 45 days, per
@@ -104,6 +109,9 @@ export function distinctCountries(jobs: SerializedJob[]): Set<string> {
   const set = new Set<string>();
   for (const j of jobs) {
     for (const c of splitCountries(j.country)) {
+      // Region tags ("Africa") get their own region page — skip them
+      // here so they don't also emit a duplicate country page/slug.
+      if (isMetaRegionName(c)) continue;
       set.add(canonicalCountryName(c));
     }
   }
