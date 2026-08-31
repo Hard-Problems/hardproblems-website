@@ -167,6 +167,98 @@ export async function fetchSheetCsv(
   return null;
 }
 
+// Column headers as they appear in row 1 of the sheet. Everything is
+// matched through normalizeHeader(), so trailing spaces, punctuation
+// and quote-style changes (including a smart-quote autocorrect) don't
+// break the mapping.
+//
+// This replaces positional indices. Reading r[19] for the expiry meant
+// that inserting one column anywhere to its left silently shifted every
+// later field — seniority would start reading the careers-page column
+// and the expiry filter would read garbage, with nothing thrown and
+// nothing logged. Matching on names turns that silent corruption into a
+// loud, detectable failure.
+const COLUMN_HEADERS = {
+  date: 'Job listed date',
+  url: 'Job listing URL',
+  title: 'Title of the role',
+  company: 'Company',
+  typeOfOrg: 'Type of org',
+  goodForWorld: 'Good for the world?',
+  companyUrl: 'Company URL',
+  country: 'Country',
+  city: 'City or cities',
+  remote: 'Remote or Hybrid',
+  salary: 'Salary per year',
+  sector: 'Company Sector',
+  description: 'Company Description',
+  goodForWorldExplanation: 'Explain the "Good for the world" score',
+  role: 'Role type',
+  dateCreated: 'Date created',
+  deleted: 'Job Deleted',
+  seniority: 'Seniority',
+  expiresAt: 'Application deadline'
+} as const;
+
+type ColumnField = keyof typeof COLUMN_HEADERS;
+
+// Losing any of these means we cannot produce a trustworthy board, so
+// the parse aborts rather than emitting subtly wrong rows. "Job Deleted"
+// is in here because silently dropping it would republish every job the
+// team has ever removed.
+const REQUIRED_FIELDS: ColumnField[] = [
+  'date',
+  'url',
+  'title',
+  'company',
+  'deleted'
+];
+
+// Lowercase, and collapse every run of non-alphanumerics to one space.
+// "Good for the world? " and 'Explain the "Good for the world" score'
+// both survive this intact and distinct.
+function normalizeHeader(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+// Map each field to its column index in this particular CSV, or null if
+// a required column is absent. Optional columns resolve to -1, which
+// readCell() renders as an empty string — the same thing the old
+// positional code produced for a short row.
+function resolveColumns(headerRow: string[]): Record<ColumnField, number> | null {
+  const byName = new Map<string, number>();
+  headerRow.forEach((h, i) => {
+    const key = normalizeHeader(h);
+    // First occurrence wins, so a stray duplicate header later in the
+    // row can't hijack a column that already resolved.
+    if (key && !byName.has(key)) byName.set(key, i);
+  });
+
+  const resolved = {} as Record<ColumnField, number>;
+  const missing: string[] = [];
+  for (const [field, header] of Object.entries(COLUMN_HEADERS)) {
+    const idx = byName.get(normalizeHeader(header)) ?? -1;
+    resolved[field as ColumnField] = idx;
+    if (idx === -1) missing.push(header);
+  }
+
+  if (missing.length > 0) {
+    console.warn(`[fetchJobs] sheet missing columns: ${missing.join(', ')}`);
+  }
+  const missingRequired = REQUIRED_FIELDS.filter((f) => resolved[f] === -1);
+  if (missingRequired.length > 0) {
+    console.warn(
+      `[fetchJobs] required columns missing (${missingRequired.join(', ')}) — refusing to parse`
+    );
+    return null;
+  }
+  return resolved;
+}
+
+function readCell(row: string[], idx: number): string {
+  return idx >= 0 ? (row[idx] ?? '') : '';
+}
+
 // Parse a Sheet CSV body into sorted jobs.
 //
 // Deliberately does NOT apply the date window — that has to be
@@ -178,40 +270,41 @@ export function parseJobsCsv(text: string): SerializedJob[] {
   const rows = parseCSV(text).filter((r) => r.some((c) => c.trim().length > 0));
   if (rows.length < 2) return [];
 
-  // Column Q (index 16) is the "Job Deleted" flag. Any row with "1" there
-  // is excluded from the board entirely.
+  const col = resolveColumns(rows[0]);
+  if (!col) return [];
+
+  // "Job Deleted" — any row with "1" is excluded from the board.
   const dataRows = rows
     .slice(1)
-    .filter((r) => (r[16] ?? '').trim() !== '1');
+    .filter((r) => readCell(r, col.deleted).trim() !== '1');
   const jobs = dataRows.map((r) => {
-    const date = parseDate(r[0] ?? '');
-    const dateCreated = parseDateTime(r[15] ?? '');
-    // Column T (index 19) — optional per-job expiry date. Blank on
-    // older rows added before the column existed; parseDate returns
-    // null for empty strings and any unparseable value, so we treat
+    const date = parseDate(readCell(r, col.date));
+    const dateCreated = parseDateTime(readCell(r, col.dateCreated));
+    // "Application deadline" — optional per-job expiry. Blank on older
+    // rows added before the column existed; parseDate returns null for
+    // empty strings and any unparseable value, so we treat
     // missing-or-malformed as "no expiry set".
-    const expiresAt = parseDate(r[19] ?? '');
+    const expiresAt = parseDate(readCell(r, col.expiresAt));
     return {
       date: date ? date.toISOString() : null,
-      url: sanitizeSheetUrl(r[1] ?? ''),
-      title: (r[2] ?? '').trim(),
-      company: (r[3] ?? '').trim(),
-      typeOfOrg: (r[4] ?? '').trim(),
-      goodForWorld: (r[5] ?? '').trim(),
-      companyUrl: sanitizeSheetUrl(r[6] ?? ''),
-      country: (r[7] ?? '').trim(),
-      city: (r[8] ?? '').trim(),
-      remote: (r[9] ?? '').trim(),
-      salary: (r[10] ?? '').trim(),
-      sector: (r[11] ?? '').trim(),
-      description: (r[12] ?? '').trim(),
-      goodForWorldExplanation: (r[13] ?? '').trim(),
-      role: (r[14] ?? '').trim(),
+      url: sanitizeSheetUrl(readCell(r, col.url)),
+      title: readCell(r, col.title).trim(),
+      company: readCell(r, col.company).trim(),
+      typeOfOrg: readCell(r, col.typeOfOrg).trim(),
+      goodForWorld: readCell(r, col.goodForWorld).trim(),
+      companyUrl: sanitizeSheetUrl(readCell(r, col.companyUrl)),
+      country: readCell(r, col.country).trim(),
+      city: readCell(r, col.city).trim(),
+      remote: readCell(r, col.remote).trim(),
+      salary: readCell(r, col.salary).trim(),
+      sector: readCell(r, col.sector).trim(),
+      description: readCell(r, col.description).trim(),
+      goodForWorldExplanation: readCell(r, col.goodForWorldExplanation).trim(),
+      role: readCell(r, col.role).trim(),
       dateCreated: dateCreated ? dateCreated.toISOString() : null,
-      // Column R (index 17) — "Seniority". Free-form text from the
-      // sheet; matchesSeniority() classifies it into the filter
-      // buckets at render time.
-      seniority: (r[17] ?? '').trim(),
+      // "Seniority" — free-form text; matchesSeniority() classifies it
+      // into the filter buckets at render time.
+      seniority: readCell(r, col.seniority).trim(),
       expiresAt: expiresAt ? expiresAt.toISOString() : null
     } satisfies SerializedJob;
   });
