@@ -19,7 +19,7 @@ import {
 import {
   FILTER_PARAM_KEYS,
   META_REGIONS,
-  META_REGION_NAMES,
+  isMetaRegionName,
   SECTOR_OPTIONS,
   SENIORITY_OPTIONS,
   SectorCategory,
@@ -470,8 +470,10 @@ export default function JobsList({
         if (c.toLowerCase() === 'global') continue;
         // Meta-region tags (Europe, Africa, etc.) are already shown in
         // the "Region" optgroup above — hide them from the country
-        // list so the dropdown doesn't list them twice.
-        if (META_REGION_NAMES.has(c)) continue;
+        // list so the dropdown doesn't list them twice. Jobs tagged
+        // this way still surface under each member country via
+        // matchesCountry().
+        if (isMetaRegionName(c)) continue;
         // Canonicalize so alternate spellings ("USA" vs
         // "United States") collapse into one dropdown option.
         set.add(canonicalCountryName(c));
