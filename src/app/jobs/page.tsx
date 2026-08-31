@@ -19,6 +19,14 @@ import styles from './page.module.scss';
 // regardless of how many users land on the page.
 export const dynamic = 'force-dynamic';
 
+// Headroom for the fallback path only. Normal renders read the Redis
+// snapshot (see jobsSnapshot.ts) and finish in ~1.5s, but if that
+// snapshot is ever unavailable fetchJobs() drops back to pulling the
+// ~1.6MB Sheet inline — which is exactly what was exceeding Vercel's
+// 15s default and leaving the board stale. Pro allows up to 60s, so
+// the degraded path now completes instead of being killed.
+export const maxDuration = 60;
+
 export const metadata: Metadata = {
   title: 'Job board for designers who want to work on hard problems',
   // Auto-discovery for RSS readers. The "raw" feed has every job; users can
