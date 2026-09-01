@@ -112,6 +112,11 @@ export function distinctCountries(jobs: SerializedJob[]): Set<string> {
       // Region tags ("Africa") get their own region page — skip them
       // here so they don't also emit a duplicate country page/slug.
       if (isMetaRegionName(c)) continue;
+      // "Global" is a flag meaning location-agnostic, not a place.
+      // Without this it would earn a /jobs/global page, which is both
+      // meaningless as a location and duplicative — those jobs already
+      // appear on every other country and region page.
+      if (c.trim().toLowerCase() === 'global') continue;
       set.add(canonicalCountryName(c));
     }
   }
@@ -124,7 +129,11 @@ export function distinctCountries(jobs: SerializedJob[]): Set<string> {
 export function qualifyingCountries(jobs: SerializedJob[]): string[] {
   const qualifying: string[] = [];
   for (const country of distinctCountries(jobs)) {
-    const n = jobs.filter((j) => matchesCountry(j.country, country)).length;
+    // includeGlobal=false: a country earns a page on its own jobs, not
+    // on the shared pool of Global listings.
+    const n = jobs.filter((j) =>
+      matchesCountry(j.country, country, false)
+    ).length;
     if (n >= COUNTRY_MIN_ACTIVE_JOBS) qualifying.push(country);
   }
   return qualifying.sort();
@@ -138,8 +147,11 @@ export function countryQualifies(
   jobs: SerializedJob[],
   country: string
 ): boolean {
+  // Must use the same strict count as qualifyingCountries(), or a page
+  // could be pre-rendered and then 404 on its own render (or vice
+  // versa) purely because the two disagreed about Global jobs.
   return (
-    jobs.filter((j) => matchesCountry(j.country, country)).length >=
+    jobs.filter((j) => matchesCountry(j.country, country, false)).length >=
     COUNTRY_MIN_ACTIVE_JOBS
   );
 }

@@ -366,11 +366,22 @@ function aliasRegex(name: string): RegExp {
   return new RegExp(pattern, 'i');
 }
 
-export function matchesCountry(jobCountry: string, selected: string): boolean {
+export function matchesCountry(
+  jobCountry: string,
+  selected: string,
+  // Set false to count only GENUINE matches, ignoring the
+  // location-agnostic pass-through below. Used when deciding whether a
+  // country has earned its own page: counting Global jobs there meant
+  // every country's total was inflated by the same shared pool, so a
+  // country with one real job could clear the threshold and get a page
+  // populated almost entirely by jobs repeated on every other country
+  // page. Display still includes Global jobs — see jobsAtLocation().
+  includeGlobal = true
+): boolean {
   if (selected === 'all') return true;
   // "Global" roles are location-agnostic — they should appear in every
   // country filter so a user looking at e.g. Germany still sees them.
-  if (/\bGlobal\b/i.test(jobCountry)) return true;
+  if (includeGlobal && /\bGlobal\b/i.test(jobCountry)) return true;
   // Meta region (Europe, South America, Africa, Middle East, Asia) —
   // matches if the job's country field mentions any country in the
   // region's list, OR any known alias of those countries.
