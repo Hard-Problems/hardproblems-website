@@ -70,18 +70,15 @@ function getDb(): SupabaseClient | null {
     return null;
   }
   try {
+    // Caching of these reads is left to route-level config on purpose.
+    // Forcing `no-store` here made every caller dynamic, which broke
+    // static generation for /jobs/[location] — those pages then failed
+    // the snapshot read at build time and silently fell back to pulling
+    // the 1.6MB Sheet. The board itself is `force-dynamic` so its reads
+    // are uncached regardless, and the location pages want their ISR
+    // window to apply.
     cached = createClient(url, key, {
-      auth: { persistSession: false, autoRefreshToken: false },
-      global: {
-        // supabase-js issues ordinary fetch GETs, which Next is free to
-        // put in its Data Cache — the exact mechanism this whole change
-        // exists to remove. If the first read happened before the cron
-        // ever wrote a row, a cached empty result would pin
-        // readJobsSnapshot() to null indefinitely. Opt out explicitly
-        // rather than relying on route-level `force-dynamic`.
-        fetch: (input: RequestInfo | URL, init?: RequestInit) =>
-          fetch(input, { ...init, cache: 'no-store' })
-      }
+      auth: { persistSession: false, autoRefreshToken: false }
     });
   } catch (err) {
     console.warn('[jobsSnapshot] could not create Supabase client', err);
