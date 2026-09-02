@@ -10,7 +10,7 @@ authorSlug: 'tony-joy'
 publishedAt: '2026-09-01'
 updatedAt: '2026-09-01'
 
-status: 'published' # draft | review | published
+status: 'draft' # draft | review | published
 
 articleType: 'Interviews' # Article | Book reviews | Podcast | Interviews
 
@@ -47,11 +47,14 @@ _What do designers do at a nonprofit working on global public health? Tony Joy o
 
 [Resolve to Save Lives](https://rtsl.org) is a public health charity that aims to save 100 million people from heart attacks and strokes in the next 30 years. What does a design team at a public health NGO do? Hard Problems' [Daniel Burka](/authors/daniel-burka) interviewed [Tony Joy](https://www.linkedin.com/in/tony-joy/), senior product designer, and their design and product team.
 
-- **Design/product org size:** 6 people (2 designers, 1 UX researcher, 3 PMs)
-- **Org size:** ~200 people
-- **Sector and type:** Global health organization (Charity)
-- **Founded:** 2017 by Dr. Tom Frieden, former director of the US CDC
-- **Location:** USA, with offices in China, India, Nigeria, Ethiopia, and Rwanda
+|  |  |
+| --- | --- |
+| **Organization** | [Resolve to Save Lives](https://rtsl.org) (RTSL) |
+| **Design/product org size** | 6 people (2 designers, 1 UX researcher, 3 PMs) |
+| **Org size** | ~200 people |
+| **Sector and type** | Global health organization (Charity) |
+| **Founded** | 2017 by [Dr. Tom Frieden](https://drtomfrieden.net/), former director of the [US CDC](https://www.cdc.gov/) |
+| **Location** | USA, with offices in China, India, Nigeria, Ethiopia, and Rwanda |
 
 ## What does the design team do at Resolve to Save Lives? {#what-does-the-design-team-do}
 
