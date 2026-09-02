@@ -101,6 +101,20 @@ I also participated in flagship company-building programmes managed by Entrepren
         url: 'https://www.linkedin.com/in/kanelincoln/'
       }
     ]
+  },
+  {
+    slug: 'tony-joy',
+    name: 'Tony Joy',
+    bio: `Tony is a senior product designer at Resolve to Save Lives. He likes trying food he can’t pronounce, traveling to unheard-of places, reading old books, and seeing good design.`,
+    links: [
+      {
+        label: 'LinkedIn',
+        url: 'https://www.linkedin.com/in/tony-joy/'
+      }
+    ],
+    phraseLinks: {
+      'Resolve to Save Lives': 'https://rtsl.org'
+    }
   }
 ];
 

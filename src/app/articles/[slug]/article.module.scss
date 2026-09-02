@@ -478,6 +478,15 @@
     display: none;
   }
 
+  // Cells only carry a `border-bottom`, so a table has no rule above its
+  // first row — most visible when the empty header above is hidden and
+  // the grid looks like it's missing its top edge. Close it on the table
+  // itself; `border-collapse: collapse` merges the stroke into a single
+  // line matching the dividers between rows.
+  table {
+    border-top: 1px solid color-mix(in srgb, #aed8c1 60%, transparent);
+  }
+
   // Light green tint variant — apply by wrapping the table in
   // `<div class="green-table">` (markdown-friendly) or by setting the
   // class on the <table> itself. Cell borders shift to a paler tone so
@@ -488,6 +497,8 @@
   :global(.green-table) table {
     background: var(--color-light-green);
     table-layout: fixed;
+    // The tint supplies its own top edge; no mint rule above it.
+    border-top: 0;
   }
 
   table:global(.green-table) th,
@@ -661,6 +672,24 @@
     max-width: 100%;
     height: auto;
     margin: 2em 0;
+  }
+
+  // Extra 2rem of breathing room beneath inline images. Applied as
+  // padding rather than a bigger bottom margin because most images are
+  // followed by a heading, and the heading's 4rem top margin would
+  // simply collapse over a larger margin here and swallow the gap.
+  // Padding doesn't collapse, so the space lands whatever follows.
+  // Exclusions: floated images (text wraps alongside them, so the space
+  // would punch a hole in the column), the byline avatar and the brick
+  // grid's cells — none of those are standalone figures in the flow.
+  img:not(:global(.float-right)):not(.authorAvatar) {
+    padding-bottom: 2rem;
+  }
+
+  // Repeats the :not()s so this out-specifies the rule above rather than
+  // losing the cascade to it.
+  :global(.image-bricks) img:not(:global(.float-right)):not(.authorAvatar) {
+    padding-bottom: 0;
   }
 
   // Embeds — Google Maps, YouTube, Vimeo, etc. Stretches to fill the
