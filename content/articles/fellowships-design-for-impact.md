@@ -122,6 +122,6 @@ The Loeb Fellowship is the least structured program on this list, but in the bes
 
 <div class="note">
 
-**Think a fellowship is missing?** [Send us one to include](mailto:contact@hardproblems.com?subject=Fellowship%20suggestion).
+**Think a fellowship is missing?** [Email your suggestion](mailto:contact@hardproblems.com?subject=Fellowship%20suggestion) or [comment on LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7500931767487492098) with your suggestion.
 
 </div>
