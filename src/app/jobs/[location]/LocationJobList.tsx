@@ -12,7 +12,9 @@ import Link from 'next/link';
 import { Fragment, type ReactNode } from 'react';
 import { Earth, Gem, Sparkle } from 'lucide-react';
 import type { SerializedJob } from '../fetchJobs';
-import { displaySector, isHardProblemsPick } from '../filters';
+import { displaySector, isHardProblemsPick,
+  hoverDescription
+} from '../filters';
 import { orgTypeDisplay } from '../orgType';
 import { getSectorIcon } from '../sectorIcons';
 import CompanyFavicon from '../CompanyFavicon';
@@ -221,9 +223,9 @@ export default function LocationJobList({
                   )}
                 </div>
               )}
-              {job.description && (
+              {hoverDescription(job) && (
                 <p className={locationStyles.inlineDescription}>
-                  {job.description}
+                  {hoverDescription(job)}
                 </p>
               )}
             </div>

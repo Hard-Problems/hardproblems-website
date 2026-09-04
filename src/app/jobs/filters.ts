@@ -7,6 +7,18 @@ import type { SerializedJob } from './fetchJobs';
 import { OrgCategory, orgCategory } from './orgType';
 import { aliasesFor, canonicalCountryName } from './countryAliases';
 
+// Text for the job-card hover tooltip: the job-specific description
+// (Column U) when present, else the company description (Column M).
+// Shared so /jobs, /jobs/[location] and the homepage teaser can't drift
+// apart on which field they show.
+//
+// Lives here rather than in fetchJobs.ts because that module imports the
+// Supabase client — a value import from it inside a 'use client'
+// component would pull supabase-js into the browser bundle.
+export function hoverDescription(job: SerializedJob): string {
+  return job.jobDescription || job.description;
+}
+
 export type WorkStyle = 'remote' | 'hybrid' | 'onsite';
 
 export const WORK_STYLE_OPTIONS: { value: WorkStyle; label: string }[] = [

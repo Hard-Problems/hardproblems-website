@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { usePostHog } from 'posthog-js/react';
 import { Earth, Gem } from 'lucide-react';
 import type { SerializedJob } from './fetchJobs';
-import { displaySector } from './filters';
+import { displaySector,
+  hoverDescription
+} from './filters';
 import { getSectorIcon } from './sectorIcons';
 import CompanyFavicon from './CompanyFavicon';
 import jobStyles from './page.module.scss';
@@ -215,12 +217,12 @@ export default function JobsTeaser({
                   </div>
                 )}
               </div>
-              {(job.description || isStaffPick) && (
+              {(hoverDescription(job) || isStaffPick) && (
                 <div
                   className={jobStyles.jobDescription}
                   role="tooltip"
                 >
-                  {job.description && (
+                  {hoverDescription(job) && (
                     <>
                       {job.company && (
                         <>
@@ -232,7 +234,7 @@ export default function JobsTeaser({
                           <br />
                         </>
                       )}
-                      {job.description}
+                      {hoverDescription(job)}
                     </>
                   )}
                   {isStaffPick && (

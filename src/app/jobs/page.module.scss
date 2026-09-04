@@ -434,7 +434,15 @@
   right: calc(100% + 12px);
   transform: translateY(-50%);
   z-index: 10;
-  width: 240px;
+  // Sized to the space left of the job row: the desktop grid is a 320px
+  // filter column plus a 4rem (64px) gap, and the tooltip is offset 12px
+  // from the row, so 372px is the most that fits before it would cross
+  // the layout's left edge.
+  //
+  // Wide on purpose: the tooltip shows the full Column U job description
+  // (~1,100 chars median) untruncated, and width is what keeps that from
+  // becoming an extremely tall column of text.
+  width: 330px;
   background: #fef9e7;
   border: 1px solid #ebd2b3;
   border-radius: 6px;

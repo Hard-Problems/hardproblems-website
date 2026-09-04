@@ -29,6 +29,12 @@ export type SerializedJob = {
   description: string;
   goodForWorldExplanation: string;
   role: string;
+  // Column U ("Job description") — job-specific blurb, preferred over
+  // `description` (Column M, the COMPANY description) in the hover
+  // tooltip. Empty for ~25% of rows, which fall back to `description`.
+  // Stored in full: the tooltip is sized to fit it rather than the text
+  // being cut to fit the tooltip.
+  jobDescription: string;
   dateCreated: string | null;
   seniority: string;
   // Optional per-job expiry from Column T. When present, hides the
@@ -194,6 +200,7 @@ const COLUMN_HEADERS = {
   description: 'Company Description',
   goodForWorldExplanation: 'Explain the "Good for the world" score',
   role: 'Role type',
+  jobDescription: 'Job description',
   dateCreated: 'Date created',
   deleted: 'Job Deleted',
   seniority: 'Seniority',
@@ -301,6 +308,7 @@ export function parseJobsCsv(text: string): SerializedJob[] {
       description: readCell(r, col.description).trim(),
       goodForWorldExplanation: readCell(r, col.goodForWorldExplanation).trim(),
       role: readCell(r, col.role).trim(),
+      jobDescription: readCell(r, col.jobDescription).trim(),
       dateCreated: dateCreated ? dateCreated.toISOString() : null,
       // "Seniority" — free-form text; matchesSeniority() classifies it
       // into the filter buckets at render time.

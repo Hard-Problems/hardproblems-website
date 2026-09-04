@@ -34,7 +34,8 @@ import {
   parseSectorPickParam,
   parseSeniorityParam,
   parseWorkStyleParam,
-  splitCountries
+  splitCountries,
+  hoverDescription
 } from './filters';
 import { canonicalCountryName } from './countryAliases';
 import styles from './page.module.scss';
@@ -1135,9 +1136,9 @@ export default function JobsList({
                     </div>
                   )}
                 </div>
-                {(job.description || isStaffPick) && (
+                {(hoverDescription(job) || isStaffPick) && (
                   <div className={styles.jobDescription} role="tooltip">
-                    {job.description && (
+                    {hoverDescription(job) && (
                       <>
                         {job.company && (
                           <>
@@ -1147,7 +1148,7 @@ export default function JobsList({
                             <br />
                           </>
                         )}
-                        {job.description}
+                        {hoverDescription(job)}
                       </>
                     )}
                     {isStaffPick && (
