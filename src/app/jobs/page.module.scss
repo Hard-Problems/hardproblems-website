@@ -447,7 +447,11 @@
   border: 1px solid #ebd2b3;
   border-radius: 6px;
   padding: 10px 14px;
-  font-size: var(--font-size-sm);
+  // xs rather than sm: the tooltip now carries the full Column U job
+  // description (~1,100 chars median), so the smaller size both suits a
+  // dense block of body copy and keeps the tooltip's height down. Matches
+  // the staff-pick block below, which was already xs.
+  font-size: var(--font-size-xs);
   font-weight: 400;
   line-height: 1.4;
   color: #333;
