@@ -51,7 +51,21 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
     'span',
     'del',
     'sub',
-    'sup'
+    'sup',
+    // Inline SVG, for Lucide icons used in article content (e.g. the
+    // fact table at the top of the Resolve to Save Lives interview).
+    // Deliberately a narrow geometry-only subset: no <script>,
+    // <foreignObject>, <use>, <image> or animation elements, which are
+    // the tags that make inline SVG an XSS vector.
+    'svg',
+    'path',
+    'circle',
+    'rect',
+    'line',
+    'polyline',
+    'polygon',
+    'ellipse',
+    'g'
   ],
   allowedAttributes: {
     ...sanitizeHtml.defaults.allowedAttributes,
@@ -60,6 +74,33 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
     // be listed here explicitly — including `class`, which our styles
     // (e.g. `.article-image-link { display: inline-block }`) depend on.
     '*': ['class', 'id', 'aria-hidden'],
+    // SVG presentation + geometry only. `style` is NOT allowed — icon
+    // sizing lives in article.module.scss under `.lucide-inline` so that
+    // article content can't inject arbitrary inline CSS.
+    svg: [
+      'xmlns',
+      'viewbox',
+      'viewBox',
+      'fill',
+      'stroke',
+      'stroke-width',
+      'stroke-linecap',
+      'stroke-linejoin',
+      'width',
+      'height',
+      'class',
+      'aria-hidden',
+      'role',
+      'focusable'
+    ],
+    path: ['d', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin'],
+    circle: ['cx', 'cy', 'r', 'fill', 'stroke', 'stroke-width'],
+    rect: ['x', 'y', 'width', 'height', 'rx', 'ry', 'fill', 'stroke', 'stroke-width'],
+    line: ['x1', 'y1', 'x2', 'y2', 'stroke', 'stroke-width', 'stroke-linecap'],
+    polyline: ['points', 'fill', 'stroke', 'stroke-width'],
+    polygon: ['points', 'fill', 'stroke', 'stroke-width'],
+    ellipse: ['cx', 'cy', 'rx', 'ry', 'fill', 'stroke', 'stroke-width'],
+    g: ['fill', 'stroke', 'stroke-width', 'transform'],
     a: ['href', 'name', 'target', 'rel', 'class', 'id'],
     img: [
       'src',

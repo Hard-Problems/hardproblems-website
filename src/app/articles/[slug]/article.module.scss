@@ -410,6 +410,15 @@
     background: #faf0cc;
   }
 
+  // Opt-in extra breathing room above a single note banner, for cases
+  // where it follows body copy and the default 2em reads as cramped.
+  // Add alongside the base class: `<div class="note note-spaced">`.
+  // Both classes in the selector so this out-specifies the `margin`
+  // shorthand on `.note` regardless of source order.
+  :global(.note.note-spaced) {
+    margin-top: 5rem;
+  }
+
   // Note banner — yellow background with a lightbulb icon. Use by wrapping
   // the content in `<div class="note">…</div>` in the markdown source.
   :global(.note) {
@@ -418,6 +427,24 @@
     gap: 0.85rem;
     background: lemonchiffon;
     border-left: 1px solid #e8c200;
+
+    // The site link green (#2f8b53) only reaches 4.01:1 on lemonchiffon,
+    // failing WCAG AA. This rust clears AAA at 7.21:1 and sits in a
+    // warmer hue family than the olive body text, so links still read as
+    // links rather than as a shade of the surrounding copy. The underline
+    // tint replaces the light-green one from globals.css, which would
+    // otherwise clash with the yellow ground.
+    a,
+    a:visited {
+      color: #8a3d00;
+      text-decoration-color: #d3a171;
+    }
+
+    a:hover,
+    a:focus {
+      color: #6b2f00;
+      text-decoration-color: currentColor;
+    }
     padding: 1rem 1.25rem;
     margin: 2em 0;
     color: #746100;
@@ -445,11 +472,25 @@
     }
   }
 
+  // Inline Lucide icons in article content (see the fact table on the
+  // Resolve to Save Lives interview). Sized in ems so they track the
+  // surrounding text, and `currentColor` in the markup means they pick
+  // up whatever colour that text has.
+  :global(.lucide-inline) {
+    width: 1.15em;
+    height: 1.15em;
+    vertical-align: -0.15em;
+    margin-right: 0.9em;
+    flex-shrink: 0;
+  }
+
   // GFM tables (supported natively by markdown-it).
   table {
     width: 100%;
     border-collapse: collapse;
-    margin: 1.5rem 0;
+    // Extra room above so a table reads as its own block rather than
+    // crowding the paragraph before it; bottom stays at 1.5rem.
+    margin: 2.5rem 0 1.5rem;
     font-size: var(--font-size-xs);
     line-height: 1.3;
   }
@@ -674,24 +715,6 @@
     margin: 2em 0;
   }
 
-  // Extra 2rem of breathing room beneath inline images. Applied as
-  // padding rather than a bigger bottom margin because most images are
-  // followed by a heading, and the heading's 4rem top margin would
-  // simply collapse over a larger margin here and swallow the gap.
-  // Padding doesn't collapse, so the space lands whatever follows.
-  // Exclusions: floated images (text wraps alongside them, so the space
-  // would punch a hole in the column), the byline avatar and the brick
-  // grid's cells — none of those are standalone figures in the flow.
-  img:not(:global(.float-right)):not(.authorAvatar) {
-    padding-bottom: 2rem;
-  }
-
-  // Repeats the :not()s so this out-specifies the rule above rather than
-  // losing the cascade to it.
-  :global(.image-bricks) img:not(:global(.float-right)):not(.authorAvatar) {
-    padding-bottom: 0;
-  }
-
   // Embeds — Google Maps, YouTube, Vimeo, etc. Stretches to fill the
   // column width and inherits a subtle rounded corner so the embed reads
   // as part of the article rather than a raw browser chrome panel.
@@ -778,6 +801,21 @@
     width: 480px;
     max-width: 60%;
     margin: 0 0 1rem 1.5rem;
+  }
+
+  // A floated image can be made clickable by wrapping it in a markdown
+  // link: `[![alt](src){.float-right}](src)`. wrapImagesInLinks() skips
+  // floated images on purpose — its `.article-image-link` wrapper is
+  // display:inline-block, which would contain the float and stop the
+  // text wrapping — so the anchor here stays inline and only picks up
+  // the same hover treatment.
+  a img:global(.float-right) {
+    transition: filter 0.2s ease;
+  }
+
+  a:hover img:global(.float-right),
+  a:focus-visible img:global(.float-right) {
+    filter: brightness(1.03) saturate(1.05);
   }
 
   // 30% smaller variant of the float-right image — combine the two
@@ -901,13 +939,23 @@
 // When the viewport is wide enough that the 760px reading column has
 // generous whitespace on either side, let the float-right image bleed
 // out into that whitespace for a more magazine-feel layout.
-@media only screen and (min-width: 1200px) {
+//
+// The image bleed gets its OWN breakpoint, higher than the rest of this
+// block. The margin either side is (viewport - 760) / 2, so a -240px
+// bleed only fits from 1240px up; firing it at 1200px overflowed the
+// document by up to 10px and produced horizontal scrolling on every
+// article with a floated image. 1260 leaves ~10px of slack, because a
+// media query measures the viewport including the scrollbar while the
+// layout inside it does not.
+@media only screen and (min-width: 1260px) {
   .body img:global(.float-right) {
     margin-right: -240px;
   }
+}
 
-  // 160px each side = 320px total wider — matches the image bleed at this
-  // breakpoint.
+@media only screen and (min-width: 1200px) {
+  // 160px each side = 320px total wider. Only needs 1080px of viewport
+  // to fit, so this can stay at the lower breakpoint.
   .body h1,
   .body :global(.intro),
   .body em:global(.intro),

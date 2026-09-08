@@ -105,7 +105,9 @@ I also participated in flagship company-building programmes managed by Entrepren
   {
     slug: 'tony-joy',
     name: 'Tony Joy',
-    bio: `Tony is a senior product designer at Resolve to Save Lives. He likes trying food he can’t pronounce, traveling to unheard-of places, reading old books, and seeing good design.`,
+    bio: `Tony is a senior product designer at Resolve to Save Lives. He likes trying food he can’t pronounce, traveling to unheard-of places, reading old books, and seeing good design.
+
+Tony is based in Bangalore, India.`,
     links: [
       {
         label: 'LinkedIn',
