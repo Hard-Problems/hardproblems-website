@@ -362,17 +362,9 @@
     margin: 2.5em 0;
   }
 
-  // FAQ list — `<dl class="faq">` in markdown. Small circular Q / A
-  // markers sit in the left gutter, absolutely positioned so wrapped
-  // lines stay flush with the first line's text rather than sliding
-  // under the marker. Circle dimensions are in rem so the marker
-  // stays a consistent size regardless of surrounding text sizing.
-  :global(.faq) dt,
-  :global(.faq) dd {
-    position: relative;
-    margin-left: 2rem;
-  }
-
+  // FAQ list — `<dl class="faq">` in markdown. Marker styling itself is
+  // shared with the `.qa` interview format further down; only the
+  // list-specific spacing lives here.
   :global(.faq) dd {
     margin-top: 0.4rem;
   }
@@ -382,32 +374,6 @@
   // question reads as its own block.
   :global(.faq) dt {
     margin-top: 2.5rem;
-  }
-
-  :global(.faq) dt::before,
-  :global(.faq) dd::before {
-    position: absolute;
-    left: -2rem;
-    top: 0.05em;
-    width: 1.5rem;
-    height: 1.5rem;
-    border-radius: 50%;
-    font-weight: 600;
-    font-size: 0.75rem;
-    line-height: 1.5rem;
-    text-align: center;
-  }
-
-  :global(.faq) dt::before {
-    content: 'Q';
-    color: var(--color-mid-green);
-    background: var(--color-light-green);
-  }
-
-  :global(.faq) dd::before {
-    content: 'A';
-    color: #b58900;
-    background: #faf0cc;
   }
 
   // Opt-in extra breathing room above a single note banner, for cases
@@ -521,6 +487,158 @@
     text-align: center;
     text-wrap: balance;
     font-size: var(--font-size-md);
+  }
+
+  // Q&A layout, opt-in per article via `qa: true` in frontmatter (see
+  // wrapQaSections() in lib/articles.ts, which builds this markup).
+  //
+  // Both the question and the answer are grids with a narrow first
+  // column holding the marker. For the answer, every child is forced
+  // into column 2 while the ::before sits at row 1 of column 1 — that
+  // is what lets a single "A" hang beside a whole multi-paragraph
+  // block rather than repeating per paragraph.
+  :global(.qa) {
+    // Generous space above each question so the Q/A pairs read as
+    // discrete exchanges. Margins collapse between adjacent blocks, so
+    // the larger top value is what sets the gap.
+    margin: 5rem 0 3rem;
+  }
+
+  // Same hanging-marker geometry as the `.faq` <dl> further up: content
+  // indented 2rem, marker absolutely positioned back into that space.
+  //
+  // Absolute positioning rather than a grid column is deliberate — a
+  // grid container establishes a block formatting context, which would
+  // trap floated images inside their answer. `position: relative` plus
+  // a margin does not, so a float-right image still escapes and later
+  // text wraps beside it as it would outside a Q&A article.
+  // Shared by BOTH Q&A formats — the `.faq` <dl> and the `.qa` blocks
+  // that wrapQaSections() builds. One definition so the two can never
+  // drift apart visually.
+  //
+  // Keep margin-left in step with the marker's `left` below: at narrow
+  // widths the marker sits inside this indent, so the two must match or
+  // it pokes out past the container's left edge.
+  :global(.faq) dt,
+  :global(.faq) dd,
+  :global(.qa) h2,
+  :global(.qa-answer) {
+    position: relative;
+    margin-left: 2.5rem;
+  }
+
+  :global(.qa) h2 {
+    // Questions read at body size and in the body face, not as display
+    // headings — the "Q" marker carries the hierarchy instead. `font:
+    // inherit` takes it from .body so this tracks any future change to
+    // the body type rather than pinning 18px here. Note that resolves
+    // to weight 400 against the answer paragraphs' 300, which leaves a
+    // whisper of contrast between question and answer.
+    font: inherit;
+    // Matches <strong> in body copy, which this site sets to 600 —
+    // so a question reads exactly as bold body text would.
+    font-weight: 600;
+    // Tighter than the default h2 margins — the .qa wrapper provides
+    // the separation between blocks, and Q/A should read as a pair.
+    // Longhand, NOT the `margin` shorthand: the shared rule above sets
+    // margin-left: 2rem to make room for the badge, and a shorthand
+    // here would silently reset it to 0 and knock the Q badge 32px out
+    // of line with the A.
+    //
+    // 0.4rem matches the `.faq` dd offset — the answer sits close under
+    // its question so the pair reads as one exchange.
+    margin-top: 0;
+    margin-bottom: 0.4rem;
+  }
+
+  :global(.faq) dt::before,
+  :global(.faq) dd::before,
+  :global(.qa) h2::before,
+  :global(.qa-answer)::before {
+    position: absolute;
+    // 2.5rem against the badge's own 1.5rem width leaves a 1rem channel
+    // between badge and text. (`.faq` above still uses -2rem — these
+    // are separate components; change both if they should stay twins.)
+    left: -2.5rem;
+    top: 0.05em;
+    width: 1.5rem;
+    height: 1.5rem;
+    // Mono, matching the tag pills and other labelled UI on the site —
+    // the fixed-width letterform reads as a label rather than as part
+    // of the sentence beside it.
+    font-family: var(--font-mono);
+    font-weight: 600;
+    // Larger than the old badge type — without a disc behind it the
+    // letter has to carry itself, and 0.75rem read as incidental.
+    font-size: 1.05rem;
+    line-height: 1.5rem;
+    text-align: center;
+    // No disc behind the letter — instead each marker carries a short
+    // vertical rule on its right, in the colour the disc used to be.
+    // Reads as a quieter label than the filled badge while still
+    // separating the marker column from the text.
+    border-right: 2px solid transparent;
+  }
+
+  :global(.faq) dt::before,
+  :global(.qa) h2::before {
+    content: 'Q';
+    color: var(--color-mid-green);
+    border-right-color: var(--color-light-green);
+  }
+
+  :global(.faq) dd::before,
+  :global(.qa-answer)::before {
+    content: 'A';
+    color: #b58900;
+    border-right-color: #faf0cc;
+  }
+
+  :global(.qa-answer) > :first-child {
+    margin-top: 0;
+  }
+
+  :global(.qa-answer) > :last-child {
+    margin-bottom: 0;
+  }
+
+  // At desktop widths there is whitespace either side of the 760px
+  // reading column, so hang the badges OUT into it: the question and
+  // answer text then start flush with the container's left edge,
+  // matching every other paragraph on the page, and only the markers
+  // sit outside. Below this the column is too close to the viewport
+  // edge for that, so the base rule indents the text instead.
+  @media only screen and (min-width: 1000px) {
+    :global(.faq) dt,
+    :global(.faq) dd,
+    :global(.faq) dt,
+    :global(.faq) dd,
+    :global(.qa) h2,
+    :global(.qa-answer) {
+      margin-left: 0;
+    }
+  }
+
+  // On narrow screens the gutter costs too much of the measure — drop
+  // the markers inline above their content instead.
+  @media only screen and (max-width: 600px) {
+    // Keep the badges but stack them above their text — a 2rem gutter
+    // costs too much of the measure at this width.
+    :global(.faq) dt,
+    :global(.faq) dd,
+    :global(.qa) h2,
+    :global(.qa-answer) {
+      margin-left: 0;
+    }
+
+    :global(.faq) dt::before,
+    :global(.faq) dd::before,
+    :global(.qa) h2::before,
+    :global(.qa-answer)::before {
+      position: static;
+      display: block;
+      margin-bottom: 0.35rem;
+    }
   }
 
   // GFM tables (supported natively by markdown-it).

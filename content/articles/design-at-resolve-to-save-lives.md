@@ -12,7 +12,10 @@ updatedAt: '2026-09-09'
 
 status: 'published' # draft | review | published | unlisted
 
-articleType: 'Interviews' # Article | Book reviews | Podcast | Interviews
+articleType: 'Interviews'
+
+# Render the body as a Q&A — see wrapQaSections() in lib/articles.ts
+qa: true # Article | Book reviews | Podcast | Interviews
 
 topics:
   - public-health
@@ -53,7 +56,7 @@ What does a design team at a public health NGO do? Hard Problems' [Daniel Burka]
 | --- | --- |
 | <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-inline" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>**Organization** | [Resolve to Save Lives](https://rtsl.org) (RTSL) |
 | <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-inline" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>**Org size** | ~200 people |
-| <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-inline" aria-hidden="true"><path d="M13 7 8.7 2.7a2.41 2.41 0 0 0-3.4 0L2.7 5.3a2.41 2.41 0 0 0 0 3.4L7 13"/><path d="m8 6 2-2"/><path d="m18 16 2-2"/><path d="m17 11 4.3 4.3c.94.94.94 2.46 0 3.4l-2.6 2.6c-.94.94-2.46.94-3.4 0L11 17"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>**Design and product org size** | 6 people (2 designers, 1 UX researcher, 3 PMs) |
+| <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-inline" aria-hidden="true"><path d="M13 7 8.7 2.7a2.41 2.41 0 0 0-3.4 0L2.7 5.3a2.41 2.41 0 0 0 0 3.4L7 13"/><path d="m8 6 2-2"/><path d="m18 16 2-2"/><path d="m17 11 4.3 4.3c.94.94.94 2.46 0 3.4l-2.6 2.6c-.94.94-2.46.94-3.4 0L11 17"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>**Design &amp; product team** | 6 people (2 designers, 1 UX researcher, 3 PMs) |
 | <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-inline" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>**Sector and type** | Global health organization (Charity) |
 | <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-inline" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>**Founded** | 2017 by [Dr. Tom Frieden](https://drtomfrieden.net/), former director of the [US CDC](https://www.cdc.gov/) |
 | <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-inline" aria-hidden="true"><path d="M21.54 15H17a2 2 0 0 0-2 2v4.54"/><path d="M7 3.34V5a3 3 0 0 0 3 3a2 2 0 0 1 2 2c0 1.1.9 2 2 2a2 2 0 0 0 2-2c0-1.1.9-2 2-2h3.17"/><path d="M11 21.95V18a2 2 0 0 0-2-2a2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2H2.05"/><circle cx="12" cy="12" r="10"/></svg>**Location** | USA, with offices in China, India, Nigeria, Ethiopia, and Rwanda |
@@ -70,7 +73,7 @@ In summary, we make digital systems for managing patients in chronic disease pro
 
 [![Bar chart of annual global deaths by cause: cardiovascular diseases lead at 18.56 million, ahead of cancers at 10.08 million and every other cause](/images/content/graph-resolve-to-save-lives.png){.float-right}](/images/content/graph-resolve-to-save-lives.png)
 
-## How is hypertension a meaningful problem? {#how-is-hypertension-a-meaningful-problem}
+## Is hypertension a meaningful problem? {#how-is-hypertension-a-meaningful-problem}
 
 Heart disease kills around 20 million people every year — more than all communicable diseases like tuberculosis, malaria, HIV, etc. combined. And high blood pressure (i.e. hypertension) is the biggest driver of heart disease. About 1.4 billion people live with hypertension and only about 1 in 5 have it under control.
 
@@ -140,9 +143,9 @@ _Tony and Chetan working with healthcare workers in Indonesia to create an elect
 
 ## How do you work with other people in the org? {#how-do-you-work-with-others}
 
-Product, design, user research, and engineering together make up only about 4% of RTSL. The rest of the organization is made up of public health experts working on program implementation and scale-up, improving health service delivery, and medicine access.
+Product, design, user research, and engineering are a small portion of the overall team at Resolve to Save Lives. The rest of the team are public health experts working on program implementation, improving health service delivery, and medicine access.
 
-We also work closely with external partners and ministries of health, including government tech teams, public health specialists, ministers and NCD officials, and insurance providers. On top of that, we coordinate with internal teams like legal and communications.
+We also work closely with external partners and Ministries of Health, including government tech teams, public health specialists, ministers and NCD officials, and insurance providers. On top of that, we coordinate with internal teams like legal and communications.
 
 All of this has to line up for a country partnership to work, move from pilot to scale, and eventually be adopted by the government. Even if a pilot is successful, it won't scale if it doesn't fit how the government wants to run the programme.
 

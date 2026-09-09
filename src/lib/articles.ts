@@ -202,6 +202,10 @@ export type Article = {
   seoTitle?: string;
   seoDescription?: string;
   canonicalUrl?: string;
+  // Render the body as a Q&A: every <h2> becomes a question with a "Q"
+  // marker, and the content up to the next <h2> becomes its answer with
+  // a single "A" marker. Opt-in per article — see wrapQaSections().
+  qa?: boolean;
   // Raw markdown body — useful for excerpt extraction or RSS feeds later.
   content: string;
   // Rendered HTML body, ready to be dangerouslySetInnerHTML'd.
@@ -217,6 +221,33 @@ export type Article = {
 //      small illustrations) where click-to-enlarge would be off-tone.
 // We walk tag-by-tag with a running anchor-depth counter so nested
 // anchors and text between tags are handled correctly.
+// Restructure an interview into Q&A blocks: each <h2> becomes the
+// question and everything up to the next <h2> becomes its answer,
+// wrapped so CSS can hang a "Q" and an "A" marker in a left gutter
+// (see `.qa` in article.module.scss).
+//
+// Opt in per article with `qa: true` in the frontmatter — the format
+// suits interviews but not every article, so it is never automatic.
+//
+// Content BEFORE the first <h2> (the H1, the intro, any fact table) is
+// passed through untouched, so the byline split and the standfirst keep
+// working. Answers keep whatever they contain — paragraphs, lists,
+// images, note banners — because the slice is verbatim.
+function wrapQaSections(html: string): string {
+  const headings = [...html.matchAll(/<h2\b[^>]*>[\s\S]*?<\/h2>/gi)];
+  if (headings.length === 0) return html;
+
+  let out = html.slice(0, headings[0].index);
+  headings.forEach((h, i) => {
+    const answerStart = (h.index ?? 0) + h[0].length;
+    const answerEnd =
+      i + 1 < headings.length ? (headings[i + 1].index ?? html.length) : html.length;
+    const answer = html.slice(answerStart, answerEnd);
+    out += `<div class="qa">${h[0]}<div class="qa-answer">${answer}</div></div>`;
+  });
+  return out;
+}
+
 function wrapImagesInLinks(html: string): string {
   const tagRe = /<(\/?)(a|img)\b([^>]*)>/gi;
   let result = '';
@@ -264,10 +295,15 @@ function readArticleFile(filename: string): Article | null {
   const parsed = matter(raw);
   const data = parsed.data as Partial<Article>;
   const content = parsed.content;
-  const contentHtml = sanitizeHtml(
+  // `qa: true` renders the article as a Q&A — see wrapQaSections().
+  // Applied AFTER sanitising so the wrapper divs and their classes are
+  // ours and cannot be injected from article markdown.
+  const isQa = data.qa === true;
+  const rendered = sanitizeHtml(
     wrapImagesInLinks(md.render(content)),
     SANITIZE_OPTIONS
   );
+  const contentHtml = isQa ? wrapQaSections(rendered) : rendered;
 
   return {
     slug: typeof data.slug === 'string' && data.slug ? data.slug : slug,
@@ -297,6 +333,7 @@ function readArticleFile(filename: string): Article | null {
     seoTitle: data.seoTitle,
     seoDescription: data.seoDescription,
     canonicalUrl: data.canonicalUrl,
+    qa: isQa,
     content,
     contentHtml
   };
