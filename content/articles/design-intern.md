@@ -9,12 +9,8 @@ authorSlug: 'daniel-burka'
 
 publishedAt: '2026-08-24'
 updatedAt: '2026-08-24T13:17:50Z'
-# Hard removal date. Article and its URL disappear at 00:00 UTC on
-# 2026-09-16 (i.e. visible ALL of Sept 15). Applications close on the
-# same day.
-expiresAt: '2026-09-15'
 
-status: 'published' # draft | review | published
+status: 'unlisted' # draft | review | published | unlisted
 
 articleType: 'Job'
 
@@ -44,6 +40,12 @@ canonicalUrl: ''
 # We're hiring a part-time design intern in London {#design-intern}
 
 _Hard Problems is hiring a paid intern for 9 months to help us with design, writing, and producing a podcast. You'll get lots of hands-on experience and mentorship._{.intro}
+
+<div class="note note-alert">
+
+**Applications are now closed.** The deadline for this position was 8 Sept 2026 and we are no longer accepting applications. Sorry.
+
+</div>
 
 ![Illustration inviting you to join Hard Problems](/images/content/illustration-join-us.svg){.float-right}
 
@@ -118,6 +120,6 @@ Fill in the application form below. [Email us](mailto:contact@hardproblems.com) 
 
 Hard Problems is an equal opportunity employer. We welcome applications from people of all backgrounds, and we're happy to make adjustments to the application process — just tell us what you need.
 
-Applications close **15 September 2026**. We review as they come in, so applying early helps.
+Applications close **8 Sept 2026**.
 
 <div id="design-intern-application-form"></div>

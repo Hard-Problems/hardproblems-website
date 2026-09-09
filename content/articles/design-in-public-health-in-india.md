@@ -10,7 +10,7 @@ authorSlug: 'mahima-chandak'
 publishedAt: '2025-06-07'
 updatedAt: '2025-06-07'
 
-status: 'published' # draft | review | published
+status: 'published' # draft | review | published | unlisted
 
 articleType: 'Video' # Article | Book Review | Podcast | Opinion | Video
 

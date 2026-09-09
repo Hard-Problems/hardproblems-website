@@ -1,16 +1,16 @@
 ---
-title: 'Design at Resolve to Save Lives'
+title: 'Design that improves heart health for millions'
 slug: 'design-at-resolve-to-save-lives'
 
-excerpt: 'What do designers do at a nonprofit working on global public health? Tony Joy on hypertension and the 80% of design work that happens outside of Figma.'
+excerpt: 'Tony Joy tells us what the design team does at Resolve to Save Lives, a global public health nonprofit.'
 
 author: 'Tony Joy'
 authorSlug: 'tony-joy'
 
-publishedAt: '2026-09-11'
-updatedAt: '2026-09-11'
+publishedAt: '2026-09-09'
+updatedAt: '2026-09-09'
 
-status: 'published' # draft | review | published
+status: 'published' # draft | review | published | unlisted
 
 articleType: 'Interviews' # Article | Book reviews | Podcast | Interviews
 
@@ -35,15 +35,15 @@ featured: false
 image: '/images/content/thumb-resolve-to-save-lives-design.jpg'
 imageAlt: 'A health worker using a tablet alongside paper patient registers'
 
-seoTitle: 'Design at Resolve to Save Lives: an interview with Tony Joy'
-seoDescription: 'Tony Joy, senior product designer at Resolve to Save Lives, on what a design team does at a global public health charity — and how design helps prevent heart attacks and strokes.'
+seoTitle: 'Design that improves heart health for millions'
+seoDescription: 'Tony Joy tells us what the design team does at Resolve to Save Lives, a global public health nonprofit.'
 
 canonicalUrl: ''
 ---
 
-# Design at Resolve to Save Lives {#design-at-resolve-to-save-lives}
+# Design that improves heart health for millions {#design-at-resolve-to-save-lives}
 
-_What do designers do at a nonprofit working on global public health? Tony Joy on hypertension and the 80% of design work that happens outside of Figma._{.intro}
+_Tony Joy tells us what the design team does at Resolve to Save Lives, a global public health nonprofit._{.intro}
 
 [Resolve to Save Lives](https://rtsl.org) is a public health charity that aims to save 100 million people from heart attacks and strokes in the next 30 years.
 
@@ -58,7 +58,7 @@ What does a design team at a public health NGO do? Hard Problems' [Daniel Burka]
 | <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-inline" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>**Founded** | 2017 by [Dr. Tom Frieden](https://drtomfrieden.net/), former director of the [US CDC](https://www.cdc.gov/) |
 | <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-inline" aria-hidden="true"><path d="M21.54 15H17a2 2 0 0 0-2 2v4.54"/><path d="M7 3.34V5a3 3 0 0 0 3 3a2 2 0 0 1 2 2c0 1.1.9 2 2 2a2 2 0 0 0 2-2c0-1.1.9-2 2-2h3.17"/><path d="M11 21.95V18a2 2 0 0 0-2-2a2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2H2.05"/><circle cx="12" cy="12" r="10"/></svg>**Location** | USA, with offices in China, India, Nigeria, Ethiopia, and Rwanda |
 
-## What does the design team do at Resolve to Save Lives? {#what-does-the-design-team-do}
+## What does your design team do? {#what-does-the-design-team-do}
 
 A lot of it is making public health digital tools work in places where people are already very busy.
 

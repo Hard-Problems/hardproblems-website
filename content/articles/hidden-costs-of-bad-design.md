@@ -10,7 +10,7 @@ authorSlug: 'daniel-burka'
 publishedAt: '2026-08-04'
 updatedAt: '2026-08-04'
 
-status: 'published' # draft | review | published
+status: 'published' # draft | review | published | unlisted
 
 articleType: 'Advice' # Article | Book Review | Podcast | Opinion
 

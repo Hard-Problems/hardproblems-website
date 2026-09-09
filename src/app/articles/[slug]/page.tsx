@@ -4,13 +4,13 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { BookOpen } from 'lucide-react';
 import ArticleCard from '../../../components/ArticleCard';
-import DesignInternApplicationForm from '../../../components/DesignInternApplicationForm';
 import NewsletterModule from '../../../components/NewsletterModule';
 import {
   articleTypeSlug,
   formatPublishedDate,
   getAllArticles,
   getArticleBySlug,
+  isViewableAtPermalink,
   getAuthorImage,
   topicDisplay
 } from '../../../lib/articles';
@@ -98,7 +98,7 @@ export async function generateMetadata({
 }: Props): Promise<Metadata> {
   const { slug } = await params;
   const article = getArticleBySlug(slug);
-  if (!article || article.status !== 'published') {
+  if (!article || !isViewableAtPermalink(article.status)) {
     return { title: 'Article — Hard Problems' };
   }
   const plainTitle = titleAsText(article.title);
@@ -164,7 +164,7 @@ export default async function ArticlePage({ params }: Props) {
     })();
   if (
     !article ||
-    (article.status !== 'published' &&
+    (!isViewableAtPermalink(article.status) &&
       process.env.NODE_ENV !== 'development') ||
     (isExpired && process.env.NODE_ENV !== 'development')
   )
@@ -180,6 +180,8 @@ export default async function ArticlePage({ params }: Props) {
   const topArticles = TOP_ARTICLE_SLUGS.map((s) => getArticleBySlug(s))
     .filter(
       (a): a is NonNullable<typeof a> =>
+        // `published` only — an unlisted article must never be
+        // recommended, or the rail would leak it.
         a != null && a.status === 'published' && a.slug !== article.slug
     )
     .slice(0, 3);
@@ -287,7 +289,16 @@ export default async function ArticlePage({ params }: Props) {
                 <div
                   dangerouslySetInnerHTML={{ __html: formSlot.before }}
                 />
-                <DesignInternApplicationForm />
+                {/* Application window closed — see the note-alert at the
+                    top of the article. To reopen: re-import
+                    DesignInternApplicationForm from
+                    '../../../components/DesignInternApplicationForm' and
+                    render it here instead. The component, its API route
+                    and the `design-intern-application-form` slot marker
+                    in the markdown are all left in place. */}
+                <div className={styles.applicationsClosed}>
+                  Sorry, the application form is now closed.
+                </div>
                 <div
                   dangerouslySetInnerHTML={{ __html: formSlot.after }}
                 />

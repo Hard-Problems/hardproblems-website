@@ -10,7 +10,7 @@ authorSlug: 'mahima-chandak'
 publishedAt: '2026-09-02'
 updatedAt: '2026-09-02'
 
-status: 'published' # draft | review | published
+status: 'published' # draft | review | published | unlisted
 
 articleType: 'Advice' # Article | Advice | Book reviews | Podcast | Interviews
 

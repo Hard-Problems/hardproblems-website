@@ -10,7 +10,7 @@ authorSlug: 'test-author'
 publishedAt: '2026-06-19'
 updatedAt: '2026-06-14'
 
-status: 'draft' # draft | review | published
+status: 'draft' # draft | review | published | unlisted
 
 articleType: 'Article' # Article | Book Review | Podcast
 

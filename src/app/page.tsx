@@ -18,9 +18,17 @@ export const revalidate = 3600;
 // its right; below, the remaining articles fall into a regular 3-up grid.
 // On mobile the right-of-hero teaser is hidden — a second teaser is
 // inserted into the article list after the 3rd article instead.
-// Slug pinned to the secondary-hero slot (i === 3 in the remaining list)
-// so it always sits on the same row as the Coworking London aside.
+// Slug pinned to the secondary-hero slot so it always sits on the same
+// row as the Coworking London aside.
 const COWORKING_HERO_SLUG = 'hard-problems-coworking-space';
+
+// Index (within `remainingArticles`, i.e. after the hero) of the row
+// that holds the Coworking aside. Three things key off it and must stay
+// in sync: where the coworking article is pinned, where the aside is
+// emitted, and which card renders as the secondary hero. The aside is
+// `grid-column: 1; grid-row: span 2` and the hero beside it spans
+// columns 2-3, so they only line up when emitted as a pair.
+const COWORKING_SLOT_INDEX = 9;
 
 export default async function Home() {
   const articles = getAllArticles();
@@ -31,9 +39,9 @@ export default async function Home() {
   const coworkingIdx = remainingArticles.findIndex(
     (a) => a.slug === COWORKING_HERO_SLUG
   );
-  if (coworkingIdx !== -1 && coworkingIdx !== 3) {
+  if (coworkingIdx !== -1 && coworkingIdx !== COWORKING_SLOT_INDEX) {
     const [coworkingArticle] = remainingArticles.splice(coworkingIdx, 1);
-    const insertAt = Math.min(3, remainingArticles.length);
+    const insertAt = Math.min(COWORKING_SLOT_INDEX, remainingArticles.length);
     remainingArticles = [
       ...remainingArticles.slice(0, insertAt),
       coworkingArticle,
@@ -94,7 +102,7 @@ export default async function Home() {
                     <NewsletterModule variant="inline" />
                   </li>
                 )}
-                {i === 3 && (
+                {i === COWORKING_SLOT_INDEX && (
                   <li className={styles.coworkingAside}>
                     <h3>Coworking in London</h3>
                     <p className={styles.coworkingAsideIntro}>
@@ -116,7 +124,7 @@ export default async function Home() {
                 <ArticleCard
                   article={article}
                   compact={i >= 0}
-                  hero={i === 3}
+                  hero={i === COWORKING_SLOT_INDEX}
                   hideDate={article.slug === COWORKING_HERO_SLUG}
                 />
                 {/* Mobile-only jobs teaser slotted between the 3rd

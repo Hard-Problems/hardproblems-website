@@ -10,7 +10,7 @@ authorSlug: 'kane-lincoln'
 publishedAt: '2025-06-05'
 updatedAt: '2025-06-05'
 
-status: 'published' # draft | review | published
+status: 'published' # draft | review | published | unlisted
 
 articleType: 'Interviews' # Article | Book reviews | Podcast | Interviews
 

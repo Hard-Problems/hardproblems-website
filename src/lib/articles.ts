@@ -163,7 +163,13 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   }
 };
 
-export type ArticleStatus = 'draft' | 'review' | 'published';
+// `unlisted` behaves like `published` for direct visits but is never
+// enumerated: it stays out of the homepage, every listing, the sitemap
+// and the feeds. Use it for pages that should be shareable by link
+// only. Contrast with a `published` article carrying a FUTURE
+// `publishedAt`, which is also unlisted but flips to listed on its own
+// once the date arrives — `unlisted` never does.
+export type ArticleStatus = 'draft' | 'review' | 'published' | 'unlisted';
 
 export type Article = {
   slug: string;
@@ -321,7 +327,18 @@ function estimateReadingTime(content: string): number {
 //
 // Missing / unparseable `publishedAt` is treated as "always visible"
 // so authors don't have to backfill a date on legacy content.
+// True if the canonical /articles/<slug> URL should serve this article.
+// Deliberately broader than isArticleLiveNow(): `unlisted` articles are
+// served here but excluded from every listing. Use this for direct-slug
+// rendering; use isArticleLiveNow() for anything that ENUMERATES
+// articles.
+export function isViewableAtPermalink(status: ArticleStatus): boolean {
+  return status === 'published' || status === 'unlisted';
+}
+
 export function isArticleLiveNow(article: Article): boolean {
+  // `unlisted` is excluded here by design — that is the whole point of
+  // the status. Only `published` is ever enumerated.
   if (article.status !== 'published') return false;
   const now = new Date();
   const todayUTC = Date.UTC(

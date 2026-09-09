@@ -10,7 +10,7 @@ authorSlug: 'kane-lincoln'
 publishedAt: '2026-06-20'
 updatedAt: '2026-06-15'
 
-status: 'published' # draft | review | published
+status: 'published' # draft | review | published | unlisted
 
 articleType: "What's new" # Article | Reading | Podcast | What's new
 
