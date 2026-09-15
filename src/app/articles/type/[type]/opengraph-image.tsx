@@ -32,15 +32,15 @@ export default async function Image({ params }: Props) {
   const article = getAllArticles().find(
     (a) => articleTypeSlug(a.articleType) === type
   );
-  // Plural label (e.g. "Book Reviews") if we know the original casing;
-  // fall back to a title-cased version of the slug if we don't.
+  // Plural label (e.g. "Book Reviews") if we know the original casing.
+  // No matching type means a topic slug (or an unknown one), so fall
+  // back to the title-cased slug unpluralized — topics are subject
+  // areas, and "Climate Changes" reads as a typo.
   const label = article
     ? pluralize(article.articleType)
-    : pluralize(
-        type
-          .replace(/-/g, ' ')
-          .replace(/\b\w/g, (c) => c.toUpperCase())
-      );
+    : type
+        .replace(/-/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase());
   return createOGImage({
     title: label,
     subtitle: articleTypeSubtitle(type)

@@ -117,6 +117,19 @@ Tony is based in Bangalore, India.`,
     phraseLinks: {
       'Resolve to Save Lives': 'https://rtsl.org'
     }
+  },
+  {
+    slug: 'eniola-ayedun',
+    name: 'Eniola Ayedun',
+    bio: `Eniola Ayedun brings a distinctive lens to the world of user experience, shaped by a Master's in UX Design and years of hands-on product work. Most recently, she led product operations and customer insight for a UK local government data platform, where she discovered that the front lines of user support are an invaluable, often overlooked, source of deep user insights.
+
+Eniola is passionate about translating user pain points into actionable design improvements and advocates for a more integrated approach to CX, showing how design thinking can proactively streamline support interactions and enhance the entire user journey. She is committed to building more empathetic and efficient digital "places" for users. Outside of work, she enjoys exploring art exhibitions by local artists and curating playlists for fun.`,
+    links: [
+      {
+        label: 'LinkedIn',
+        url: 'https://www.linkedin.com/in/eniola-ayedun-17183a268/'
+      }
+    ]
   }
 ];
 

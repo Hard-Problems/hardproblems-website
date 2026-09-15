@@ -89,6 +89,9 @@ export function generateStaticParams() {
 // type over topic if the same slug matches both (arbitrary but stable).
 type Match = {
   label: string;
+  // Types are formats ("Video" → "Videos") and get pluralized in the
+  // page title; topics are subject areas ("Climate change") and don't.
+  kind: 'type' | 'topic';
   articles: ReturnType<typeof getAllArticles>;
 };
 function resolveMatch(slug: string): Match | null {
@@ -97,11 +100,11 @@ function resolveMatch(slug: string): Match | null {
     (a) => articleTypeSlug(a.articleType) === slug
   );
   if (byType.length > 0) {
-    return { label: byType[0].articleType, articles: byType };
+    return { label: byType[0].articleType, kind: 'type', articles: byType };
   }
   const byTopic = all.filter((a) => a.topics.includes(slug));
   if (byTopic.length > 0) {
-    return { label: topicDisplay(slug), articles: byTopic };
+    return { label: topicDisplay(slug), kind: 'topic', articles: byTopic };
   }
   return null;
 }
@@ -118,7 +121,8 @@ export async function generateMetadata({
   }
   const match = resolveMatch(type);
   if (!match) return { title: 'Articles — Hard Problems' };
-  const label = pluralize(match.label);
+  const label =
+    match.kind === 'type' ? pluralize(match.label) : match.label;
   return {
     title: `${label} — Hard Problems`,
     description: `${label} from Hard Problems.`

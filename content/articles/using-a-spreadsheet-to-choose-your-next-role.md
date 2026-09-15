@@ -74,7 +74,7 @@ This is the hardest part. You need to diagnose what genuinely brings you fulfill
 
 Try to be thoughtful about your values, but also don't agonize over them. You can always change them while you're scoring job opportunities if you find the scores don't align with your gut feelings.
 
-**Action:**{.highlight} Spend time journaling or talking with trusted friends. Look back at past jobs—what made you happiest to go to work?
+**Action:**{.highlight} Spend time journaling or talking with trusted friends. Look back at past jobs — what made you happiest to go to work?
 
 The template has a suggested list, but your values will be unique. Here are some common ones:
 
