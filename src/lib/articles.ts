@@ -453,8 +453,13 @@ export function articleTypeSlug(type: string): string {
 // Naive pluralisation good enough for the article-type labels we use
 // (Article, Book Review, Podcast, Interview, etc.). Doesn't handle
 // irregulars — extend if we add a type like "Analysis" later.
+// Labels that are uncountable, so an appended "s" reads as a typo
+// ("Advices", "What's news"). Matched case-insensitively.
+const UNCOUNTABLE_LABELS = new Set(['advice', "what's new"]);
+
 export function pluralize(label: string): string {
   if (!label) return '';
+  if (UNCOUNTABLE_LABELS.has(label.trim().toLowerCase())) return label;
   if (label.endsWith('s')) return label;
   if (/[^aeiou]y$/i.test(label)) return label.slice(0, -1) + 'ies';
   return label + 's';

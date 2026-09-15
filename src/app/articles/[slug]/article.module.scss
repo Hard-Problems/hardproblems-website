@@ -869,7 +869,51 @@
     display: block;
     max-width: 100%;
     height: auto;
-    margin: 2em 0;
+    // Auto side margins center any image narrower than the column.
+    margin: 2em auto;
+  }
+
+  // wrapImagesInLinks' anchor is inline-block in globals.css, so it
+  // shrink-wraps a small image — and the desktop bleed rule's
+  // `margin-left: 50%` then resolves against the anchor instead of the
+  // column, cancels out with the translateX, and leaves the image flush
+  // left. A block-level fit-content anchor with auto side margins centers
+  // the whole link. Wide images still resolve the anchor to the column
+  // width, so their bleed is unchanged; the brick grid's own `> a` rule
+  // out-specifies this and keeps its cells full-size.
+  :global(.article-image-link) {
+    display: block;
+    width: fit-content;
+    margin-inline: auto;
+  }
+
+  // Half-column image, centered. Combine with `{.normal-width}` so the
+  // desktop bleed doesn't apply: `{.normal-width .half-width}`. This only
+  // sets the display size — the full-resolution file is still served, so
+  // detailed graphics stay sharp on high-density screens and when opened.
+  img:global(.half-width) {
+    width: 50%;
+  }
+
+  // When wrapImagesInLinks has wrapped the image, size the link instead
+  // and let the image fill it, so the clickable area matches the image
+  // rather than spanning the whole column.
+  :global(.article-image-link):has(> img:global(.half-width)) {
+    width: 50%;
+  }
+
+  :global(.article-image-link) > img:global(.half-width) {
+    width: 100%;
+  }
+
+  // Back to full column width on phones, matching the 600px breakpoint
+  // where floated images also drop to full width — at half of a phone
+  // column, detailed graphics are too small to read.
+  @media only screen and (max-width: 600px) {
+    img:global(.half-width),
+    :global(.article-image-link):has(> img:global(.half-width)) {
+      width: 100%;
+    }
   }
 
   // Embeds — Google Maps, YouTube, Vimeo, etc. Stretches to fill the
@@ -1169,7 +1213,7 @@
 @media only screen and (min-width: 1000px) {
   .body img:global(.normal-width) {
     max-width: 100%;
-    margin-left: 0;
+    margin-left: auto;
     transform: none;
   }
 }
