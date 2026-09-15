@@ -19,6 +19,7 @@ topics:
   - public-health
   - healthcare
   - climate-change
+  - good-government
 
 organizations:
   - Hard Problems
