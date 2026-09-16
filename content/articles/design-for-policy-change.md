@@ -61,6 +61,8 @@ It took an increasingly furious crowd of delayed passengers to force staff into 
 
 To compound the chaos, the airport offered no public Wi-Fi, so international travelers like me had no internet. I was left completely disconnected, forced to beg strangers for hotspot access just to send a message to my mom, waiting at a different terminal building. She spent four extra hours unable to talk to me because the airport had no backup for when the network went down.
 
+I saw what happens when the systems around us are not designed with failure in mind. And where policies can help.
+
 ## So, what is policy? {#so-what-is-policy}
 
 Public policy is how a government works through a problem that affects lots of people. For instance, whether everyone can afford to see a doctor or whether factories can pump carbon into the air.
@@ -72,7 +74,7 @@ In practice, it's far messier. A problem often has to become politically expensi
 [![Stacked area chart of UK CO2 emissions by fuel or industry type from 1750 to 2024: coal dominates until the 1950s, then oil and gas grow, and total emissions peak around 1970 before falling steeply to about 300 million tonnes](/images/content/graph-uk-co2-emissions-by-fuel.png){.normal-width}](https://ourworldindata.org/emissions-by-fuel)
 _A graph that illustrates the share of [CO2 emissions by fuel type](https://ourworldindata.org/emissions-by-fuel) over the last 200 years in the U.K., which can inform future climate policy. [Our World in Data](https://ourworldindata.org) is an excellent example of well-designed data that can positively influence policymakers._{.caption}
 
-## What problems need to be solved? {#what-problems-need-to-be-solved}
+## What problems can design help to solve? {#what-problems-can-design-help-to-solve}
 
 I only started thinking about any of this after I moved to the U.K. and got a job showing local council governments how to use maps to back up the decisions they were making. Public health teams, GIS analysts, and anyone else who needed to know which streets in their area were struggling and why. It was the first time I saw governance as something built and maintained and not something that simply happened to me.
 
