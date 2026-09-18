@@ -234,7 +234,9 @@ export default function JobsTeaser({
                           <br />
                         </>
                       )}
-                      {hoverDescription(job)}
+                      <span className={jobStyles.jobDescriptionText}>
+                        {hoverDescription(job)}
+                      </span>
                     </>
                   )}
                   {isStaffPick && (

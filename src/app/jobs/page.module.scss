@@ -500,6 +500,15 @@
   margin-right: 0.25rem;
 }
 
+// Column U descriptions now come in two paragraphs (organisation, then role)
+// separated by a single line break. A plain text node collapses that line
+// break to a space; pre-line keeps it, while still collapsing runs of spaces.
+// Single-paragraph descriptions, and the Column M fallback, render exactly as
+// before.
+.jobDescriptionText {
+  white-space: pre-line;
+}
+
 // Our Pick explainer that appears under the company
 // description inside the tooltip when a job is marked as a pick.
 .jobDescriptionPick {

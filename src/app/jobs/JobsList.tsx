@@ -1148,7 +1148,9 @@ export default function JobsList({
                             <br />
                           </>
                         )}
-                        {hoverDescription(job)}
+                        <span className={styles.jobDescriptionText}>
+                          {hoverDescription(job)}
+                        </span>
                       </>
                     )}
                     {isStaffPick && (
