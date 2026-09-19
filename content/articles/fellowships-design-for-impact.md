@@ -8,7 +8,7 @@ author: 'Mahima Chandak'
 authorSlug: 'mahima-chandak'
 
 publishedAt: '2026-09-02'
-updatedAt: '2026-09-02'
+updatedAt: '2026-09-19'
 
 status: 'published' # draft | review | published | unlisted
 
@@ -88,7 +88,7 @@ If you can't commit two years yet, Coding it Forward is an equally good option t
 
 ### [UX for Change](https://www.ux4change.org/responsible-design-for-change-fellowship/) {#ux-for-change}
 
-**Tuition based (£875 + VAT) • 4 months**
+**£490 + VAT • 6 months**
 
 If you're at that stage of your career where you're feeling a lack of purpose at work and questioning your next move, UX for Change might be the right place for you. For the first 5 weeks, a coach guides you to unlearn, reflect, and build your understanding of responsible design. For the rest of the fellowship, you apply your skills and build meaningful solutions for [East London Water Works](https://elwp.org.uk/Home.htm), as an individual contributor or leading the team of ICs.
 
