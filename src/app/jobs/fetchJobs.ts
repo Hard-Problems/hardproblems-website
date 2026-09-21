@@ -337,53 +337,75 @@ export function parseJobsCsv(text: string): SerializedJob[] {
   return jobs;
 }
 
-// Hide jobs whose listed date is either OLDER than MAX_AGE_DAYS or
-// in the FUTURE — the latter gives us proper scheduling (a job with
-// a future date stays hidden until that day arrives, at which point
-// it appears on the board and in the next digest).
-//
-// Comparison is done in UTC days so it matches the relative date
-// labels ("Today", "Yesterday", "N days ago"). Jobs without a
-// parseable date are kept so a missing value doesn't silently drop
-// a listing.
-//
-// Runs on every read, never at sync time — that is what lets a cached
-// snapshot stay correct as the clock moves.
-export function applyDateWindow(jobs: SerializedJob[]): SerializedJob[] {
+function todayUTC(): number {
   const now = new Date();
-  const todayUTC = Date.UTC(
-    now.getUTCFullYear(),
-    now.getUTCMonth(),
-    now.getUTCDate()
-  );
-  return jobs.filter((j) => {
-    // Column T expiry — hide the job the day AFTER its expiry date.
-    // The one-day grace absorbs timezone drift: parseDate treats the
-    // sheet's YYYY-MM-DD as UTC midnight, which is already
-    // yesterday's evening in the Americas. Comparing strictly less
-    // than (not less-than-or-equal) means a job dated 2026-08-15
-    // stays visible ALL of Aug 15 UTC and disappears at midnight
-    // UTC on Aug 16 — safe across every timezone the sheet's editors
-    // might be in.
-    if (j.expiresAt) {
-      const e = new Date(j.expiresAt);
-      const expiryUTC = Date.UTC(
-        e.getUTCFullYear(),
-        e.getUTCMonth(),
-        e.getUTCDate()
-      );
-      if (expiryUTC < todayUTC) return false;
-    }
-    if (!j.date) return true;
-    const d = new Date(j.date);
-    const jobUTC = Date.UTC(
-      d.getUTCFullYear(),
-      d.getUTCMonth(),
-      d.getUTCDate()
-    );
-    const days = Math.round((todayUTC - jobUTC) / 86400000);
-    return days >= 0 && days < MAX_AGE_DAYS;
-  });
+  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+}
+
+function utcDay(iso: string): number {
+  const d = new Date(iso);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+}
+
+// Where a job sits relative to the board's date window on a given day.
+// The single source of truth for both applyDateWindow() (read time) and
+// pruneExpiredJobs() (sync time), so the two can never disagree.
+//
+//   live   — shown on the board today
+//   future — listed date hasn't arrived yet; becomes live on that day
+//   gone   — past its expiry, or older than MAX_AGE_DAYS. Permanent:
+//            the calendar only moves forward, so a gone job can never
+//            become live again.
+type WindowState = 'live' | 'future' | 'gone';
+
+function windowState(j: SerializedJob, today: number): WindowState {
+  // Column T expiry — hide the job the day AFTER its expiry date.
+  // The one-day grace absorbs timezone drift: parseDate treats the
+  // sheet's YYYY-MM-DD as UTC midnight, which is already yesterday's
+  // evening in the Americas. Comparing strictly less than (not
+  // less-than-or-equal) means a job dated 2026-08-15 stays visible ALL
+  // of Aug 15 UTC and disappears at midnight UTC on Aug 16 — safe
+  // across every timezone the sheet's editors might be in.
+  if (j.expiresAt && utcDay(j.expiresAt) < today) return 'gone';
+  // Jobs without a parseable date are kept so a missing value doesn't
+  // silently drop a listing.
+  if (!j.date) return 'live';
+  const days = Math.round((today - utcDay(j.date)) / 86400000);
+  if (days < 0) return 'future';
+  if (days >= MAX_AGE_DAYS) return 'gone';
+  return 'live';
+}
+
+// Hide jobs whose listed date is either OLDER than MAX_AGE_DAYS or in
+// the FUTURE — the latter gives us proper scheduling (a job with a
+// future date stays hidden until that day arrives, at which point it
+// appears on the board and in the next digest).
+//
+// Comparison is done in UTC days so it matches the relative date labels
+// ("Today", "Yesterday", "N days ago").
+//
+// Runs on every read — that is what lets a cached snapshot stay correct
+// as the clock moves.
+export function applyDateWindow(jobs: SerializedJob[]): SerializedJob[] {
+  const today = todayUTC();
+  return jobs.filter((j) => windowState(j, today) === 'live');
+}
+
+// Drop jobs that can never be shown again, for use at SYNC time before
+// the snapshot is written. Without this the snapshot kept every
+// non-deleted row the sheet has ever held and grew without bound — and
+// since /jobs reads the whole snapshot on every page view, dead rows
+// were shipped over the wire on every request.
+//
+// Future-dated jobs are deliberately KEPT so scheduled listings still
+// appear exactly on their date rather than waiting for the next sync.
+//
+// Safe against clock movement between sync and read: anything `gone`
+// at sync time is also `gone` at any later read, so pruning never
+// removes a job that applyDateWindow() would have shown.
+export function pruneExpiredJobs(jobs: SerializedJob[]): SerializedJob[] {
+  const today = todayUTC();
+  return jobs.filter((j) => windowState(j, today) !== 'gone');
 }
 
 export async function fetchJobs(): Promise<SerializedJob[]> {
