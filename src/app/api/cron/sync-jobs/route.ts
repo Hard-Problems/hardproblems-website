@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
-import { fetchSheetCsv, parseJobsCsv } from '../../../jobs/fetchJobs';
+import {
+  fetchSheetCsv,
+  parseJobsCsv,
+  pruneExpiredJobs
+} from '../../../jobs/fetchJobs';
 import { writeJobsSnapshot } from '../../../jobs/jobsSnapshot';
 import { isCronAuthorized } from '../../../../lib/cronAuth';
 
@@ -50,14 +54,19 @@ export async function GET(request: Request) {
     );
   }
 
-  const jobs = parseJobsCsv(csv);
-  if (jobs.length === 0) {
+  const parsed = parseJobsCsv(csv);
+  if (parsed.length === 0) {
     console.warn('[jobs/sync] sheet parsed to zero jobs, keeping previous');
     return NextResponse.json(
       { ok: false, error: 'empty-parse', bytes: csv.length },
       { status: 502 }
     );
   }
+
+  // Only jobs that are live or scheduled — see pruneExpiredJobs(). The
+  // emptiness check above runs on the full parse, so a sheet that parses
+  // fine but happens to be all-expired is not reported as a bad parse.
+  const jobs = pruneExpiredJobs(parsed);
 
   const written = await writeJobsSnapshot(jobs);
   if (!written) {
@@ -71,10 +80,13 @@ export async function GET(request: Request) {
     );
   }
 
-  console.log(`[jobs/sync] wrote snapshot: ${jobs.length} jobs`);
+  console.log(
+    `[jobs/sync] wrote snapshot: ${jobs.length} jobs (pruned ${parsed.length - jobs.length} expired)`
+  );
   return NextResponse.json({
     ok: true,
-    parsed: jobs.length,
+    parsed: parsed.length,
+    kept: jobs.length,
     bytes: csv.length,
     syncedAt: new Date().toISOString()
   });
