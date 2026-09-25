@@ -925,6 +925,24 @@
     filter: brightness(1.03) saturate(1.05);
   }
 
+  // Stacked layout (below the 1000px grid breakpoint): the screenshot has
+  // the full column to itself, which is far more room than it needs, so
+  // halve it and centre it. The desktop left indent is dropped here — it
+  // would pull the image off-centre.
+  @media only screen and (max-width: 999px) {
+    :global(.media-grid) > p {
+      padding-left: 0;
+    }
+
+    :global(.media-grid) img:not(:global(.float-right)):not(.authorAvatar) {
+      width: 50%;
+      margin-inline: auto;
+      // Breathing room above each screenshot, which sits directly under
+      // the previous entry's copy once the columns stack.
+      margin-top: 2em;
+    }
+  }
+
   // Inline `code` — small pill style for prose mentions of identifiers,
   // commands, etc.
   code {
