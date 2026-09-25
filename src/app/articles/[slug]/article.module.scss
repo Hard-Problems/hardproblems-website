@@ -854,6 +854,95 @@
     margin-bottom: 0;
   }
 
+  // Media row — a thumbnail beside the copy about it, used for list
+  // articles where every entry has a screenshot (the websites digest).
+  // Authors wrap the image and a `<div class="media-body">` inside
+  // `<div class="media-grid">`, blank lines around each so markdown
+  // still parses. Stacks to a single column on mobile, image on top.
+  :global(.media-grid) {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    // Copy sits centred against the thumbnail rather than top-aligned.
+    align-items: center;
+    margin: 2.5rem 0;
+  }
+
+  @media only screen and (min-width: 1000px) {
+    :global(.media-grid) {
+      // 120px of image plus the 2em left indent on the cell.
+      grid-template-columns: calc(120px + 2em) 1fr;
+      gap: 2rem;
+    }
+  }
+
+  // The image arrives wrapped in a markdown paragraph — strip its
+  // spacing so the picture aligns with the copy beside it, and indent
+  // the picture 2em from the column's left edge. The desktop column is
+  // widened by the same 2em below, so the indent moves the image without
+  // shrinking it.
+  :global(.media-grid) > p {
+    margin: 0;
+    padding-left: 2em;
+  }
+
+  :global(.media-grid) :global(.article-image-link) {
+    width: 100%;
+  }
+
+  // Fills its grid column, with the article-wide image bleed, centering
+  // and bottom padding all cancelled — inside the grid the cell sets the
+  // size. Both :not()s repeat the base image rule's so this wins the
+  // cascade outright rather than relying on source order.
+  :global(.media-grid) img:not(:global(.float-right)):not(.authorAvatar) {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    transform: none;
+    border: 1px solid #ddd;
+  }
+
+  :global(.media-body) > *:first-child {
+    margin-top: 0;
+  }
+
+  :global(.media-body) > *:last-child {
+    margin-bottom: 0;
+  }
+
+  // Same click-affordance as the site-wrapped images: these are linked
+  // in the markdown (out to each website), so they never get the
+  // `.article-image-link` class that carries the hover brighten in
+  // globals.css. Repeat it here, keyed off the grid instead.
+  :global(.media-grid) a img {
+    transition: filter 0.2s ease;
+  }
+
+  :global(.media-grid) a:hover img,
+  :global(.media-grid) a:focus-visible img {
+    filter: brightness(1.03) saturate(1.05);
+  }
+
+  // Stacked layout (below the 1000px grid breakpoint): the screenshot has
+  // the full column to itself, which is far more room than it needs, so
+  // halve it and centre it. The desktop left indent is dropped here — it
+  // would pull the image off-centre.
+  @media only screen and (max-width: 999px) {
+    :global(.media-grid) > p {
+      padding-left: 0;
+    }
+
+    :global(.media-grid) img:not(:global(.float-right)):not(.authorAvatar) {
+      width: 50%;
+      margin-inline: auto;
+      // Breathing room above each screenshot, which sits directly under
+      // the previous entry's copy once the columns stack.
+      margin-top: 2em;
+    }
+  }
+
   // Inline `code` — small pill style for prose mentions of identifiers,
   // commands, etc.
   code {
