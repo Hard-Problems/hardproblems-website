@@ -46,7 +46,7 @@ image: '/images/content/thumb-websites.jpg'
 imageAlt: 'A grid of screenshots from the websites in this list, with two illustrated figures looking on'
 
 seoTitle: 'Websites for designers who want to work on hard problems'
-seoDescription: 'A digest of the best websites for designers, PMs, and technologists looking for meaningful work — thoughtful writing, job boards, and communities.'
+seoDescription: 'The best websites for designers, PMs, and technologists looking for meaningful work — thoughtful writing, job boards, and communities.'
 
 canonicalUrl: ''
 ---
