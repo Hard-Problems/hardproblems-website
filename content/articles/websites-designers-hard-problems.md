@@ -63,7 +63,7 @@ So, what if someone else did the research for you? (And not just your AI.)
 
 Below is our digest of great websites for designers, PMs, and those looking to learn more about where and how to apply their skills for good. Whether you're looking for thought-inspiring content involving impactful careers, seeking a new community, or looking for a job with meaning, these sites can help.
 
-Let us know on [LinkedIn](https://www.linkedin.com/company/hardproblems/) if you know a website that should be included.
+Let us know on [LinkedIn](https://www.linkedin.com/posts/hardproblems_websites-for-designers-who-want-to-work-on-activity-7510594955111866368-rBTd) if you know a website that should be included.
 
 PS: For more inspiration, see our list of [books for people who want to work on hard problems](/articles/books-designers-hard-problems).
 
