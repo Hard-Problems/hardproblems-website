@@ -8,10 +8,19 @@
 // jobs page — the dense layout reads cleaner without underlines.
 // Exception: links inside `.filterFooter` (the "Our favorite job sources"
 // sentence) keep the site-wide body-link underline.
+//
+// `.jobs` is listed as well as `.board` because the location pages
+// render the same rows WITHOUT the `.board` wrapper, so their titles,
+// company names and Details links were the only ones on the site's job
+// rows showing an underline.
 .board a,
 .board a:visited,
 .board a:hover,
-.board a:focus {
+.board a:focus,
+.jobs a,
+.jobs a:visited,
+.jobs a:hover,
+.jobs a:focus {
   text-decoration: none;
 }
 

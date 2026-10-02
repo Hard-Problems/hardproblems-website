@@ -19,6 +19,7 @@ import { orgTypeDisplay } from '../orgType';
 import { getSectorIcon } from '../sectorIcons';
 import CompanyFavicon from '../CompanyFavicon';
 import { buildFaviconUrl } from '../faviconUrl';
+import { formatRelativeDate } from '../relativeDate';
 import styles from '../page.module.scss';
 import locationStyles from './page.module.scss';
 
@@ -26,29 +27,6 @@ const BULLET_SEPARATOR = '  •  ';
 
 
 // "Today" / "Yesterday" / "N days ago" — same wording JobsList uses.
-function formatRelativeDate(iso: string | null): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  const now = new Date();
-  const todayUTC = Date.UTC(
-    now.getUTCFullYear(),
-    now.getUTCMonth(),
-    now.getUTCDate()
-  );
-  const jobUTC = Date.UTC(
-    d.getUTCFullYear(),
-    d.getUTCMonth(),
-    d.getUTCDate()
-  );
-  const diffDays = Math.round((todayUTC - jobUTC) / 86400000);
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays > 1) return `${diffDays} days ago`;
-  if (diffDays === -1) return 'Tomorrow';
-  return `in ${-diffDays} days`;
-}
-
 // Country-only location — matches JobsList's teaser-style meta.
 function formatLocation(job: ListedJob): string {
   const parts = [job.city, job.country].filter(Boolean);
@@ -134,7 +112,9 @@ export default function LocationJobList({
           );
         }
         if (job.salary && job.salary.toLowerCase() !== 'n/a') {
-          metaItems.push(<span>{job.salary}</span>);
+          metaItems.push(
+            <span className={styles.jobSalary}>{job.salary}</span>
+          );
         }
 
         return (

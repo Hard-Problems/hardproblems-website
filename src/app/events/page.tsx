@@ -1,5 +1,34 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
+
+// Without this the page inherits the layout's site-wide title and
+// description, which nine pages were sharing verbatim. openGraph and
+// twitter are set too: Next does not derive them from `title`, and each
+// replaces the layout's wholesale rather than merging, so `card` is
+// repeated here. The segment's own opengraph-image.tsx still supplies
+// the image — except here, where the route has none of its own and so
+// inherits the root /opengraph-image. Naming it is required: an
+// explicit openGraph block replaces the parent's rather than merging,
+// so leaving `images` out silently drops the card image.
+export const metadata: Metadata = {
+  title: 'Events for designers and technologists — Hard Problems',
+  description:
+    'We host online events globally and in-person events in London, featuring great speakers, to build a community of people working on hard problems.',
+  openGraph: {
+    title: 'Events for designers and technologists',
+    description:
+      'We host online events globally and in-person events in London, featuring great speakers, to build a community of people working on hard problems.',
+    images: ['/opengraph-image']
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: ['/opengraph-image'],
+    title: 'Events for designers and technologists',
+    description:
+      'We host online events globally and in-person events in London, featuring great speakers, to build a community of people working on hard problems.'
+  }
+};
 
 export default function Page() {
   return (

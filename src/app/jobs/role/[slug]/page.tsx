@@ -15,20 +15,23 @@
 // route 404s on its next render. That matches Google's guidance to
 // remove expired postings rather than leave them indexed.
 
+import { Fragment } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { fetchJobs } from '../../fetchJobs';
+import { fetchJobs, type SerializedJob } from '../../fetchJobs';
 import { buildJobSlugs, findJobBySlug, jobKey } from '../../jobSlug';
 import { countryQualifies, locationSlug } from '../../locations';
 import {
   Banknote,
   Briefcase,
   Building2,
+  Earth,
   ChevronRight,
   Gem,
   Laptop,
   MapPin,
+  Sparkle,
   SquareMousePointer,
   UsersRound,
   type LucideIcon
@@ -44,6 +47,7 @@ import { orgCategory, orgTypeDisplay } from '../../orgType';
 import { getSectorIcon } from '../../sectorIcons';
 import CompanyFavicon from '../../CompanyFavicon';
 import { buildFaviconUrl } from '../../faviconUrl';
+import { formatRelativeDate } from '../../relativeDate';
 import JobPostingSchema from './JobPostingSchema';
 import BreadcrumbSchema from './BreadcrumbSchema';
 // The chips below reuse the board's own tag classes rather than
@@ -55,6 +59,17 @@ import styles from './page.module.scss';
 // changes every 15 minutes and a job's own details rarely change at
 // all, so this is mostly about picking up removals.
 export const revalidate = 3600;
+
+// Only matters on the degraded path. Normally this route reads the
+// Supabase snapshot, which is a single fast row read. When the snapshot
+// is unavailable, fetchJobs() falls back to downloading the sheet CSV
+// inside the render — now ~2.8MB, and heading for ~5MB as Column X
+// ("Full job description") is filled in. That is the same shape as the
+// failure that once left the board serving stale data: a large fetch
+// inside a render, killed by the default function ceiling before it
+// could finish. /jobs, /jobs/feed.xml and both crons already raise the
+// limit for exactly this reason; this route was the one that did not.
+export const maxDuration = 60;
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -91,6 +106,146 @@ const MONTHS = [
   'Nov',
   'Dec'
 ];
+
+// One related-role row, built from the board's own classes so it reads
+// identically to a row on /jobs. Deliberately not the board's full row:
+// no hover description (that text is the duplication these pages are
+// trying to avoid repeating) and no date column.
+//
+// The title links INTERNALLY here, unlike on the board where it goes to
+// the employer. These lists exist to put a role's own title in the
+// anchor text of a link to its page — pointing them outward would
+// remove the only reason to have them.
+const BULLET_SEPARATOR = '  \u2022  ';
+
+function RelatedJobRow({ job, href }: { job: SerializedJob; href: string }) {
+  const faviconUrl = buildFaviconUrl(job.companyUrl);
+  const sector = job.sector ? displaySector(job.sector) : '';
+  const SectorIcon = sector ? getSectorIcon(sector) : null;
+  const typeLabel = orgTypeDisplay(job.typeOfOrg);
+  const pick = isHardProblemsPick(job.goodForWorld);
+  const hasSalary = job.salary && job.salary.toLowerCase() !== 'n/a';
+
+  const meta: { key: string; className: string; value: string }[] = [
+    { key: 'company', className: boardStyles.jobCompany, value: job.company },
+    { key: 'place', className: boardStyles.jobLocation, value: placeOf(job) },
+    {
+      key: 'salary',
+      className: boardStyles.jobSalary,
+      value: hasSalary ? job.salary : ''
+    }
+  ].filter((m) => m.value);
+
+  const relativeLabel = formatRelativeDate(job.date);
+  const isNewToday = relativeLabel === 'Today';
+
+  const globe = (
+    <Earth
+      className={boardStyles.companyFavicon}
+      strokeWidth={1.5}
+      aria-hidden="true"
+    />
+  );
+  const icon = faviconUrl ? (
+    <CompanyFavicon
+      src={faviconUrl}
+      alt=""
+      className={boardStyles.companyFavicon}
+      fallback={globe}
+    />
+  ) : (
+    globe
+  );
+
+  return (
+    <li className={boardStyles.job}>
+      {/* The board wraps the icon in a link to the company; matching it
+          keeps the inherited colour and weight identical too. */}
+      {job.companyUrl ? (
+        <a
+          href={job.companyUrl}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={job.company ? `Visit ${job.company}` : 'Visit company'}
+          className={boardStyles.jobIcon}
+        >
+          {icon}
+        </a>
+      ) : (
+        <div className={boardStyles.jobIcon}>{icon}</div>
+      )}
+      <div className={boardStyles.jobMain}>
+        <h3 className={boardStyles.jobTitle}>
+          <Link href={href}>{job.title}</Link>
+        </h3>
+        <div className={boardStyles.jobMeta}>
+          {meta.map((m, i) => (
+            <Fragment key={m.key}>
+              {i > 0 && (
+                <span className={boardStyles.jobBullet}>
+                  {BULLET_SEPARATOR}
+                </span>
+              )}
+              {m.key === 'company' && job.companyUrl ? (
+                <a
+                  href={job.companyUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={m.className}
+                >
+                  {m.value}
+                </a>
+              ) : (
+                <span className={m.className}>{m.value}</span>
+              )}
+            </Fragment>
+          ))}
+        </div>
+        {(sector || typeLabel || pick) && (
+          <div className={boardStyles.jobSectorRow}>
+            {sector && (
+              <span className={`tag ${boardStyles.jobSector}`}>
+                {SectorIcon && (
+                  <SectorIcon
+                    className={boardStyles.jobSectorIcon}
+                    aria-hidden="true"
+                  />
+                )}
+                {sector}
+              </span>
+            )}
+            {typeLabel && (
+              <span className={`tag ${boardStyles.jobType}`}>{typeLabel}</span>
+            )}
+            {pick && (
+              <span className={`tag ${boardStyles.jobStaffPick}`}>
+                <Gem
+                  className={boardStyles.jobStaffPickStar}
+                  aria-hidden="true"
+                />
+                Our Pick
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+      <div className={boardStyles.jobAside}>
+        {relativeLabel && (
+          <small
+            className={`${boardStyles.jobDate} ${
+              isNewToday ? boardStyles.jobDateToday : ''
+            }`}
+          >
+            {isNewToday && (
+              <Sparkle className={boardStyles.jobDateIcon} aria-hidden="true" />
+            )}
+            {relativeLabel}
+          </small>
+        )}
+      </div>
+    </li>
+  );
+}
 
 // Sheet dates are stored as UTC midnight ISO strings, so read the UTC
 // parts: a western timezone would otherwise shift a midnight date back
@@ -183,9 +338,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function JobPage({ params }: Props) {
   const { slug } = await params;
   const jobs = await fetchJobs();
-  const found = findJobBySlug(jobs, slug);
-  if (!found) notFound();
-  const { job } = found;
+  // buildJobSlugs rather than findJobBySlug: the related-job lists below
+  // need the whole map, and findJobBySlug would build a second copy of it
+  // for every render.
+  const slugs = buildJobSlugs(jobs);
+  const job = jobs.find((j) => slugs.get(jobKey(j)) === slug);
+  if (!job) notFound();
 
   // Only link a country that actually has a location page. /jobs/<country>
   // exists only for countries over the active-job threshold, so linking
@@ -219,6 +377,44 @@ export default async function JobPage({ params }: Props) {
   const typeLabel = orgTypeDisplay(job.typeOfOrg);
   const orgCat = orgCategory(job.typeOfOrg);
   const isStaffPick = isHardProblemsPick(job.goodForWorld);
+
+  // Related roles. Two jobs: they give the page content that exists
+  // nowhere else on the site, and they link job pages to each other —
+  // until now the only way in was from /jobs and the location pages, and
+  // every one of those links reads "Details", which tells a search engine
+  // nothing. These links use the role's own title as the anchor text.
+  //
+  // 83 companies currently have more than one opening, so the company
+  // list applies to about 39% of jobs; the sector list covers the rest.
+  const currentKey = jobKey(job);
+  const hrefFor = (j: SerializedJob) => {
+    const s = slugs.get(jobKey(j));
+    return s ? `/jobs/role/${s}` : null;
+  };
+  const linkable = (j: SerializedJob) => hrefFor(j) !== null;
+
+  const sameCompany = job.company
+    ? jobs
+        .filter(
+          (j) =>
+            j.company === job.company && jobKey(j) !== currentKey && linkable(j)
+        )
+        .slice(0, 5)
+    : [];
+
+  // Don't repeat a role that the company list already showed.
+  const shown = new Set([currentKey, ...sameCompany.map(jobKey)]);
+  const sameSector = sectorLabel
+    ? jobs
+        .filter(
+          (j) =>
+            j.sector &&
+            displaySector(j.sector) === sectorLabel &&
+            !shown.has(jobKey(j)) &&
+            linkable(j)
+        )
+        .slice(0, 5)
+    : [];
 
   // Same proxy URL the board uses, so this shares its CDN cache entry.
   // The source is 64px and renders here at 20, which stays sharp even on
@@ -267,7 +463,11 @@ export default async function JobPage({ params }: Props) {
   // its own under the chips.
   const impact = job.impactSummary || job.goodForWorldExplanation;
 
-  const applyAfter = job.jobDescription
+  // Column X when the long-form write-up exists, Column U otherwise.
+  // Both are newline-separated prose, so `paragraphs` handles either.
+  const aboutRole = job.fullJobDescription || job.jobDescription;
+
+  const applyAfter = aboutRole
     ? 'role'
     : impact
       ? 'why'
@@ -365,10 +565,10 @@ export default async function JobPage({ params }: Props) {
         {applyAfter === null && applyBlock}
       </div>
 
-      {job.jobDescription && (
+      {aboutRole && (
         <section className={styles.block}>
           <h2 className="section-label">About the role</h2>
-          {paragraphs(job.jobDescription).map((para, i) => (
+          {paragraphs(aboutRole).map((para, i) => (
             <p key={i}>{para}</p>
           ))}
           {applyAfter === 'role' && applyBlock}
@@ -425,6 +625,42 @@ export default async function JobPage({ params }: Props) {
             </p>
           )}
           {applyAfter === 'about' && applyBlock}
+        </section>
+      )}
+
+      {(sameCompany.length > 0 || sameSector.length > 0) && (
+        <section className={styles.block}>
+          {sameCompany.length > 0 && (
+            <>
+              <h2 className={`section-label ${styles.relatedHeading}`}>
+                Other roles at {job.company}
+              </h2>
+              <ul className={styles.relatedList}>
+                {sameCompany.map((j) => (
+                  <RelatedJobRow key={jobKey(j)} job={j} href={hrefFor(j)!} />
+                ))}
+              </ul>
+            </>
+          )}
+
+          {sameSector.length > 0 && (
+            <>
+              <h2
+                className={`section-label ${
+                  sameCompany.length > 0
+                    ? styles.relatedSecondHeading
+                    : styles.relatedHeading
+                }`}
+              >
+                More {sectorLabel.toLowerCase()} jobs
+              </h2>
+              <ul className={styles.relatedList}>
+                {sameSector.map((j) => (
+                  <RelatedJobRow key={jobKey(j)} job={j} href={hrefFor(j)!} />
+                ))}
+              </ul>
+            </>
+          )}
         </section>
       )}
 

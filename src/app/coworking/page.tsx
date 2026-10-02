@@ -1,8 +1,32 @@
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { coworkingTeams as teams } from '../../lib/coworkingTeams';
 import DeskApplicationForm from './DeskApplicationForm';
 import styles from './page.module.scss';
+
+// Without this the page inherits the layout's site-wide title and
+// description, which nine pages were sharing verbatim. openGraph and
+// twitter are set too: Next does not derive them from `title`, and each
+// replaces the layout's wholesale rather than merging, so `card` is
+// repeated here. The segment's own opengraph-image.tsx still supplies
+// the image.
+export const metadata: Metadata = {
+  title: 'Coworking space in London — Hard Problems',
+  description:
+    'A small London coworking space for people working on hard problems. A few free days if you qualify, or a fixed desk at £450/month and a drop-in desk at £200/month.',
+  openGraph: {
+    title: 'Coworking space in London',
+    description:
+      'A small London coworking space for people working on hard problems. A few free days if you qualify, or a fixed desk at £450/month and a drop-in desk at £200/month.'
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Coworking space in London',
+    description:
+      'A small London coworking space for people working on hard problems. A few free days if you qualify, or a fixed desk at £450/month and a drop-in desk at £200/month.'
+  }
+};
 
 export default function Page() {
   return (

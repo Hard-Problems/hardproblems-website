@@ -34,6 +34,14 @@ import styles from './page.module.scss';
 
 export const revalidate = 3600;
 
+// Degraded path only, as on /jobs/role/[slug]: normally this reads the
+// Supabase snapshot, but if that is unavailable fetchJobs() falls back
+// to downloading the sheet CSV inside the render — ~2.8MB today and
+// growing as Column X is filled in. Without this the default ceiling
+// could kill that fetch mid-render, which is how the board ended up
+// serving stale data once before.
+export const maxDuration = 60;
+
 type Props = { params: Promise<{ location: string }> };
 
 // Build the list of paths to pre-render at build time: every region

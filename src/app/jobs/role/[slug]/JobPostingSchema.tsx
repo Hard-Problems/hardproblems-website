@@ -65,7 +65,17 @@ function buildJobPosting(job: SerializedJob) {
     '@context': 'https://schema.org',
     '@type': 'JobPosting',
     title: job.title,
-    description: job.description || job.title,
+    // Google wants a complete representation of the JOB here —
+    // responsibilities, qualifications, experience — not a description of
+    // the employer. Column X ("Full job description") is written for
+    // exactly that and runs to ~650 words, so prefer it; Column U is the
+    // shorter role-specific blurb; Column M (the COMPANY description) is
+    // the last resort, and was previously the only thing sent.
+    description:
+      job.fullJobDescription ||
+      job.jobDescription ||
+      job.description ||
+      job.title,
     datePosted: job.date || undefined,
     // Search Console flagged this as missing. Almost every design
     // role we list is full-time; default when the sheet doesn't say
