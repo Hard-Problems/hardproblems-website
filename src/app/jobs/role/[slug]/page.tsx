@@ -247,6 +247,39 @@ function RelatedJobRow({ job, href }: { job: SerializedJob; href: string }) {
   );
 }
 
+// A "## Subheading" line in one of the sheet's long-text fields.
+//
+// Column X ("Full job description") is hand-written with markdown ATX
+// subheadings — "## The role", "## Pay and benefits" and so on. Nothing
+// else markdown-ish appears in that data: across all 420 populated
+// values there are no bullets, numbered lists, bold or italic markers,
+// links or blockquotes, and no level-1 headings. So this is one
+// deliberate rule rather than a markdown parser — running the text
+// through one would pull a parse-and-sanitise pipeline in to serve a
+// single construct, and would start interpreting stray asterisks and
+// underscores in prose that was never written as markdown.
+const SUBHEADING = /^#{1,6}\s+(\S.*)$/;
+
+// Renders one of the sheet's prose fields: paragraphs, plus any
+// subheadings. Used for all three prose sections so that a heading added
+// to another column later renders as one rather than showing its hashes.
+function RichText({ text }: { text: string }) {
+  return (
+    <>
+      {paragraphs(text).map((para, i) => {
+        const heading = para.match(SUBHEADING);
+        return heading ? (
+          <h3 key={i} className={styles.contentHeading}>
+            {heading[1]}
+          </h3>
+        ) : (
+          <p key={i}>{para}</p>
+        );
+      })}
+    </>
+  );
+}
+
 // Sheet dates are stored as UTC midnight ISO strings, so read the UTC
 // parts: a western timezone would otherwise shift a midnight date back
 // a day. Produces "2 Oct 2026".
@@ -568,9 +601,7 @@ export default async function JobPage({ params }: Props) {
       {aboutRole && (
         <section className={styles.block}>
           <h2 className="section-label">About the role</h2>
-          {paragraphs(aboutRole).map((para, i) => (
-            <p key={i}>{para}</p>
-          ))}
+          <RichText text={aboutRole} />
           {applyAfter === 'role' && applyBlock}
         </section>
       )}
@@ -578,7 +609,7 @@ export default async function JobPage({ params }: Props) {
       {(impact || isStaffPick) && (
         <section className={styles.block}>
           <h2 className="section-label">Why this work matters</h2>
-          {impact && paragraphs(impact).map((para, i) => <p key={i}>{para}</p>)}
+          {impact && <RichText text={impact} />}
           {/* Explains the "Our Pick" chip at the top of the page. Shown
               here rather than beside the chip because the reason a job
               is a pick is the same thing this section is about. */}
@@ -617,8 +648,7 @@ export default async function JobPage({ params }: Props) {
           <h2 className="section-label">
             About {job.company || 'the organisation'}
           </h2>
-          {job.description &&
-            paragraphs(job.description).map((para, i) => <p key={i}>{para}</p>)}
+          {job.description && <RichText text={job.description} />}
           {job.companyUrl && (
             <p className={styles.companySite}>
               <a href={job.companyUrl}>{displayUrl(job.companyUrl)}</a>
