@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import PodcastGuestForm from './PodcastGuestForm';
@@ -24,6 +25,29 @@ const EPISODES = EPISODE_TITLES.map((title, i) => {
     alt: title
   };
 }).reverse();
+
+// Without this the page inherits the layout's site-wide title and
+// description, which nine pages were sharing verbatim. openGraph and
+// twitter are set too: Next does not derive them from `title`, and each
+// replaces the layout's wholesale rather than merging, so `card` is
+// repeated here. The segment's own opengraph-image.tsx still supplies
+// the image.
+export const metadata: Metadata = {
+  title: 'Podcast for designers and technologists — Hard Problems',
+  description:
+    'A podcast for designers and technologists who want to work on urgent problems like public health and climate change. Coming soon — and we are looking for guests.',
+  openGraph: {
+    title: 'Podcast for designers and technologists',
+    description:
+      'A podcast for designers and technologists who want to work on urgent problems like public health and climate change. Coming soon — and we are looking for guests.'
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Podcast for designers and technologists',
+    description:
+      'A podcast for designers and technologists who want to work on urgent problems like public health and climate change. Coming soon — and we are looking for guests.'
+  }
+};
 
 export default function Page() {
   return (
@@ -69,8 +93,8 @@ export default function Page() {
 
         <h3 className="space-top-large">We need your help</h3>
         <p>
-          Know someone who we should interview? Tell us about them and
-          why they&rsquo;d make a great guest.
+          Know someone who we should interview? Tell us about them and why
+          they&rsquo;d make a great guest.
         </p>
         <p>
           <PodcastGuestForm />

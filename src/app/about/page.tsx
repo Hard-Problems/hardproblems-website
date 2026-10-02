@@ -1,9 +1,33 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Team } from '../../components/Team';
 import ArticleCard from '../../components/ArticleCard';
 import { getArticleBySlug } from '../../lib/articles';
 import articlesStyles from '../articles/page.module.scss';
+
+// Without this the page inherits the layout's site-wide title and
+// description, which nine pages were sharing verbatim. openGraph and
+// twitter are set too: Next does not derive them from `title`, and each
+// replaces the layout's wholesale rather than merging, so `card` is
+// repeated here. The segment's own opengraph-image.tsx still supplies
+// the image.
+export const metadata: Metadata = {
+  title: 'About us: a nonprofit for designers — Hard Problems',
+  description:
+    'Hard Problems is a UK nonprofit that helps designers, researchers and technologists shift into full-time work on urgent problems like climate change and public health.',
+  openGraph: {
+    title: 'About us — Hard Problems',
+    description:
+      'Hard Problems is a UK nonprofit that helps designers, researchers and technologists shift into full-time work on urgent problems like climate change and public health.'
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'About us — Hard Problems',
+    description:
+      'Hard Problems is a UK nonprofit that helps designers, researchers and technologists shift into full-time work on urgent problems like climate change and public health.'
+  }
+};
 
 export default function Page() {
   const featuredArticle = getArticleBySlug('explain-hard-problems');

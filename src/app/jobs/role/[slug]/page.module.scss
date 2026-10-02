@@ -224,10 +224,61 @@
   font-size: var(--font-size-sm);
 }
 
+// Related-role lists. Rows come from RelatedJobRow, which uses the
+// board's own classes, so this only has to strip the <ul> defaults and
+// give the first row the top rule that `.job`'s bottom border implies.
+.relatedList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid color-mix(in srgb, #aed8c1 60%, transparent);
+}
+
+// The board's rows title themselves with <h4>, which carries no
+// font-family of its own. These use <h3> so the heading order stays
+// intact under the <h2> above, and the global h3 rule would otherwise
+// render them in Instrument Serif. Everything else about the title
+// already comes from the board's .jobTitle class.
+.relatedList h3 {
+  font-family: inherit;
+}
+
+// /jobs wraps its rows in a `.board` container carrying
+// `a { text-decoration: none }`, which is what keeps those titles and
+// company names unlined. These rows sit outside it, so the global
+// `li a` underline applied instead. (Note /jobs/<location> has the same
+// gap and IS underlined — an existing inconsistency between the two
+// boards; this matches /jobs.) Hover is left alone so `.jobTitle a:hover`
+// still draws its underline.
+.relatedList a,
+.relatedList a:visited {
+  text-decoration: none;
+}
+
+// `.tag` is sized for a context with `line-height: normal`; inside the
+// page body it inherits 1.6 and the pills grow by 2px.
+.relatedList :global(.tag) {
+  line-height: normal;
+}
+
+// Both related headings sit directly on top of a list, which reads
+// cramped without more air above than a normal section heading needs.
+// `.job .relatedHeading` to outweigh `.block h2`, whose margin shorthand
+// would otherwise zero the top margin.
+.job .relatedHeading {
+  margin-top: 1.75rem;
+}
+
+// The sector list follows the company list inside the same section, so
+// its heading also needs the gap `.block` would otherwise have provided
+// between two sections.
+.job .relatedSecondHeading {
+  margin-top: 3.75rem;
+}
+
 .footerNote {
   margin-top: 3rem;
   padding-top: 1.5rem;
-  border-top: 1px solid var(--color-light-green);
   font-size: var(--font-size-sm);
   color: #666;
 }

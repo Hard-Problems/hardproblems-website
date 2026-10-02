@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { Fragment } from 'react';
 import Link from 'next/link';
 import ArticleCard from '../components/ArticleCard';
@@ -30,6 +31,29 @@ const COWORKING_HERO_SLUG = 'hard-problems-coworking-space';
 // columns 2-3, so they only line up when emitted as a pair.
 const COWORKING_SLOT_INDEX = 9;
 
+// Without this the page inherits the layout's site-wide title and
+// description, which nine pages were sharing verbatim. openGraph and
+// twitter are set too: Next does not derive them from `title`, and each
+// replaces the layout's wholesale rather than merging, so `card` is
+// repeated here. The segment's own opengraph-image.tsx still supplies
+// the image.
+export const metadata: Metadata = {
+  title: 'Hard Problems — helping designers work on urgent problems',
+  description:
+    'Articles, jobs and a community for designers, researchers and technologists moving into full-time work on climate change, public health and good government.',
+  openGraph: {
+    title: 'Hard Problems — helping designers work on urgent problems',
+    description:
+      'Articles, jobs and a community for designers, researchers and technologists moving into full-time work on climate change, public health and good government.'
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Hard Problems — helping designers work on urgent problems',
+    description:
+      'Articles, jobs and a community for designers, researchers and technologists moving into full-time work on climate change, public health and good government.'
+  }
+};
+
 export default async function Home() {
   const articles = getAllArticles();
   const heroArticle = articles[0];
@@ -54,6 +78,17 @@ export default async function Home() {
 
   return (
     <>
+      {/* The homepage is a grid of cards with no visible heading of its
+          own, so it had no <h1> at all — the one page on the site with
+          the most authority was describing itself to search engines with
+          nothing. Visually hidden rather than shown because the design
+          has no place for a title here, and rather than promoting the
+          masthead logo because the site name alone ("Hard Problems.")
+          says less than the phrase we actually want to rank for. */}
+      <h1 className="sr-only">
+        Hard Problems — helping designers to work on the world’s urgent problems
+      </h1>
+
       <section className={styles.articles}>
         {heroArticle && (
           <div className={styles.heroRow}>
@@ -62,7 +97,10 @@ export default async function Home() {
             </ul>
             <aside className={styles.heroJobs}>
               <h3>New on the job board</h3>
-              <JobsTeaser jobs={toListedJobs(recentJobs)} totalCount={jobs.length} />
+              <JobsTeaser
+                jobs={toListedJobs(recentJobs)}
+                totalCount={jobs.length}
+              />
             </aside>
           </div>
         )}
@@ -134,7 +172,10 @@ export default async function Home() {
                 {i === 1 && (
                   <li className={styles.mobileJobsTeaser}>
                     <h3>New on the job board</h3>
-                    <JobsTeaser jobs={toListedJobs(recentJobs)} totalCount={jobs.length} />
+                    <JobsTeaser
+                      jobs={toListedJobs(recentJobs)}
+                      totalCount={jobs.length}
+                    />
                   </li>
                 )}
               </Fragment>

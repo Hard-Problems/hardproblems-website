@@ -39,6 +39,16 @@ export type SerializedJob = {
   // `goodForWorldExplanation` if that ever stops being true.
   impactSummary: string;
   role: string;
+  // Column X ("Full job description") — a long-form write-up of the
+  // role, newly being added by hand. 1.8k–5.4k characters where present,
+  // as 5–6 newline-separated prose paragraphs (no blank lines, no
+  // bullets), so the same paragraph split the other fields use applies.
+  //
+  // Shown as "About the role" on a job's own page when present, with
+  // `jobDescription` as the fallback. Deliberately kept OFF the client
+  // payload: at ~4k characters a row it would add megabytes to the board
+  // once it is filled in across the sheet.
+  fullJobDescription: string;
   // Column U ("Job description") — job-specific blurb, preferred over
   // `description` (Column M, the COMPANY description) in the hover
   // tooltip. Empty for ~25% of rows, which fall back to `description`.
@@ -210,6 +220,7 @@ const COLUMN_HEADERS = {
   description: 'Company Description',
   goodForWorldExplanation: 'Explain the "Good for the world" score',
   impactSummary: 'Positive Impact Summary',
+  fullJobDescription: 'Full job description',
   role: 'Role type',
   jobDescription: 'Job description',
   dateCreated: 'Date created',
@@ -319,6 +330,7 @@ export function parseJobsCsv(text: string): SerializedJob[] {
       description: readCell(r, col.description).trim(),
       goodForWorldExplanation: readCell(r, col.goodForWorldExplanation).trim(),
       impactSummary: readCell(r, col.impactSummary).trim(),
+      fullJobDescription: readCell(r, col.fullJobDescription).trim(),
       role: readCell(r, col.role).trim(),
       jobDescription: readCell(r, col.jobDescription).trim(),
       dateCreated: dateCreated ? dateCreated.toISOString() : null,
@@ -449,7 +461,11 @@ export type FilterableJob = Pick<
 
 export type ListedJob = Omit<
   SerializedJob,
-  'goodForWorldExplanation' | 'impactSummary' | 'dateCreated' | 'expiresAt'
+  | 'goodForWorldExplanation'
+  | 'impactSummary'
+  | 'fullJobDescription'
+  | 'dateCreated'
+  | 'expiresAt'
 > & {
   // Slug of this job's own page at /jobs/role/<slug>. Computed here
   // rather than in the card because it depends on the whole job set —
@@ -464,6 +480,7 @@ export function toListedJobs(jobs: SerializedJob[]): ListedJob[] {
     ({
       goodForWorldExplanation,
       impactSummary,
+      fullJobDescription,
       dateCreated,
       expiresAt,
       ...rest

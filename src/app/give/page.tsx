@@ -1,6 +1,30 @@
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CreditCard } from 'lucide-react';
+
+// Without this the page inherits the layout's site-wide title and
+// description, which nine pages were sharing verbatim. openGraph and
+// twitter are set too: Next does not derive them from `title`, and each
+// replaces the layout's wholesale rather than merging, so `card` is
+// repeated here. The segment's own opengraph-image.tsx still supplies
+// the image.
+export const metadata: Metadata = {
+  title: 'Support our work — Hard Problems',
+  description:
+    'Hard Problems is a lean nonprofit, primarily self-funded by its founding team. A gift helps us do more to move designers into work on urgent problems.',
+  openGraph: {
+    title: 'Support our work',
+    description:
+      'Hard Problems is a lean nonprofit, primarily self-funded by its founding team. A gift helps us do more to move designers into work on urgent problems.'
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Support our work',
+    description:
+      'Hard Problems is a lean nonprofit, primarily self-funded by its founding team. A gift helps us do more to move designers into work on urgent problems.'
+  }
+};
 
 export default function Page() {
   return (
