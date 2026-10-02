@@ -19,12 +19,21 @@ export default function CompanyFavicon({
   src,
   alt,
   className,
-  fallback
+  fallback,
+  // Rendered size in CSS px. The job lists use the 16px default; the
+  // per-job pages pass 20 for the icon beside the organisation name.
+  // The proxy's source is 64px either way, so both stay sharp on a
+  // high-DPI display.
+  size = 16
 }: {
   src: string;
   alt: string;
   className?: string;
+  // Rendered in place of the image when it fails to load. The job lists
+  // pass a globe glyph; the per-job pages pass null, so a company with
+  // no favicon simply shows none and the name closes the gap.
   fallback: React.ReactNode;
+  size?: number;
 }) {
   const [failed, setFailed] = useState(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -44,8 +53,8 @@ export default function CompanyFavicon({
       ref={imgRef}
       src={src}
       alt={alt}
-      width={16}
-      height={16}
+      width={size}
+      height={size}
       className={className}
       loading="lazy"
       onError={() => setFailed(true)}

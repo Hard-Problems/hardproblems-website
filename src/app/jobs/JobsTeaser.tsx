@@ -4,32 +4,21 @@ import { Fragment, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePostHog } from 'posthog-js/react';
 import { Earth, Gem } from 'lucide-react';
-import type { SerializedJob } from './fetchJobs';
+import type { ListedJob } from './fetchJobs';
 import { displaySector,
   hoverDescription
 } from './filters';
 import { getSectorIcon } from './sectorIcons';
 import CompanyFavicon from './CompanyFavicon';
+import { buildFaviconUrl } from './faviconUrl';
 import jobStyles from './page.module.scss';
 import teaserStyles from './jobsTeaser.module.scss';
 
 type ClickSource = 'title' | 'company' | 'favicon';
 
-function buildFaviconUrl(rawUrl: string): string | null {
-  const trimmed = rawUrl.trim();
-  if (!trimmed) return null;
-  const withProto = trimmed.startsWith('http') ? trimmed : `https://${trimmed}`;
-  try {
-    const { hostname } = new URL(withProto);
-    if (!hostname) return null;
-    return `/api/favicon?host=${encodeURIComponent(hostname)}`;
-  } catch {
-    return null;
-  }
-}
 
 // Country-only — the teaser omits city and remote/work-style tags.
-function formatLocation(job: SerializedJob): string {
+function formatLocation(job: ListedJob): string {
   return job.country.trim();
 }
 
@@ -39,7 +28,7 @@ export default function JobsTeaser({
   jobs,
   totalCount
 }: {
-  jobs: SerializedJob[];
+  jobs: ListedJob[];
   // Total number of visible jobs across the whole board. When provided,
   // the "See all jobs" button reads "See all N jobs" instead. Optional so
   // existing callers that don't pass it keep their current button text.
@@ -47,7 +36,7 @@ export default function JobsTeaser({
 }) {
   const posthog = usePostHog();
 
-  const trackJobClick = (job: SerializedJob, source: ClickSource) => {
+  const trackJobClick = (job: ListedJob, source: ClickSource) => {
     if (!posthog) return;
     posthog.capture('job_click', {
       job_title: job.title,

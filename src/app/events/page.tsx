@@ -5,7 +5,7 @@ export default function Page() {
   return (
     <>
       <section className="left">
-        <h2>Events</h2>
+        <h1 className="page-title">Events</h1>
         <p className="intro">
           We host global events online and in-person events in London, featuring
           great speakers to build community.

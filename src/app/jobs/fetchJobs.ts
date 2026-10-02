@@ -1,5 +1,6 @@
 import { validateAndNormalizeUrl } from '../../lib/validateUrl';
 import { readJobsSnapshot } from './jobsSnapshot';
+import { buildJobSlugs, jobKey } from './jobSlug';
 
 // Sanitize a raw URL string from the sheet into either a valid,
 // normalized URL or an empty string. Empty is safe for every consumer
@@ -28,6 +29,15 @@ export type SerializedJob = {
   sector: string;
   description: string;
   goodForWorldExplanation: string;
+  // Column W ("Positive Impact Summary"). A public-facing rewrite of
+  // `goodForWorldExplanation`, which is really the internal rationale
+  // for the score: W drops the scoring language ("As a commercial
+  // for-profit…", "…representing a clearly net-positive"), and in a
+  // handful of rows also drops criticism of the organisation. It reads
+  // as copy rather than as a justification, so it is what the job pages
+  // show. Currently populated for every row; falls back to
+  // `goodForWorldExplanation` if that ever stops being true.
+  impactSummary: string;
   role: string;
   // Column U ("Job description") — job-specific blurb, preferred over
   // `description` (Column M, the COMPANY description) in the hover
@@ -199,6 +209,7 @@ const COLUMN_HEADERS = {
   sector: 'Company Sector',
   description: 'Company Description',
   goodForWorldExplanation: 'Explain the "Good for the world" score',
+  impactSummary: 'Positive Impact Summary',
   role: 'Role type',
   jobDescription: 'Job description',
   dateCreated: 'Date created',
@@ -307,6 +318,7 @@ export function parseJobsCsv(text: string): SerializedJob[] {
       sector: readCell(r, col.sector).trim(),
       description: readCell(r, col.description).trim(),
       goodForWorldExplanation: readCell(r, col.goodForWorldExplanation).trim(),
+      impactSummary: readCell(r, col.impactSummary).trim(),
       role: readCell(r, col.role).trim(),
       jobDescription: readCell(r, col.jobDescription).trim(),
       dateCreated: dateCreated ? dateCreated.toISOString() : null,
@@ -408,14 +420,71 @@ export function pruneExpiredJobs(jobs: SerializedJob[]): SerializedJob[] {
   return jobs.filter((j) => windowState(j, today) !== 'gone');
 }
 
-export async function fetchJobs(): Promise<SerializedJob[]> {
+// What the job-card UI actually needs. `goodForWorldExplanation`,
+// `dateCreated` and `expiresAt` are read only on the server — by the
+// RSS feed's sort, by applyDateWindow(), and (formerly) by the
+// JobPosting schema — never by JobsList, JobsTeaser or LocationJobList.
+//
+// Worth stripping because those components are `'use client'`: every
+// field reaches the browser TWICE, once in the rendered HTML and again
+// in the RSC flight payload Next streams for hydration. On the 585-job
+// board those three fields were ~164KB per copy, ~329KB of page weight.
+// The subset of a job that the shared filter helpers actually read.
+// Constraining filterJobs()/hoverDescription() to this rather than to
+// a concrete job type lets BOTH callers work: the client passes
+// ListedJob (trimmed, plus a slug), while the RSS feed and alert
+// preview pass full SerializedJobs and get them back unchanged.
+export type FilterableJob = Pick<
+  SerializedJob,
+  | 'country'
+  | 'remote'
+  | 'typeOfOrg'
+  | 'sector'
+  | 'role'
+  | 'seniority'
+  | 'goodForWorld'
+  | 'description'
+  | 'jobDescription'
+>;
+
+export type ListedJob = Omit<
+  SerializedJob,
+  'goodForWorldExplanation' | 'impactSummary' | 'dateCreated' | 'expiresAt'
+> & {
+  // Slug of this job's own page at /jobs/role/<slug>. Computed here
+  // rather than in the card because it depends on the whole job set —
+  // see buildJobSlugs() for how duplicate company+title pairs are
+  // disambiguated.
+  slug: string;
+};
+
+export function toListedJobs(jobs: SerializedJob[]): ListedJob[] {
+  const slugs = buildJobSlugs(jobs);
+  return jobs.map(
+    ({
+      goodForWorldExplanation,
+      impactSummary,
+      dateCreated,
+      expiresAt,
+      ...rest
+    }) => ({
+      ...rest,
+      slug: slugs.get(jobKey({ ...rest } as SerializedJob)) ?? ''
+    })
+  );
+}
+
+// Every job we hold, before the date window is applied. Split out from
+// fetchJobs() so the expensive part can be memoised while the window
+// stays per-call — see fetchJobs below.
+async function loadJobs(): Promise<SerializedJob[]> {
   // Primary path: the snapshot written by /api/cron/sync-jobs. This is
   // a single indexed row read, which keeps the 1.6MB Google fetch off
   // the request path — that fetch running inside a force-dynamic render
   // is what blew Vercel's 15s function limit and left the Data Cache
   // permanently stale.
   const snapshot = await readJobsSnapshot();
-  if (snapshot) return applyDateWindow(snapshot.jobs);
+  if (snapshot) return snapshot.jobs;
 
   // Fallback: no usable snapshot (first deploy before the cron has run,
   // `next build`, local dev without Supabase, or a database problem).
@@ -432,5 +501,52 @@ export async function fetchJobs(): Promise<SerializedJob[]> {
   // Only promote a body that actually parsed, so a 200 carrying a
   // truncated response or an HTML error page can't poison the fallback.
   if (fresh !== null) lastGoodCsv = fresh;
-  return applyDateWindow(jobs);
+  return jobs;
+}
+
+// How long one process may reuse a snapshot read.
+//
+// The snapshot is ~1.1MB and is NOT free to read: `/jobs/role/[slug]`
+// alone calls fetchJobs() twice per page (generateMetadata, then the
+// component), so a build that pre-renders ~583 job pages made ~1,167
+// reads — about 1.3GB of Supabase egress per deploy, repeated on every
+// ISR revalidation. Holding the result briefly collapses a whole build,
+// and any burst of concurrent requests, into a single read.
+//
+// 30s is comfortably safe: the sync cron only rewrites the snapshot
+// every 15 minutes, and the pages that read it revalidate hourly, so
+// this window is far shorter than the staleness already inherent in the
+// pipeline.
+const JOBS_TTL_MS = 30_000;
+
+// The PROMISE is cached, not the resolved value — that is what makes
+// concurrent callers (exactly what a parallel build produces) share one
+// read instead of each starting their own.
+let jobsCache: { at: number; promise: Promise<SerializedJob[]> } | null = null;
+
+export async function fetchJobs(): Promise<SerializedJob[]> {
+  const now = Date.now();
+  if (!jobsCache || now - jobsCache.at >= JOBS_TTL_MS) {
+    const promise = loadJobs();
+    jobsCache = { at: now, promise };
+    // Never let a failure — or an empty result, which means the snapshot
+    // read and the sheet fallback both came back unusable — occupy the
+    // cache for the full TTL. Those are exactly the cases where the next
+    // caller should retry rather than inherit a blank board.
+    promise.then(
+      (jobs) => {
+        if (jobs.length === 0 && jobsCache?.promise === promise) {
+          jobsCache = null;
+        }
+      },
+      () => {
+        if (jobsCache?.promise === promise) jobsCache = null;
+      }
+    );
+  }
+
+  // Applied per call, never cached. The window has to be evaluated
+  // against the time of THIS read, so a job that expires between two
+  // reads of the same cached snapshot still disappears on the second.
+  return applyDateWindow(await jobsCache.promise);
 }

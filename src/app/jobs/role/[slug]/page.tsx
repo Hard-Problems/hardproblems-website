@@ -1,0 +1,402 @@
+// A page per job, at /jobs/role/<company>-<title>.
+//
+// Why these exist: Google requires JobPosting structured data to
+// describe the page it sits on. The board previously emitted ~585
+// postings in one block on /jobs, which is not eligible for job rich
+// results. One page per job gives that markup somewhere valid to live,
+// and gives each role a URL that can rank for its own long-tail query.
+//
+// The job TITLE on these pages still links out to the employer's real
+// listing — we are not trying to intercept applications, and
+// `directApply: false` in the schema says so explicitly.
+//
+// Lifecycle: the sync cron prunes expired jobs from the snapshot (see
+// pruneExpiredJobs), so a closed role disappears from the data and this
+// route 404s on its next render. That matches Google's guidance to
+// remove expired postings rather than leave them indexed.
+
+import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import type { Metadata } from 'next';
+import { fetchJobs } from '../../fetchJobs';
+import { buildJobSlugs, findJobBySlug, jobKey } from '../../jobSlug';
+import { countryQualifies, locationSlug } from '../../locations';
+import {
+  Banknote,
+  Briefcase,
+  Building2,
+  ChevronRight,
+  Gem,
+  Laptop,
+  MapPin,
+  SquareMousePointer,
+  UsersRound,
+  type LucideIcon
+} from 'lucide-react';
+import {
+  displaySector,
+  isHardProblemsPick,
+  OUR_PICK_EXPLAINER,
+  paragraphs,
+  splitCountries
+} from '../../filters';
+import { orgCategory, orgTypeDisplay } from '../../orgType';
+import { getSectorIcon } from '../../sectorIcons';
+import CompanyFavicon from '../../CompanyFavicon';
+import { buildFaviconUrl } from '../../faviconUrl';
+import JobPostingSchema from './JobPostingSchema';
+import BreadcrumbSchema from './BreadcrumbSchema';
+// The chips below reuse the board's own tag classes rather than
+// restyling them here, so the two stay in step.
+import boardStyles from '../../page.module.scss';
+import styles from './page.module.scss';
+
+// Hourly, matching the location pages. The underlying snapshot only
+// changes every 15 minutes and a job's own details rarely change at
+// all, so this is mostly about picking up removals.
+export const revalidate = 3600;
+
+type Props = { params: Promise<{ slug: string }> };
+
+export async function generateStaticParams() {
+  const jobs = await fetchJobs();
+  const slugs = buildJobSlugs(jobs);
+  // Deduped: the sheet carries a few genuinely duplicate rows (same
+  // apply URL listed twice), which share a slug and so describe one
+  // page. Emitting the same param twice would have Next pre-render it
+  // twice for no benefit.
+  const unique = new Set(
+    jobs.map((job) => slugs.get(jobKey(job))).filter((s): s is string => !!s)
+  );
+  return [...unique].map((slug) => ({ slug }));
+}
+
+// Fixed three-letter month names rather than toLocaleDateString's
+// `month: 'short'`. en-GB renders September as "Sept", and which
+// abbreviations you get depends on the ICU data compiled into whichever
+// Node the page renders on — a build machine and a serverless runtime
+// can disagree. A literal table is always three characters and always
+// the same everywhere.
+const MONTHS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec'
+];
+
+// Sheet dates are stored as UTC midnight ISO strings, so read the UTC
+// parts: a western timezone would otherwise shift a midnight date back
+// a day. Produces "2 Oct 2026".
+function formatDate(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+
+// Readable form of a company URL for display: drop the scheme and any
+// trailing slash, keep the rest. `companyUrl` is already sanitised by
+// fetchJobs — it is either a valid https:// URL or an empty string.
+function displayUrl(url: string): string {
+  return url.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+}
+
+// Just the physical place. The remote/hybrid field is shown as its own
+// row in the Details table rather than being folded in here, so the two
+// facts don't run together in the subheading under the title.
+function placeOf(job: { city: string; country: string }): string {
+  return [job.city, job.country].filter(Boolean).join(', ');
+}
+
+// Place plus remote, for the page title and meta description where a
+// single readable phrase is more useful than two separate fields.
+function summarise(job: {
+  city: string;
+  country: string;
+  remote: string;
+}): string {
+  const place = placeOf(job);
+  if (place && job.remote) return `${place} · ${job.remote}`;
+  return place || job.remote || '';
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const found = findJobBySlug(await fetchJobs(), slug);
+  if (!found) return { title: 'Job — Hard Problems' };
+  const { job } = found;
+  const where = summarise(job);
+  return {
+    title: `${job.title} at ${job.company} — Hard Problems`,
+    description:
+      `${job.title} at ${job.company}${where ? `, ${where}` : ''}. ` +
+      (job.goodForWorldExplanation || job.description || '').slice(0, 140),
+    alternates: { canonical: `/jobs/role/${slug}` }
+  };
+}
+
+export default async function JobPage({ params }: Props) {
+  const { slug } = await params;
+  const jobs = await fetchJobs();
+  const found = findJobBySlug(jobs, slug);
+  if (!found) notFound();
+  const { job } = found;
+
+  // Only link a country that actually has a location page. /jobs/<country>
+  // exists only for countries over the active-job threshold, so linking
+  // every country sent most of these breadcrumbs to a 404. The sheet's
+  // country field can also list several ("USA, Canada"), which is not a
+  // slug at all — take the first listed country that qualifies.
+  const countryCrumb =
+    splitCountries(job.country).find((c) => countryQualifies(jobs, c)) ?? null;
+  const where = placeOf(job);
+  const sector = job.sector ? displaySector(job.sector) : '';
+
+  // Icons label the FIELD, not the value — the row is read as
+  // "location: Boston", so the marker belongs to "Location". (The
+  // value-specific sector icon already appears on the chip above.)
+  const facts: { label: string; value: string; Icon: LucideIcon }[] = [
+    { label: 'Location', value: where, Icon: MapPin },
+    { label: 'On-site or remote', value: job.remote, Icon: Laptop },
+    { label: 'Salary', value: job.salary, Icon: Banknote },
+    { label: 'Sector', value: sector, Icon: SquareMousePointer },
+    { label: 'Role', value: job.role, Icon: Briefcase },
+    { label: 'Seniority', value: job.seniority, Icon: UsersRound },
+    { label: 'Organisation', value: job.typeOfOrg, Icon: Building2 }
+  ];
+  const visibleFacts = facts.filter((f) => f.value && f.value.trim());
+
+  // Same three chips the board puts on each row, with the same
+  // thresholds, linking to the board pre-filtered the way clicking the
+  // chip there would filter it.
+  const sectorLabel = job.sector ? displaySector(job.sector) : '';
+  const SectorIcon = sectorLabel ? getSectorIcon(sectorLabel) : null;
+  const typeLabel = orgTypeDisplay(job.typeOfOrg);
+  const orgCat = orgCategory(job.typeOfOrg);
+  const isStaffPick = isHardProblemsPick(job.goodForWorld);
+
+  // Same proxy URL the board uses, so this shares its CDN cache entry.
+  // The source is 64px and renders here at 20, which stays sharp even on
+  // a 3x display.
+  const faviconUrl = buildFaviconUrl(job.companyUrl);
+
+  // Posting dates, shown under the apply button rather than in the
+  // Details table: when a role closes is something you want in front of
+  // you at the moment you decide to apply, not filed among the facts
+  // about it. The deadline is Column T, set on about one job in six.
+  const listed = formatDate(job.date);
+  const deadline = formatDate(job.expiresAt);
+
+  // Rendered when there is anything to show, so the dates survive a job
+  // that somehow arrives without an apply URL (none do today).
+  const applyBlock =
+    job.url || listed || deadline ? (
+      <p className={styles.applyRow}>
+        {job.url && (
+          <a href={job.url} className="black-button">
+            View the full listing and apply →
+          </a>
+        )}
+        {(listed || deadline) && (
+          <span className={styles.applyDates}>
+            {listed && `Listed ${listed}`}
+            {listed && deadline && <span aria-hidden="true"> · </span>}
+            {deadline && (
+              <strong className={styles.deadline}>Apply by {deadline}</strong>
+            )}
+          </span>
+        )}
+        {job.url && (
+          <span className={styles.applyNote}>
+            Applications are handled by {job.company || 'the employer'}, not by
+            Hard Problems.
+          </span>
+        )}
+      </p>
+    ) : null;
+
+  // The apply block sits at the end of the first prose section, between
+  // that section's copy and the next heading. Which section that is
+  // depends on which fields the sheet filled in, hence the fallback
+  // chain; `null` means there is no prose at all and the block stands on
+  // its own under the chips.
+  const impact = job.impactSummary || job.goodForWorldExplanation;
+
+  const applyAfter = job.jobDescription
+    ? 'role'
+    : impact
+      ? 'why'
+      : job.description
+        ? 'about'
+        : null;
+
+  return (
+    <main className={styles.job}>
+      <JobPostingSchema job={job} />
+      <BreadcrumbSchema job={job} slug={slug} country={countryCrumb} />
+
+      <p className={styles.breadcrumb}>
+        <Link href="/jobs">All jobs</Link>
+        {countryCrumb && (
+          <>
+            <ChevronRight className={styles.crumbSep} aria-hidden="true" />
+            <Link href={`/jobs/${locationSlug(countryCrumb)}`}>
+              {countryCrumb}
+            </Link>
+          </>
+        )}
+      </p>
+
+      <div className={styles.header}>
+        <h1 className="page-title">{job.title}</h1>
+        <p className={styles.company}>
+          {faviconUrl && (
+            <CompanyFavicon
+              src={faviconUrl}
+              alt=""
+              size={20}
+              className={styles.companyFavicon}
+              // No globe stand-in: a company with no favicon simply
+              // shows none, and the name closes the gap.
+              fallback={null}
+            />
+          )}
+          {job.companyUrl ? (
+            <a href={job.companyUrl}>{job.company}</a>
+          ) : (
+            job.company
+          )}
+          {where && <span className={styles.where}>, {where}</span>}
+        </p>
+
+        {(sectorLabel || typeLabel || isStaffPick) && (
+          <div className={styles.chipRow}>
+            {sectorLabel && (
+              <Link
+                href={`/jobs?sectorPick=${encodeURIComponent(
+                  sectorLabel.toLowerCase()
+                )}`}
+                className={`tag ${boardStyles.jobSector} ${boardStyles.jobTagButton}`}
+              >
+                {SectorIcon && (
+                  <SectorIcon
+                    className={boardStyles.jobSectorIcon}
+                    aria-hidden="true"
+                  />
+                )}
+                {sectorLabel}
+              </Link>
+            )}
+
+            {typeLabel &&
+              (orgCat ? (
+                <Link
+                  href={`/jobs?org=${encodeURIComponent(orgCat)}`}
+                  className={`tag ${boardStyles.jobType} ${boardStyles.jobTagButton}`}
+                >
+                  {typeLabel}
+                </Link>
+              ) : (
+                <span className={`tag ${boardStyles.jobType}`}>
+                  {typeLabel}
+                </span>
+              ))}
+
+            {isStaffPick && (
+              <Link
+                href="/jobs?pick=1"
+                className={`tag ${boardStyles.jobStaffPick} ${boardStyles.jobTagButton}`}
+              >
+                <Gem
+                  className={boardStyles.jobStaffPickStar}
+                  aria-hidden="true"
+                />
+                Our Pick
+              </Link>
+            )}
+          </div>
+        )}
+
+        {applyAfter === null && applyBlock}
+      </div>
+
+      {job.jobDescription && (
+        <section className={styles.block}>
+          <h2 className="section-label">About the role</h2>
+          {paragraphs(job.jobDescription).map((para, i) => (
+            <p key={i}>{para}</p>
+          ))}
+          {applyAfter === 'role' && applyBlock}
+        </section>
+      )}
+
+      {(impact || isStaffPick) && (
+        <section className={styles.block}>
+          <h2 className="section-label">Why this work matters</h2>
+          {impact && paragraphs(impact).map((para, i) => <p key={i}>{para}</p>)}
+          {/* Explains the "Our Pick" chip at the top of the page. Shown
+              here rather than beside the chip because the reason a job
+              is a pick is the same thing this section is about. */}
+          {isStaffPick && (
+            <aside className={styles.pickNote}>
+              <strong className={styles.pickNoteHeading}>
+                <Gem className={styles.pickNoteIcon} aria-hidden="true" />
+                Our Pick
+              </strong>
+              <p>{OUR_PICK_EXPLAINER}</p>
+            </aside>
+          )}
+          {applyAfter === 'why' && applyBlock}
+        </section>
+      )}
+
+      {visibleFacts.length > 0 && (
+        <section className={styles.block}>
+          <h2 className="section-label">Details</h2>
+          <dl className={styles.facts}>
+            {visibleFacts.map(({ label, value, Icon }) => (
+              <div key={label}>
+                <dt>
+                  <Icon className={styles.factIcon} aria-hidden="true" />
+                  {label}
+                </dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
+
+      {(job.description || job.companyUrl) && (
+        <section className={styles.block}>
+          <h2 className="section-label">
+            About {job.company || 'the organisation'}
+          </h2>
+          {job.description &&
+            paragraphs(job.description).map((para, i) => <p key={i}>{para}</p>)}
+          {job.companyUrl && (
+            <p className={styles.companySite}>
+              <a href={job.companyUrl}>{displayUrl(job.companyUrl)}</a>
+            </p>
+          )}
+          {applyAfter === 'about' && applyBlock}
+        </section>
+      )}
+
+      <p className={styles.footerNote}>
+        This job is listed on the{' '}
+        <Link href="/jobs">Hard Problems job board</Link>, but details come from
+        the employer&rsquo;s own listing and may have changed — always check the
+        original posting.
+      </p>
+    </main>
+  );
+}

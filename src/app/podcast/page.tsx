@@ -37,12 +37,12 @@ export default function Page() {
             alt="Illustration of a person talking at a mic."
           />
         </div>
-        <p className="page-lede">
+        <h1 className="page-lede">
           The podcast for designers &amp; technologists who want to work on
           urgent problems like public health and climate change.
           <br />
           <span className="notice-pill">Coming soon…</span>
-        </p>
+        </h1>
 
         <h3 className="space-top-large">What will the podcast be about?</h3>
         <p>

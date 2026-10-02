@@ -55,8 +55,19 @@
   margin: 0 0 1.5rem 0;
 }
 
-.filterHeader h2 {
+// "Job board" is the page's <h1>. It is styled to match the site's h2
+// treatment, which is what it rendered as before — the change is
+// semantic (the masthead logo is no longer a heading), not visual.
+.filterHeader h1 {
   margin: 0 0 0.5rem 0;
+  font-weight: 400;
+  line-height: 1.05;
+  font-size: var(--font-size-3xl);
+  letter-spacing: 0;
+  display: block;
+  font-family: var(--font-instrument-serif), Georgia, 'Times New Roman',
+    serif;
+  text-align: left;
 }
 
 .filterHeader p {
@@ -505,8 +516,15 @@
 // break to a space; pre-line keeps it, while still collapsing runs of spaces.
 // Single-paragraph descriptions, and the Column M fallback, render exactly as
 // before.
+// One paragraph per block, with a gap between them. Previously a single
+// span with `white-space: pre-line`, which turned a blank line into a
+// plain line break and left the paragraphs looking run together.
 .jobDescriptionText {
-  white-space: pre-line;
+  display: block;
+}
+
+.jobDescriptionText + .jobDescriptionText {
+  margin-top: 0.55rem;
 }
 
 // Our Pick explainer that appears under the company
@@ -676,6 +694,28 @@ a.jobCompany:focus {
   stroke-width: 1.8;
 }
 
+// On the board these three tags are <button>s; on a job's own page they
+// render as <a>s linking to the board pre-filtered. The global
+// `a:visited` rule has specificity (0,1,1) and so outranks a bare
+// `.jobSector` class (0,1,0) — meaning a chip the reader had already
+// clicked came back in the visited-link colour instead of its own. Pin
+// the colour for the anchor form, at a specificity that wins. Values
+// mirror the rules above (`.tag` supplies the sector colour).
+a.jobSector,
+a.jobSector:visited {
+  color: var(--color-dark-green);
+}
+
+a.jobType,
+a.jobType:visited {
+  color: #1d4e89;
+}
+
+a.jobStaffPick,
+a.jobStaffPick:visited {
+  color: var(--color-pick-text);
+}
+
 .jobSectorRow {
   margin-top: 0.35rem;
 }
@@ -733,6 +773,22 @@ a.jobCompany:focus {
   outline: none;
 }
 
+
+// Quiet internal link to a job's own page, sitting in the meta line.
+// Deliberately low-contrast: the job title is the primary action and
+// goes to the employer, this is the secondary path.
+.jobDetailsLink {
+  color: #777;
+  text-decoration: underline;
+  text-decoration-color: #d7d7d7;
+  text-underline-offset: 0.15em;
+}
+
+.jobDetailsLink:hover,
+.jobDetailsLink:focus-visible {
+  color: var(--color-mid-green);
+  text-decoration-color: currentColor;
+}
 
 .jobBullet {
   color: #999;

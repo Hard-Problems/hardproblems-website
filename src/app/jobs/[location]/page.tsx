@@ -18,8 +18,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { fetchJobs } from '../fetchJobs';
-import JobPostingSchema from '../JobPostingSchema';
+import { fetchJobs, toListedJobs } from '../fetchJobs';
 import LocationJobList from './LocationJobList';
 import {
   countryQualifies,
@@ -117,7 +116,7 @@ export default async function JobsByLocationPage({ params }: Props) {
         government, and more. Updated daily.
       </p>
 
-      <LocationJobList jobs={forLocation} />
+      <LocationJobList jobs={toListedJobs(forLocation)} />
 
       {forLocation.length > 0 && (
         <p style={{ marginTop: '2rem' }}>
@@ -129,9 +128,6 @@ export default async function JobsByLocationPage({ params }: Props) {
           </Link>
         </p>
       )}
-
-      {/* schema.org JobPosting entries for Google's Jobs Card. */}
-      <JobPostingSchema jobs={forLocation} />
     </main>
   );
 }

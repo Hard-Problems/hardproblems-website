@@ -14,10 +14,10 @@ export default function Page() {
             alt="Illustration of a heart."
           />
         </div>
-        <p className="page-lede">
+        <h1 className="page-lede">
           We are a lean organization that is primarily self-funded by our
           founding team. But, we could use help so we can do more.
-        </p>
+        </h1>
         <p>
           <a
             href="https://www.paypal.com/ncp/payment/EKT76R9DGCEH4"

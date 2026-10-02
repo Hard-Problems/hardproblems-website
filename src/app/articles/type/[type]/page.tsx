@@ -160,7 +160,7 @@ export default async function TypePage({ params }: Props) {
           {/* Visually hidden — the categories sidebar already flags the
               active type visually. Keeps the heading landmark for
               screen readers and search crawlers. */}
-          <h2 className="sr-only">{label}</h2>
+          <h1 className="sr-only">{label}</h1>
           <ul
             className={`${styles.articleList} ${styles.articleListTwoCol}`}
           >
