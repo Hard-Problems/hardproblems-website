@@ -6,6 +6,7 @@ import {
   locationSlug,
   qualifyingCountries
 } from './jobs/locations';
+import { buildJobSlugs, jobKey } from './jobs/jobSlug';
 import { META_REGIONS } from './jobs/filters';
 
 // Next.js auto-serves this at /sitemap.xml. Regenerates alongside
@@ -88,6 +89,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
   );
 
+  // One /jobs/role/<slug> entry per live job. These are the pages that
+  // carry JobPosting structured data, so they're the ones Google needs
+  // to find. Expired jobs are pruned from the snapshot, so they drop
+  // out of here automatically and their pages 404 — which is what
+  // Google asks for with closed postings.
+  const jobSlugs = buildJobSlugs(jobs);
+  const roleUrls: MetadataRoute.Sitemap = [
+    ...new Set(
+      jobs.map((j) => jobSlugs.get(jobKey(j))).filter((s): s is string => !!s)
+    )
+  ].map((slug) => ({
+    url: `${SITE}/jobs/role/${slug}`,
+    lastModified: now,
+    changeFrequency: 'daily' as const,
+    priority: 0.6
+  }));
+
   // One /authors/<slug> entry per contributor in the AUTHORS registry.
   const authorUrls: MetadataRoute.Sitemap = AUTHORS.map((a) => ({
     url: `${SITE}/authors/${a.slug}`,
@@ -102,6 +120,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...typeUrls,
     ...regionUrls,
     ...countryUrls,
+    ...roleUrls,
     ...authorUrls
   ];
 }

@@ -11,34 +11,19 @@
 import Link from 'next/link';
 import { Fragment, type ReactNode } from 'react';
 import { Earth, Gem, Sparkle } from 'lucide-react';
-import type { SerializedJob } from '../fetchJobs';
+import type { ListedJob } from '../fetchJobs';
 import { displaySector, isHardProblemsPick,
   hoverDescription
 } from '../filters';
 import { orgTypeDisplay } from '../orgType';
 import { getSectorIcon } from '../sectorIcons';
 import CompanyFavicon from '../CompanyFavicon';
+import { buildFaviconUrl } from '../faviconUrl';
 import styles from '../page.module.scss';
 import locationStyles from './page.module.scss';
 
 const BULLET_SEPARATOR = '  •  ';
 
-// Same helper JobsList and JobsTeaser use — normalises a
-// sheet-provided company URL into a hostname and hands it to the
-// server-side favicon proxy. Returns null when the URL is empty or
-// malformed so callers can fall back to the globe icon.
-function buildFaviconUrl(rawUrl: string): string | null {
-  const trimmed = rawUrl.trim();
-  if (!trimmed) return null;
-  const withProto = trimmed.startsWith('http') ? trimmed : `https://${trimmed}`;
-  try {
-    const { hostname } = new URL(withProto);
-    if (!hostname) return null;
-    return `/api/favicon?host=${encodeURIComponent(hostname)}`;
-  } catch {
-    return null;
-  }
-}
 
 // "Today" / "Yesterday" / "N days ago" — same wording JobsList uses.
 function formatRelativeDate(iso: string | null): string {
@@ -65,7 +50,7 @@ function formatRelativeDate(iso: string | null): string {
 }
 
 // Country-only location — matches JobsList's teaser-style meta.
-function formatLocation(job: SerializedJob): string {
+function formatLocation(job: ListedJob): string {
   const parts = [job.city, job.country].filter(Boolean);
   return parts.join(', ');
 }
@@ -73,7 +58,7 @@ function formatLocation(job: SerializedJob): string {
 export default function LocationJobList({
   jobs
 }: {
-  jobs: SerializedJob[];
+  jobs: ListedJob[];
 }) {
   if (jobs.length === 0) {
     return (
@@ -193,6 +178,27 @@ export default function LocationJobList({
                     {item}
                   </Fragment>
                 ))}
+                {/* Internal link to this job's own page, same as the
+                    main board. Without it these location hubs linked
+                    only outwards, so /jobs was the sole internal route
+                    to ~583 job pages while the job pages' breadcrumbs
+                    pointed back up here — a one-way link. The TITLE
+                    above still goes straight to the employer. */}
+                {job.slug && (
+                  <>
+                    {metaItems.length > 0 && (
+                      <span className={styles.jobBullet}>
+                        {BULLET_SEPARATOR}
+                      </span>
+                    )}
+                    <Link
+                      href={`/jobs/role/${job.slug}`}
+                      className={styles.jobDetailsLink}
+                    >
+                      Details
+                    </Link>
+                  </>
+                )}
               </div>
               {(sector || typeLabel || isStaffPick) && (
                 <div className={styles.jobSectorRow}>

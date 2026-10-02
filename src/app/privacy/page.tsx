@@ -4,7 +4,7 @@ export default function Page() {
   return (
     <>
       <section className="left">
-        <h2>Privacy notice</h2>
+        <h1 className="page-title">Privacy notice</h1>
         <p>This is the Hard Problems customer privacy notice. This privacy notice tells you what to expect us to do with your personal information.</p>
         <ul>
           <li><Link href="#contact">Contact details</Link></li>

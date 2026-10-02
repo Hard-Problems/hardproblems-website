@@ -16,10 +16,10 @@ export default function Page() {
             alt="Illustration of two people working."
           />
         </div>
-        <p className="page-lede">
+        <h1 className="page-lede">
           Hard Problems has a small coworking space in London. This space is
           intended to foster community for people working on hard problems.
-        </p>
+        </h1>
         <h3 className="space-top-small">Can I work here?</h3>
         <p>
           If you work on a design or tech project related to climate change,

@@ -171,7 +171,9 @@ export default async function AuthorPage({ params }: Props) {
         />
       )}
 
-      <h2 style={{ margin: '0 0 0.25rem' }}>{author.name}</h2>
+      <h1 className="page-title" style={{ margin: '0 0 0.25rem' }}>
+        {author.name}
+      </h1>
 
       {author.links && author.links.length > 0 && (
         <p

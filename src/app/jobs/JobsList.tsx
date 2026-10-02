@@ -6,8 +6,9 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import { Earth, Gem, Sparkle } from 'lucide-react';
 import { getSectorIcon } from './sectorIcons';
-import type { SerializedJob } from './fetchJobs';
+import type { ListedJob } from './fetchJobs';
 import CompanyFavicon from './CompanyFavicon';
+import { buildFaviconUrl } from './faviconUrl';
 import JobAlertsForm from './JobAlertsForm';
 import JobSubmitForm from './JobSubmitForm';
 import {
@@ -35,12 +36,14 @@ import {
   parseSeniorityParam,
   parseWorkStyleParam,
   splitCountries,
-  hoverDescription
+  hoverDescription,
+  OUR_PICK_EXPLAINER,
+  paragraphs
 } from './filters';
 import { canonicalCountryName } from './countryAliases';
 import styles from './page.module.scss';
 
-export type { SerializedJob } from './fetchJobs';
+export type { ListedJob } from './fetchJobs';
 
 type ClickSource = 'title' | 'company' | 'favicon';
 
@@ -75,20 +78,8 @@ function formatRelativeDate(date: Date): string {
   return `in ${-diffDays} days`;
 }
 
-function buildFaviconUrl(rawUrl: string): string | null {
-  const trimmed = rawUrl.trim();
-  if (!trimmed) return null;
-  const withProto = trimmed.startsWith('http') ? trimmed : `https://${trimmed}`;
-  try {
-    const { hostname } = new URL(withProto);
-    if (!hostname) return null;
-    return `/api/favicon?host=${encodeURIComponent(hostname)}`;
-  } catch {
-    return null;
-  }
-}
 
-function formatLocation(job: SerializedJob): string {
+function formatLocation(job: ListedJob): string {
   const bits = [job.city, job.country].filter((s) => s.length > 0);
   const place = bits.join(', ');
   if (job.remote && place) return `${place} · ${job.remote}`;
@@ -377,7 +368,7 @@ export default function JobsList({
   filterHeader,
   filterFooter
 }: {
-  jobs: SerializedJob[];
+  jobs: ListedJob[];
   // Optional content rendered at the top of the filters column on
   // desktop (and above the filters on mobile). Used by /jobs to pull
   // the page heading and intro into the filters rail.
@@ -394,7 +385,7 @@ export default function JobsList({
   // Fires a GA-style `job_click` event in PostHog with rich job attributes
   // for slicing. No-ops cleanly when PostHog isn't initialised (e.g. env
   // vars missing).
-  const trackJobClick = (job: SerializedJob, source: ClickSource) => {
+  const trackJobClick = (job: ListedJob, source: ClickSource) => {
     if (!posthog) return;
     posthog.capture('job_click', {
       job_title: job.title,
@@ -955,6 +946,7 @@ export default function JobsList({
             // protocol-prefixing needed here.
             const companyHref = job.companyUrl || null;
             const typeLabel = orgTypeDisplay(job.typeOfOrg);
+            const hoverText = hoverDescription(job);
             const goodForWorldScore = parseFloat(job.goodForWorld);
             const isStaffPick =
               !Number.isNaN(goodForWorldScore) && goodForWorldScore > 8;
@@ -1055,6 +1047,25 @@ export default function JobsList({
                         {item}
                       </Fragment>
                     ))}
+                    {/* Internal link to this job's own page. Kept in the
+                        meta line and styled quietly on purpose — the
+                        TITLE above still goes straight to the employer's
+                        listing, which is what most people want. */}
+                    {job.slug && (
+                      <>
+                        {metaItems.length > 0 && (
+                          <span className={styles.jobBullet}>
+                            {BULLET_SEPARATOR}
+                          </span>
+                        )}
+                        <Link
+                          href={`/jobs/role/${job.slug}`}
+                          className={styles.jobDetailsLink}
+                        >
+                          Details
+                        </Link>
+                      </>
+                    )}
                   </div>
                   {(job.sector || typeLabel || isStaffPick) && (
                     <div className={styles.jobSectorRow}>
@@ -1136,21 +1147,22 @@ export default function JobsList({
                     </div>
                   )}
                 </div>
-                {(hoverDescription(job) || isStaffPick) && (
+                {(hoverText || isStaffPick) && (
                   <div className={styles.jobDescription} role="tooltip">
-                    {hoverDescription(job) && (
+                    {hoverText && (
                       <>
                         {job.company && (
-                          <>
-                            <strong className={styles.jobDescriptionCompany}>
-                              {job.company}
-                            </strong>
-                            <br />
-                          </>
+                          <strong className={styles.jobDescriptionCompany}>
+                            {job.company}
+                          </strong>
                         )}
-                        <span className={styles.jobDescriptionText}>
-                          {hoverDescription(job)}
-                        </span>
+                        {/* One block per paragraph so blank lines in the
+                            sheet's text read as paragraph breaks. */}
+                        {paragraphs(hoverText).map((para, idx) => (
+                          <span key={idx} className={styles.jobDescriptionText}>
+                            {para}
+                          </span>
+                        ))}
                       </>
                     )}
                     {isStaffPick && (
@@ -1162,10 +1174,7 @@ export default function JobsList({
                           />
                           Our Pick
                         </strong>
-                        <p>
-                          We hand-select great jobs at orgs whose primary
-                          mission is to make the world better.
-                        </p>
+                        <p>{OUR_PICK_EXPLAINER}</p>
                       </div>
                     )}
                   </div>

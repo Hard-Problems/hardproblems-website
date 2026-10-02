@@ -2,8 +2,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import JobsList from './JobsList';
-import { fetchJobs } from './fetchJobs';
-import JobPostingSchema from './JobPostingSchema';
+import { fetchJobs, toListedJobs } from './fetchJobs';
 import ArticleCard from '../../components/ArticleCard';
 import NewsletterModule from '../../components/NewsletterModule';
 import { getAllArticles } from '../../lib/articles';
@@ -29,10 +28,17 @@ export const maxDuration = 60;
 
 export const metadata: Metadata = {
   title: 'Job board for designers who want to work on hard problems',
-  // Auto-discovery for RSS readers. The "raw" feed has every job; users can
-  // also subscribe to filtered feeds by appending filter query params to
-  // /jobs/feed.xml (e.g. /jobs/feed.xml?sector=climate&work=remote).
   alternates: {
+    // Every filter on this page is applied client-side from the query
+    // string, so /jobs?sectorPick=healthcare, /jobs?org=nonprofit and
+    // /jobs?pick=1 all serve the same indexable page as /jobs. The job
+    // pages link to those filtered views from their chips, so without a
+    // canonical Google would discover and index them as duplicates of
+    // the board. Point them all back at /jobs.
+    canonical: '/jobs',
+    // Auto-discovery for RSS readers. The "raw" feed has every job; users
+    // can also subscribe to filtered feeds by appending filter query
+    // params to /jobs/feed.xml (e.g. /jobs/feed.xml?sector=climate).
     types: {
       'application/rss+xml': '/jobs/feed.xml'
     }
@@ -47,7 +53,9 @@ export default async function Page() {
 
   const filterHeader = (
     <>
-      <h2>Job board</h2>
+      {/* The page's own <h1>. The site name in the masthead is a plain
+          link, so this is the heading that describes the page. */}
+      <h1>Job board</h1>
       <p>
         Jobs for designers, researchers, PMs, and copywriters who want to work
         on urgent problems like healthcare, public health, good government, and
@@ -63,17 +71,13 @@ export default async function Page() {
       <Link href="https://designgigsforgood.org">Design Gigs for Good</Link>,{' '}
       <Link href="https://techjobsforgood.com">Tech Jobs for Good</Link>,{' '}
       <Link href="https://climatebase.org">Climate Base</Link>,{' '}
-      <Link href="https://jobs.womenintech.co.uk/jobs/">Women in Tech</Link>, and{' '}
-      <Link href="https://www.escapethecity.org/">Escape the City</Link>.
+      <Link href="https://jobs.womenintech.co.uk/jobs/">Women in Tech</Link>,
+      and <Link href="https://www.escapethecity.org/">Escape the City</Link>.
     </p>
   );
 
   return (
     <>
-      {/* schema.org JobPosting entries for Google's Jobs Card.
-          Rendered up front so it's in the SSR HTML before the
-          client-side JobsList hydrates. */}
-      <JobPostingSchema jobs={jobs} />
       <NewsletterModule variant="under-nav" />
       <section className={styles.board}>
         {jobs.length === 0 ? (
@@ -86,7 +90,7 @@ export default async function Page() {
           // Without it Next.js would deopt the route from static rendering.
           <Suspense fallback={null}>
             <JobsList
-              jobs={jobs}
+              jobs={toListedJobs(jobs)}
               filterHeader={filterHeader}
               filterFooter={filterFooter}
             />

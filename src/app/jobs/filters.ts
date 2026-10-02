@@ -3,7 +3,7 @@
 // guarantees the RSS output stays in lockstep with what the page shows for
 // the same query string.
 
-import type { SerializedJob } from './fetchJobs';
+import type { FilterableJob } from './fetchJobs';
 import { OrgCategory, orgCategory } from './orgType';
 import { aliasesFor, canonicalCountryName } from './countryAliases';
 
@@ -15,8 +15,28 @@ import { aliasesFor, canonicalCountryName } from './countryAliases';
 // Lives here rather than in fetchJobs.ts because that module imports the
 // Supabase client — a value import from it inside a 'use client'
 // component would pull supabase-js into the browser bundle.
-export function hoverDescription(job: SerializedJob): string {
+export function hoverDescription(job: FilterableJob): string {
   return job.jobDescription || job.description;
+}
+
+// Split one of the sheet's long-text fields into paragraphs.
+//
+// Splitting on ANY run of newlines, not just blank lines: measured
+// across the 1,750 populated description fields in the current sheet,
+// 1,174 contain no newline, 540 use single newlines and 36 use a blank
+// line — and no field exceeds two lines. A newline in this data always
+// separates two paragraphs and never formats a list, so there is nothing
+// a single-newline split can flatten. The fields are pasted from job
+// ads, so trim stray whitespace at both ends too.
+//
+// Used by both the hover tooltip on the board and the per-job pages;
+// `white-space: pre-line` alone would render a blank line as a single
+// break, leaving paragraphs with no gap between them.
+export function paragraphs(text: string): string[] {
+  return text
+    .split(/\n+/)
+    .map((para) => para.trim())
+    .filter(Boolean);
 }
 
 export type WorkStyle = 'remote' | 'hybrid' | 'onsite';
@@ -469,6 +489,12 @@ export function isHardProblemsPick(goodForWorld: string): boolean {
   return !Number.isNaN(score) && score > 8;
 }
 
+// What the "Our Pick" badge means, in one sentence. Shown in the hover
+// tooltip on the board and under "Why this work matters" on a job's own
+// page — shared so the two cannot drift apart.
+export const OUR_PICK_EXPLAINER =
+  'We hand-select great jobs at orgs whose primary mission is to make the world better.';
+
 export function matchesSeniority(
   jobSeniority: string,
   category: SeniorityCategory
@@ -585,10 +611,15 @@ export function parseFiltersFromParams(
 // Filters jobs identically to the JobsList UI. Keep this in sync with the
 // `filtered` useMemo block over there — or better, only call from this
 // module so there's one implementation.
-export function filterJobs(
-  jobs: SerializedJob[],
+// Generic over the job shape, constrained only to the fields this
+// function reads. The client passes ListedJob (trimmed, plus a slug)
+// while the RSS feed and alert preview pass full SerializedJobs and
+// need those extra fields back out — a fixed return type would strip
+// them.
+export function filterJobs<T extends FilterableJob>(
+  jobs: T[],
   filters: JobFilters
-): SerializedJob[] {
+): T[] {
   return jobs.filter((j) => {
     if (!matchesCountry(j.country, filters.country)) return false;
     if (

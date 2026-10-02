@@ -4,7 +4,7 @@ export default function Page() {
   return (
     <>
       <section className="left">
-        <h2>Code of conduct</h2>
+        <h1 className="page-title">Code of conduct</h1>
         <p>
           In the interest of fostering an open and welcoming environment, we
           as contributors and maintainers pledge to making participation in

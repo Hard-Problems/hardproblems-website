@@ -9,7 +9,7 @@
 //
 // Docs: https://developers.google.com/search/docs/appearance/structured-data/job-posting
 
-import type { SerializedJob } from './fetchJobs';
+import type { SerializedJob } from '../../fetchJobs';
 
 const SITE_URL = 'https://hardproblems.com';
 
@@ -132,16 +132,15 @@ function buildJobPosting(job: SerializedJob) {
   return posting;
 }
 
-export default function JobPostingSchema({
-  jobs
-}: {
-  jobs: SerializedJob[];
-}) {
-  if (jobs.length === 0) return null;
-  const postings = jobs.map(buildJobPosting);
-  // Concatenate into a single script tag; Google's crawler processes
-  // arrays of JobPosting entries at the same URL.
-  const json = JSON.stringify(postings);
+// ONE posting, for the page that describes that one job.
+//
+// This markup previously sat on /jobs and /jobs/<location> as an array
+// of every listing on the page. Google requires JobPosting markup to
+// describe the page it is on, so an array on a listing page was never
+// eligible for job rich results — it was removed when these per-job
+// pages were introduced. Keep it to a single posting here.
+export default function JobPostingSchema({ job }: { job: SerializedJob }) {
+  const json = JSON.stringify(buildJobPosting(job));
   return (
     <script
       type="application/ld+json"

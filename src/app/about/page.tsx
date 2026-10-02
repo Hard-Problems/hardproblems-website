@@ -18,11 +18,11 @@ export default function Page() {
             alt="Illustration of a person considering which way their career might take."
           />
         </div>
-        <p className="page-lede">
+        <h1 className="page-lede">
           Hard Problems is a nonprofit that helps designers to make the shift to
           working full-time on the world’s urgent problems &#8212; problems like
           climate change and public health.
-        </p>
+        </h1>
 
         <h3>Our mission</h3>
         <p>

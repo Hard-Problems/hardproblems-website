@@ -59,10 +59,10 @@ export default function Page() {
             alt="Illustration of a person holding a sign that says NEWS, JOBS, STORIES."
           />
         </div>
-        <p className="page-lede">
+        <h1 className="page-lede">
           The email newsletter for designers and technologists who want to work
           on hard problems.
-        </p>
+        </h1>
 
         <ul className={styles.checklist}>
           <li>4-5 emails each month</li>

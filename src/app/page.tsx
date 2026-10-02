@@ -4,7 +4,7 @@ import ArticleCard from '../components/ArticleCard';
 import CoworkingRotator from '../components/CoworkingRotator';
 import NewsletterModule from '../components/NewsletterModule';
 import { getAllArticles } from '../lib/articles';
-import { fetchJobs } from './jobs/fetchJobs';
+import { fetchJobs, toListedJobs } from './jobs/fetchJobs';
 import JobsTeaser from './jobs/JobsTeaser';
 import styles from './articles/page.module.scss';
 
@@ -62,7 +62,7 @@ export default async function Home() {
             </ul>
             <aside className={styles.heroJobs}>
               <h3>New on the job board</h3>
-              <JobsTeaser jobs={recentJobs} totalCount={jobs.length} />
+              <JobsTeaser jobs={toListedJobs(recentJobs)} totalCount={jobs.length} />
             </aside>
           </div>
         )}
@@ -134,7 +134,7 @@ export default async function Home() {
                 {i === 1 && (
                   <li className={styles.mobileJobsTeaser}>
                     <h3>New on the job board</h3>
-                    <JobsTeaser jobs={recentJobs} totalCount={jobs.length} />
+                    <JobsTeaser jobs={toListedJobs(recentJobs)} totalCount={jobs.length} />
                   </li>
                 )}
               </Fragment>

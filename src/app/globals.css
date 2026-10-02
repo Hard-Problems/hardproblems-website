@@ -199,7 +199,13 @@ p.intro {
    --font-size-xl on mobile, --font-size-2xl on desktop. Apply to the
    opening paragraph on top-level pages (About, Newsletter, etc.) that
    use the .page-narrow reading column. */
-p.page-lede {
+/* Also matches h1.page-lede: on pages whose design has no separate
+   title, the lede IS the page heading. The two extra declarations
+   neutralise what the global `h1` rule would otherwise contribute
+   (centred text, tightened tracking) so a <p> and an <h1> carrying
+   this class render identically. */
+p.page-lede,
+h1.page-lede {
   font-family:
     var(--font-instrument-serif), 'Instrument Serif', Georgia,
     'Times New Roman', serif;
@@ -208,10 +214,13 @@ p.page-lede {
   line-height: 1.25;
   margin: 1rem 0 5rem 0;
   text-wrap: balance;
+  text-align: start;
+  letter-spacing: normal;
 }
 
 @media only screen and (min-width: 1000px) {
-  p.page-lede {
+  p.page-lede,
+  h1.page-lede {
     font-size: var(--font-size-2xl);
   }
 }
@@ -573,24 +582,45 @@ h1 {
   border: 0;
 }
 
-h1 a:link,
-h1 a:visited {
+/* Site name in the masthead. Carries the appearance the element used
+   to inherit from the global `h1` rule back when it was marked up as a
+   heading — that rule is left untouched so article and job titles are
+   unaffected. */
+.site-logo {
+  display: block;
+  font-family: Helvetica, Arial, sans-serif;
+  font-weight: 700;
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  letter-spacing: -0.04rem;
+  text-align: center;
+  margin: 0;
+}
+
+.site-logo:link,
+.site-logo:visited {
   color: #333;
 }
 
-h1 a span.hp-period {
+.site-logo span.hp-period {
   color: #3aa36d;
   display: inline-block;
   transform-origin: bottom left;
   transition: transform 0.2s ease;
 }
 
-h1 a:hover span.hp-period,
-h1 a:focus-visible span.hp-period {
+.site-logo:hover span.hp-period,
+.site-logo:focus-visible span.hp-period {
   transform: translateX(2px);
 }
 
-h2 {
+/* Also matches h1.page-title: several pages lead with this treatment as
+   their page title, which makes that heading the page's <h1>. Keeping
+   both in one rule means the two tags are styled from a single source
+   rather than drifting apart. See h1.page-title below for the two
+   declarations an <h1> additionally needs. */
+h2,
+h1.page-title {
   font-weight: 400;
   line-height: 1.05;
   font-size: var(--font-size-3xl);
@@ -599,16 +629,27 @@ h2 {
   font-family: var(--font-instrument-serif), Georgia, 'Times New Roman', serif;
 }
 
+/* Undoes the two things the global `h1` rule contributes that the bare
+   `h2` above does not: centred text, and `margin: 0` in place of the
+   browser's default h2 margins (0.83em block). Without these an <h1>
+   would not render identically to the <h2> it replaced. */
+h1.page-title {
+  text-align: start;
+  margin: 0.83em 0;
+}
+
 /* On mobile, tighten the gap between a page's main heading (h2) and
    the .intro paragraph that usually follows it. Desktop keeps the
    browser default + intro top margin (taller hierarchy works better
    at wide widths). */
 @media only screen and (max-width: 999px) {
-  h2 {
+  h2,
+  h1.page-title {
     margin-bottom: 0.2em;
   }
 
-  h2 + p.intro {
+  h2 + p.intro,
+  h1.page-title + p.intro {
     margin-top: 0;
   }
 }
@@ -1774,7 +1815,8 @@ ul ul li {
     padding: 1.25rem 42px;
   }
 
-  h1 {
+  h1,
+  .site-logo {
     font-size: 1.8rem;
   }
 

@@ -74,11 +74,12 @@ export default function RootLayout({
             <RotatingTagline />
             <header className="site-header">
               <SiteHeaderNav side="left" />
-              <h1>
-                <Link href="/">
-                  Hard Problems<span className="hp-period">.</span>
-                </Link>
-              </h1>
+              {/* The site name is identity and navigation, not a
+                  heading for the page's content — so it is a plain
+                  link. Each page supplies its own <h1>. */}
+              <Link href="/" className="site-logo">
+                Hard Problems<span className="hp-period">.</span>
+              </Link>
               <SiteHeaderNav side="right" />
             </header>
             <TopBar />
