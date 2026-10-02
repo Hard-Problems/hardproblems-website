@@ -105,6 +105,19 @@
   font-weight: 500;
 }
 
+// Markdown "## " subheadings inside a long-form description. An <h3> so
+// the heading order stays intact under the section's <h2>; the global h3
+// rule would otherwise render them at 28px in Instrument Serif, which
+// would outweigh the section heading above them.
+.contentHeading {
+  margin: 1.9rem 0 0.5rem 0;
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0;
+}
+
 // Says plainly that we don't take the application. Mirrors
 // `directApply: false` in the JobPosting markup.
 .applyNote {
