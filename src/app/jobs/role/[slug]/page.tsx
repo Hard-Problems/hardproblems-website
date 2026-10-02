@@ -134,12 +134,49 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!found) return { title: 'Job — Hard Problems' };
   const { job } = found;
   const where = summarise(job);
+
+  // Card headline. No "— Hard Problems" suffix: a share card already
+  // carries og:site_name, so repeating it just eats the width that
+  // should be showing the role and the employer.
+  const shareTitle = job.company ? `${job.title} at ${job.company}` : job.title;
+
+  const description =
+    `${job.title} at ${job.company}${where ? `, ${where}` : ''}. ` +
+    (job.impactSummary || job.goodForWorldExplanation || job.description || '')
+      .slice(0, 140)
+      .trim();
+
   return {
-    title: `${job.title} at ${job.company} — Hard Problems`,
-    description:
-      `${job.title} at ${job.company}${where ? `, ${where}` : ''}. ` +
-      (job.goodForWorldExplanation || job.description || '').slice(0, 140),
-    alternates: { canonical: `/jobs/role/${slug}` }
+    title: `${shareTitle} — Hard Problems`,
+    description,
+    alternates: { canonical: `/jobs/role/${slug}` },
+    // Without an explicit block here every job page inherits the
+    // layout's site-wide defaults, so all ~583 of them previewed as the
+    // same generic "Hard Problems" card — and with og:url pointing at
+    // the homepage rather than the job, which some scrapers follow.
+    //
+    // The board's own card image, named explicitly. Declaring an
+    // `openGraph` block replaces the parent segment's wholesale rather
+    // than merging into it, so leaving `images` out drops the image the
+    // page used to inherit from /jobs/opengraph-image — and a
+    // summary_large_image card with no image is worse than a generic
+    // one. A per-job generated image would look better still, but this
+    // route pre-renders every job, so it would mean rendering one
+    // 1200x630 image per job at build time.
+    openGraph: {
+      title: shareTitle,
+      description,
+      url: `/jobs/role/${slug}`,
+      siteName: 'Hard Problems',
+      type: 'website',
+      images: [{ url: '/jobs/opengraph-image', width: 1200, height: 630 }]
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: shareTitle,
+      description,
+      images: ['/jobs/opengraph-image']
+    }
   };
 }
 
