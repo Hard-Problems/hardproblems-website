@@ -39,7 +39,6 @@ import {
 import {
   displaySector,
   isHardProblemsPick,
-  OUR_PICK_EXPLAINER,
   paragraphs,
   splitCountries
 } from '../../filters';
@@ -605,17 +604,14 @@ export default async function JobPage({ params }: Props) {
         <section className={styles.block}>
           <h2 className="section-label">Why this work matters</h2>
           {impact && <RichText text={impact} />}
-          {/* Explains the "Our Pick" chip at the top of the page. Shown
-              here rather than beside the chip because the reason a job
-              is a pick is the same thing this section is about. */}
+          {/* Says what the "Our Pick" chip at the top of the page means,
+              here rather than beside the chip because the reason a job is
+              a pick is the same thing this section is about. */}
           {isStaffPick && (
-            <aside className={styles.pickNote}>
-              <strong className={styles.pickNoteHeading}>
-                <Gem className={styles.pickNoteIcon} aria-hidden="true" />
-                Our Pick
-              </strong>
-              <p>{OUR_PICK_EXPLAINER}</p>
-            </aside>
+            <p>
+              This job was selected as &ldquo;Our Pick&rdquo; because the hiring
+              organization is particularly good for the world.
+            </p>
           )}
           {applyAfter === 'why' && applyBlock}
         </section>
