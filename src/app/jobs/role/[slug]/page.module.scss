@@ -136,6 +136,12 @@
 .job section.block {
   padding: 0;
   margin: 0 0 3.75rem 0;
+  // The same global `.container section` rule that supplies the padding
+  // above also sets `position: relative`. That is meant for the
+  // page-level sections; here it put every block into the positioned
+  // paint layer, so a later section rendered ABOVE the floated apply
+  // card and silently swallowed every click on the button.
+  position: static;
 }
 
 .block h2 {
@@ -197,36 +203,6 @@
   vertical-align: -0.16em;
   color: #999;
   stroke-width: 1.8;
-}
-
-// Explains the "Our Pick" chip, shown only on a pick. Borrows the chip's
-// own colours so the callout and the badge read as the same thing.
-.pickNote {
-  margin-top: 1.5rem;
-  padding: 0.9rem 1.1rem;
-  background: var(--color-pick-bg);
-  border-radius: 10px;
-  font-size: var(--font-size-sm);
-}
-
-.pickNoteHeading {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 0.2rem;
-  color: var(--color-pick-text);
-  font-weight: 600;
-}
-
-.pickNoteIcon {
-  width: 1em;
-  height: 1em;
-  flex-shrink: 0;
-}
-
-// `.job .pickNote p` to outweigh `.block p`, which sets a bottom margin.
-.job .pickNote p {
-  margin: 0;
 }
 
 // The organisation's own site, under its description. `.job .companySite`
@@ -303,6 +279,13 @@
 @media only screen and (min-width: 1000px) {
   .job .applyRow {
     float: right;
+    // Positioned so the box is hit-testable. The float escapes its own
+    // section, so the paragraphs of the NEXT section overlap it: their
+    // line boxes wrap around it, but their block boxes still cover that
+    // area, and in-flow inline content paints above floats. The result
+    // was a card that looked right and swallowed every click on the
+    // button. `position: relative` lifts it above that content.
+    position: relative;
     width: 18rem;
     margin: 2.5rem 0 2.75rem 2.5rem;
     padding: 2.25rem 1.25rem 1.1rem;
