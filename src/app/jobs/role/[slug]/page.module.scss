@@ -296,6 +296,64 @@
   color: #666;
 }
 
+// On desktop the apply block becomes a bordered card floated to the
+// right, so the description text runs alongside it instead of being
+// interrupted by it. Breakpoint matches the site's own desktop
+// breakpoint; below it the block stays full width and in flow.
+@media only screen and (min-width: 1000px) {
+  .job .applyRow {
+    float: right;
+    width: 18rem;
+    margin: 2.5rem 0 2.75rem 2.5rem;
+    padding: 2.25rem 1.25rem 1.1rem;
+    // The background defines the card, so no border — the two would be
+    // the same hue anyway.
+    background: var(--color-light-green);
+    border-radius: 12px;
+    gap: 0.5rem;
+    align-items: center;
+    text-align: center;
+  }
+
+  // The box is a <p> and is the last child of its section, so
+  // `.block p:last-child { margin-bottom: 0 }` (0,2,1) outranks the rule
+  // above (0,2,0) and flattens the bottom margin. One more class wins it
+  // back. Kept separate so the box styling still applies in the rare
+  // placement outside a .block, where that rule never matches.
+  .job .block .applyRow {
+    margin-bottom: 2.75rem;
+  }
+
+  // Inside the box the supporting text is dark green rather than grey,
+  // and the listed date takes the site's bold weight (the same 600 the
+  // section labels use). Three classes to outweigh the base `.applyNote`
+  // and `.deadline` colours.
+  .job .applyRow .applyDates,
+  .job .applyRow .applyNote,
+  .job .applyRow .deadline {
+    color: var(--color-dark-green);
+  }
+
+  // The whole date line takes the bold weight. `.deadline` is a <strong>
+  // carrying 500 for its out-of-box treatment, which inside the box would
+  // read LIGHTER than the "Listed" date beside it — so let it inherit.
+  .job .applyRow .applyDates,
+  .job .applyRow .deadline {
+    font-weight: 600;
+  }
+
+  // The float is taller than a short "Why this work matters" summary, so
+  // it can reach into the blocks below. These establish their own
+  // formatting contexts (a grid, and bordered lists), which means they
+  // would sit alongside the float at a squeezed width rather than
+  // wrapping around it — clear them instead.
+  .job .facts,
+  .job .relatedList,
+  .job .footerNote {
+    clear: right;
+  }
+}
+
 @media only screen and (max-width: 600px) {
   // Stack label over value — 230px of label leaves too little room for
   // the value at phone widths.

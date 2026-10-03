@@ -500,10 +500,13 @@ export default async function JobPage({ params }: Props) {
   // Both are newline-separated prose, so `paragraphs` handles either.
   const aboutRole = job.fullJobDescription || job.jobDescription;
 
-  const applyAfter = aboutRole
-    ? 'role'
-    : impact
-      ? 'why'
+  // The apply block closes the first prose section on the page, so this
+  // chain follows the section order below: impact, then the role
+  // write-up, then the company blurb.
+  const applyAfter = impact
+    ? 'why'
+    : aboutRole
+      ? 'role'
       : job.description
         ? 'about'
         : null;
@@ -598,14 +601,6 @@ export default async function JobPage({ params }: Props) {
         {applyAfter === null && applyBlock}
       </div>
 
-      {aboutRole && (
-        <section className={styles.block}>
-          <h2 className="section-label">About the role</h2>
-          <RichText text={aboutRole} />
-          {applyAfter === 'role' && applyBlock}
-        </section>
-      )}
-
       {(impact || isStaffPick) && (
         <section className={styles.block}>
           <h2 className="section-label">Why this work matters</h2>
@@ -623,6 +618,14 @@ export default async function JobPage({ params }: Props) {
             </aside>
           )}
           {applyAfter === 'why' && applyBlock}
+        </section>
+      )}
+
+      {aboutRole && (
+        <section className={styles.block}>
+          <h2 className="section-label">About the role</h2>
+          <RichText text={aboutRole} />
+          {applyAfter === 'role' && applyBlock}
         </section>
       )}
 
