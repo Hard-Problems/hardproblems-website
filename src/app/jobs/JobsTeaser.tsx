@@ -5,8 +5,12 @@ import Link from 'next/link';
 import { usePostHog } from 'posthog-js/react';
 import { Earth, Gem } from 'lucide-react';
 import type { ListedJob } from './fetchJobs';
-import { displaySector,
-  hoverDescription
+import {
+  displaySector,
+  hoverDescription,
+  isHardProblemsPick,
+  OUR_PICK_EXPLAINER,
+  paragraphs
 } from './filters';
 import { getSectorIcon } from './sectorIcons';
 import CompanyFavicon from './CompanyFavicon';
@@ -62,9 +66,8 @@ export default function JobsTeaser({
           // either a valid `https://…` URL or an empty string. No
           // protocol-prefixing needed here.
           const companyHref = job.companyUrl || null;
-          const goodForWorldScore = parseFloat(job.goodForWorld);
-          const isStaffPick =
-            !Number.isNaN(goodForWorldScore) && goodForWorldScore > 8;
+          const hoverText = hoverDescription(job);
+          const isStaffPick = isHardProblemsPick(job.goodForWorld);
 
           const metaItems: ReactNode[] = [];
           if (job.company) {
@@ -206,43 +209,37 @@ export default function JobsTeaser({
                   </div>
                 )}
               </div>
-              {(hoverDescription(job) || isStaffPick) && (
-                <div
-                  className={jobStyles.jobDescription}
-                  role="tooltip"
-                >
-                  {hoverDescription(job) && (
+              {(hoverText || isStaffPick) && (
+                <div className={jobStyles.jobDescription} role="tooltip">
+                  {hoverText && (
                     <>
                       {job.company && (
-                        <>
-                          <strong
-                            className={jobStyles.jobDescriptionCompany}
-                          >
-                            {job.company}
-                          </strong>
-                          <br />
-                        </>
+                        <strong className={jobStyles.jobDescriptionCompany}>
+                          {job.company}
+                        </strong>
                       )}
-                      <span className={jobStyles.jobDescriptionText}>
-                        {hoverDescription(job)}
-                      </span>
+                      {/* One block per paragraph so blank lines in the
+                          sheet's text read as paragraph breaks. */}
+                      {paragraphs(hoverText).map((para, idx) => (
+                        <span
+                          key={idx}
+                          className={jobStyles.jobDescriptionText}
+                        >
+                          {para}
+                        </span>
+                      ))}
                     </>
                   )}
                   {isStaffPick && (
                     <div className={jobStyles.jobDescriptionPick}>
-                      <strong
-                        className={jobStyles.jobDescriptionPickHeading}
-                      >
+                      <strong className={jobStyles.jobDescriptionPickHeading}>
                         <Gem
                           className={jobStyles.jobDescriptionPickIcon}
                           aria-hidden="true"
                         />
                         Our Pick
                       </strong>
-                      <p>
-                        We hand-select great jobs at orgs whose primary
-                        mission is to make the world better.
-                      </p>
+                      <p>{OUR_PICK_EXPLAINER}</p>
                     </div>
                   )}
                 </div>
