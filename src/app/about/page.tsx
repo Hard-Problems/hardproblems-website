@@ -99,7 +99,6 @@ export default function Page() {
         </p>
 
         <h3 className="space-top-large">Our team</h3>
-        <p>We are an all-volunteer team from around the world.</p>
         <Team />
 
         <h3 className="space-top-large">Hard Problems explained...</h3>
