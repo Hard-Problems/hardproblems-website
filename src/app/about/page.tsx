@@ -67,7 +67,11 @@ export default function Page() {
             people click ads. That sucks.”
           </p>
           <p>
-            <Link href="https://www.fastcompany.com/3008436/why-data-god-jeffrey-hammerbacher-left-facebook-found-cloudera">
+            <Link
+              href="https://www.fastcompany.com/3008436/why-data-god-jeffrey-hammerbacher-left-facebook-found-cloudera"
+              target="_blank"
+              rel="noreferrer"
+            >
               Jeff Hammerbacher, 2011
             </Link>
           </p>

@@ -115,6 +115,8 @@ export default function CoworkingRotator() {
         <li key={i}>
           <Link
             href={tile.team.href}
+            target="_blank"
+            rel="noreferrer"
             aria-label={`Visit ${tile.team.name}`}
             className={`${styles.coworkingAsideLink} hover-saturate`}
             style={{

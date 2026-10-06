@@ -265,8 +265,12 @@
   margin-top: 3.75rem;
 }
 
+// Sits above the related-role modules, so it needs clearance below as
+// well as above — otherwise it reads as a caption on the first list
+// rather than a note about this job.
 .footerNote {
   margin-top: 3rem;
+  margin-bottom: 3.5rem;
   padding-top: 1.5rem;
   font-size: var(--font-size-sm);
   color: #666;

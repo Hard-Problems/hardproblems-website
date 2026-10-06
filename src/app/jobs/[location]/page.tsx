@@ -105,6 +105,22 @@ export default async function JobsByLocationPage({ params }: Props) {
   }
 
   const forLocation = jobsAtLocation(jobs, resolved);
+
+  // Every other page this route serves: the six regions, plus every
+  // country over the threshold. Built from the same two sources as
+  // generateStaticParams, so a hub can never be linked before it exists
+  // or missed once it appears.
+  //
+  // Sorted on the place name, so "the USA" files under U and regions
+  // interleave with countries instead of forming a separate block. The
+  // two are worded the same way in the list, so nothing downstream needs
+  // to know which is which.
+  const otherHubs: string[] = [
+    ...META_REGIONS.map((r) => r.name),
+    ...qualifyingCountries(jobs)
+  ]
+    .filter((name) => name !== resolved.name)
+    .sort((a, b) => a.localeCompare(b));
   const displayName = displayNameWithArticle(resolved.name);
   const label =
     resolved.kind === 'region'
@@ -135,6 +151,26 @@ export default async function JobsByLocationPage({ params }: Props) {
             Open in the full job board →
           </Link>
         </p>
+      )}
+
+      {/* Cross-links to the sibling hubs. Until now these pages linked
+          only back to /jobs and out to employers, so each was a dead end
+          for anyone browsing by place and the hubs passed no authority
+          between themselves. Regions first, then the countries that
+          clear the job threshold, alphabetically. */}
+      {otherHubs.length > 0 && (
+        <section className={styles.otherHubs}>
+          <h2 className="section-label">Design jobs elsewhere</h2>
+          <ul>
+            {otherHubs.map((name) => (
+              <li key={name}>
+                <Link href={`/jobs/${locationSlug(name)}`}>
+                  Design jobs in {displayNameWithArticle(name)}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </main>
   );

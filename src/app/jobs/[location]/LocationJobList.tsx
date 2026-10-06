@@ -158,27 +158,6 @@ export default function LocationJobList({
                     {item}
                   </Fragment>
                 ))}
-                {/* Internal link to this job's own page, same as the
-                    main board. Without it these location hubs linked
-                    only outwards, so /jobs was the sole internal route
-                    to ~583 job pages while the job pages' breadcrumbs
-                    pointed back up here — a one-way link. The TITLE
-                    above still goes straight to the employer. */}
-                {job.slug && (
-                  <>
-                    {metaItems.length > 0 && (
-                      <span className={styles.jobBullet}>
-                        {BULLET_SEPARATOR}
-                      </span>
-                    )}
-                    <Link
-                      href={`/jobs/role/${job.slug}`}
-                      className={styles.jobDetailsLink}
-                    >
-                      Details
-                    </Link>
-                  </>
-                )}
               </div>
               {(sector || typeLabel || isStaffPick) && (
                 <div className={styles.jobSectorRow}>
@@ -213,6 +192,21 @@ export default function LocationJobList({
                 <p className={locationStyles.inlineDescription}>
                   {hoverDescription(job)}
                 </p>
+              )}
+              {/* Internal link to this job's own page, below the
+                  description — the same place the board puts it, at the
+                  end of the card. Without it these location hubs linked
+                  only outwards, so /jobs was the sole internal route to
+                  ~583 job pages while the job pages' breadcrumbs pointed
+                  back up here — a one-way link. The TITLE above still
+                  goes straight to the employer. */}
+              {job.slug && (
+                <Link
+                  href={`/jobs/role/${job.slug}`}
+                  className={styles.jobDetailsLink}
+                >
+                  Read full job description…
+                </Link>
               )}
             </div>
             <div className={styles.jobAside}>
