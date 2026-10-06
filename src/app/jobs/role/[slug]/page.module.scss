@@ -118,6 +118,37 @@
   letter-spacing: 0;
 }
 
+// Bullet lists inside the prose sections. The global `p, li, dd` rule
+// already gives the items the same weight and line-height as a
+// paragraph, so this only has to set the rhythm.
+//
+// `padding-left` replaces the browser's 40px default, which indents far
+// enough to read as a quotation. 1.15rem leaves the marker just inside
+// the text column.
+.contentList {
+  margin: 0 0 1rem 0;
+  padding-left: 1.15rem;
+
+  // The global `ul li` rule sets 1rem between items — the spacing of
+  // separate paragraphs, which is too loose for a list of short
+  // responsibilities. These are one block of related points.
+  li {
+    margin: 0 0 0.4rem 0;
+  }
+
+  li:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// A list that closes a section has the section's own 3.75rem under it
+// already; one followed by the next "##" heading gets that heading's
+// 1.9rem. Only a list followed by more prose needs its own gap, which
+// the 1rem bottom margin above supplies.
+.contentList + .contentHeading {
+  margin-top: 1.6rem;
+}
+
 // Says plainly that we don't take the application. Mirrors
 // `directApply: false` in the JobPosting markup.
 .applyNote {

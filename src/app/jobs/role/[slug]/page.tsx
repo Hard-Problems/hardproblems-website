@@ -15,7 +15,7 @@
 // route 404s on its next render. That matches Google's guidance to
 // remove expired postings rather than leave them indexed.
 
-import { Fragment } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
@@ -264,24 +264,65 @@ function RelatedJobRow({ job, href }: { job: SerializedJob; href: string }) {
 // underscores in prose that was never written as markdown.
 const SUBHEADING = /^#{1,6}\s+(\S.*)$/;
 
-// Renders one of the sheet's prose fields: paragraphs, plus any
-// subheadings. Used for all three prose sections so that a heading added
-// to another column later renders as one rather than showing its hashes.
+// A bullet line in the same fields, written as "- item". Accepts the
+// three markers a person might actually type; deliberately NOT the en or
+// em dash, which open ordinary sentences.
+//
+// Added for Column X, where newer entries list responsibilities and
+// requirements as bullets under their "##" headings. Checked against
+// every populated value in all five long-text columns first: not one
+// line starts with any of these markers today, so no existing text
+// changes shape by gaining this rule.
+const BULLET = /^[-*\u2022]\s+(\S.*)$/;
+
+// Renders one of the sheet's prose fields: paragraphs, subheadings and
+// bullet lists. Used for all three prose sections so that a heading or a
+// list added to another column later renders as one rather than showing
+// its markup.
 function RichText({ text }: { text: string }) {
-  return (
-    <>
-      {paragraphs(text).map((para, i) => {
-        const heading = para.match(SUBHEADING);
-        return heading ? (
-          <h3 key={i} className={styles.contentHeading}>
-            {heading[1]}
-          </h3>
-        ) : (
-          <p key={i}>{para}</p>
-        );
-      })}
-    </>
-  );
+  // paragraphs() splits on every run of newlines, so each bullet arrives
+  // as its own entry. Consecutive bullets are gathered back into a single
+  // <ul>; anything else closes the open list first. That is what lets an
+  // optional lead-in paragraph sit above its list, and a following "##"
+  // heading start a fresh one.
+  const blocks: ReactNode[] = [];
+  let items: { key: number; text: string }[] = [];
+
+  function closeList() {
+    if (items.length === 0) return;
+    blocks.push(
+      <ul key={`list-${items[0].key}`} className={styles.contentList}>
+        {items.map((item) => (
+          <li key={item.key}>{item.text}</li>
+        ))}
+      </ul>
+    );
+    items = [];
+  }
+
+  paragraphs(text).forEach((para, i) => {
+    const bullet = para.match(BULLET);
+    if (bullet) {
+      items.push({ key: i, text: bullet[1] });
+      return;
+    }
+
+    closeList();
+    const heading = para.match(SUBHEADING);
+    blocks.push(
+      heading ? (
+        <h3 key={i} className={styles.contentHeading}>
+          {heading[1]}
+        </h3>
+      ) : (
+        <p key={i}>{para}</p>
+      )
+    );
+  });
+
+  closeList();
+
+  return <>{blocks}</>;
 }
 
 // Sheet dates are stored as UTC midnight ISO strings, so read the UTC
