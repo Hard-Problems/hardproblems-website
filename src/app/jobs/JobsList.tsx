@@ -1047,25 +1047,6 @@ export default function JobsList({
                         {item}
                       </Fragment>
                     ))}
-                    {/* Internal link to this job's own page. Kept in the
-                        meta line and styled quietly on purpose — the
-                        TITLE above still goes straight to the employer's
-                        listing, which is what most people want. */}
-                    {job.slug && (
-                      <>
-                        {metaItems.length > 0 && (
-                          <span className={styles.jobBullet}>
-                            {BULLET_SEPARATOR}
-                          </span>
-                        )}
-                        <Link
-                          href={`/jobs/role/${job.slug}`}
-                          className={styles.jobDetailsLink}
-                        >
-                          Details
-                        </Link>
-                      </>
-                    )}
                   </div>
                   {(job.sector || typeLabel || isStaffPick) && (
                     <div className={styles.jobSectorRow}>
@@ -1146,9 +1127,26 @@ export default function JobsList({
                       )}
                     </div>
                   )}
+                  {/* Internal link to this job's own page, below the
+                      sector pills. Only ever seen on mobile — at desktop
+                      the tooltip's "Read full job description…" button
+                      goes to the same place and this is hidden. The TITLE
+                      still goes straight to the employer's listing, which
+                      is what most people want. */}
+                  {job.slug && (
+                    <Link
+                      href={`/jobs/role/${job.slug}`}
+                      className={styles.jobDetailsLink}
+                    >
+                      Read full job description…
+                    </Link>
+                  )}
                 </div>
                 {(hoverText || isStaffPick) && (
                   <div className={styles.jobDescription} role="tooltip">
+                    {/* Spans the gap to the row so the tooltip survives the
+                        pointer travelling into it. */}
+                    <span className={styles.jobDescriptionBridge} aria-hidden="true" />
                     {hoverText && (
                       <>
                         {job.company && (
@@ -1164,6 +1162,14 @@ export default function JobsList({
                           </span>
                         ))}
                       </>
+                    )}
+                    {job.slug && (
+                      <Link
+                        href={`/jobs/role/${job.slug}`}
+                        className={styles.jobDescriptionDetails}
+                      >
+                        Read full job description…
+                      </Link>
                     )}
                     {isStaffPick && (
                       <div className={styles.jobDescriptionPick}>

@@ -21,7 +21,11 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { fetchJobs, type SerializedJob } from '../../fetchJobs';
 import { buildJobSlugs, findJobBySlug, jobKey } from '../../jobSlug';
-import { countryQualifies, locationSlug } from '../../locations';
+import {
+  countryQualifies,
+  displayNameWithArticle,
+  locationSlug
+} from '../../locations';
 import {
   Banknote,
   Briefcase,
@@ -39,6 +43,7 @@ import {
 import {
   displaySector,
   isHardProblemsPick,
+  matchesCountry,
   paragraphs,
   splitCountries
 } from '../../filters';
@@ -448,6 +453,28 @@ export default async function JobPage({ params }: Props) {
         .slice(0, 5)
     : [];
 
+  // Third axis: same country. Uses the first country the sheet lists for
+  // this job (the field can carry several) and matchesCountry to select,
+  // so comma-separated values and the "Global" convention behave the same
+  // way they do on the board. `includeGlobal: false` keeps a worldwide
+  // listing from appearing under every country in turn.
+  // "Global" is a value the sheet uses for worldwide listings, not a
+  // place — "Other roles in Global" would read as a mistake, so it never
+  // heads this module.
+  const rawCountry = splitCountries(job.country)[0] ?? '';
+  const countryLabel = rawCountry === 'Global' ? '' : rawCountry;
+  const shownWithSector = new Set([...shown, ...sameSector.map(jobKey)]);
+  const sameCountry = countryLabel
+    ? jobs
+        .filter(
+          (j) =>
+            matchesCountry(j.country, countryLabel, false) &&
+            !shownWithSector.has(jobKey(j)) &&
+            linkable(j)
+        )
+        .slice(0, 5)
+    : [];
+
   // Same proxy URL the board uses, so this shares its CDN cache entry.
   // The source is 64px and renders here at 20, which stays sharp even on
   // a 3x display.
@@ -466,7 +493,12 @@ export default async function JobPage({ params }: Props) {
     job.url || listed || deadline ? (
       <p className={styles.applyRow}>
         {job.url && (
-          <a href={job.url} className="black-button">
+          <a
+            href={job.url}
+            target="_blank"
+            rel="noreferrer"
+            className="black-button"
+          >
             View the full listing and apply →
           </a>
         )}
@@ -542,7 +574,9 @@ export default async function JobPage({ params }: Props) {
             />
           )}
           {job.companyUrl ? (
-            <a href={job.companyUrl}>{job.company}</a>
+            <a href={job.companyUrl} target="_blank" rel="noreferrer">
+              {job.company}
+            </a>
           ) : (
             job.company
           )}
@@ -650,14 +684,25 @@ export default async function JobPage({ params }: Props) {
           {job.description && <RichText text={job.description} />}
           {job.companyUrl && (
             <p className={styles.companySite}>
-              <a href={job.companyUrl}>{displayUrl(job.companyUrl)}</a>
+              <a href={job.companyUrl} target="_blank" rel="noreferrer">
+                {displayUrl(job.companyUrl)}
+              </a>
             </p>
           )}
           {applyAfter === 'about' && applyBlock}
         </section>
       )}
 
-      {(sameCompany.length > 0 || sameSector.length > 0) && (
+      <p className={styles.footerNote}>
+        This job is listed on the{' '}
+        <Link href="/jobs">Hard Problems job board</Link>, but details come from
+        the employer&rsquo;s own listing and may have changed — always check the
+        original posting.
+      </p>
+
+      {(sameCompany.length > 0 ||
+        sameSector.length > 0 ||
+        sameCountry.length > 0) && (
         <section className={styles.block}>
           {sameCompany.length > 0 && (
             <>
@@ -690,15 +735,27 @@ export default async function JobPage({ params }: Props) {
               </ul>
             </>
           )}
+
+          {sameCountry.length > 0 && (
+            <>
+              <h2
+                className={`section-label ${
+                  sameCompany.length > 0 || sameSector.length > 0
+                    ? styles.relatedSecondHeading
+                    : styles.relatedHeading
+                }`}
+              >
+                Other roles in {displayNameWithArticle(countryLabel)}
+              </h2>
+              <ul className={styles.relatedList}>
+                {sameCountry.map((j) => (
+                  <RelatedJobRow key={jobKey(j)} job={j} href={hrefFor(j)!} />
+                ))}
+              </ul>
+            </>
+          )}
         </section>
       )}
-
-      <p className={styles.footerNote}>
-        This job is listed on the{' '}
-        <Link href="/jobs">Hard Problems job board</Link>, but details come from
-        the employer&rsquo;s own listing and may have changed — always check the
-        original posting.
-      </p>
     </main>
   );
 }

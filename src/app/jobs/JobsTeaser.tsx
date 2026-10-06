@@ -211,6 +211,9 @@ export default function JobsTeaser({
               </div>
               {(hoverText || isStaffPick) && (
                 <div className={jobStyles.jobDescription} role="tooltip">
+                  {/* Spans the gap to the row so the tooltip survives the
+                      pointer travelling into it. */}
+                  <span className={jobStyles.jobDescriptionBridge} aria-hidden="true" />
                   {hoverText && (
                     <>
                       {job.company && (
@@ -229,6 +232,14 @@ export default function JobsTeaser({
                         </span>
                       ))}
                     </>
+                  )}
+                  {job.slug && (
+                    <Link
+                      href={`/jobs/role/${job.slug}`}
+                      className={jobStyles.jobDescriptionDetails}
+                    >
+                      Read full job description…
+                    </Link>
                   )}
                   {isStaffPick && (
                     <div className={jobStyles.jobDescriptionPick}>

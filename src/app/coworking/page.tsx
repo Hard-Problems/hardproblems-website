@@ -92,7 +92,11 @@ export default function Page() {
 
         <h3 className="space-top-large">Location</h3>
         <p>
-          <Link href="https://maps.app.goo.gl/8SYY1vdDDcwwqGJy7">
+          <Link
+            href="https://maps.app.goo.gl/8SYY1vdDDcwwqGJy7"
+            target="_blank"
+            rel="noreferrer"
+          >
             1 Rivington Pl, London EC2A 3BA
           </Link>
         </p>
@@ -116,6 +120,8 @@ export default function Page() {
               {team.image ? (
                 <Link
                   href={team.href}
+                  target="_blank"
+                  rel="noreferrer"
                   aria-label={`Visit ${team.name}`}
                   className="hover-saturate"
                 >
