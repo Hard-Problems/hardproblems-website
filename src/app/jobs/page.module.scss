@@ -593,6 +593,11 @@ a.jobDescriptionDetails:focus-visible {
 .jobDescriptionPick {
   margin-top: 0.75rem;
   padding-top: 0.65rem;
+  // The pick block is the last thing in the tooltip, so the only space
+  // under its paragraph was the tooltip's own 10px padding. This adds
+  // ~1rem on top of that so the explainer is not crowded against the
+  // bottom border.
+  padding-bottom: 1rem;
   border-top: 1px solid #ebd2b3;
 
   p {
@@ -704,10 +709,15 @@ a.jobCompany:focus {
   color: #555;
 }
 
+// Chips space themselves with a RIGHT margin, never a left one. A left
+// margin shows up as a stray indent on the first chip of a wrapped line
+// — at 320px a third of the board's rows wrap, and every one of them
+// started 6.4px in from the row's left edge. The trailing margin on the
+// last chip has nothing after it, so it costs nothing.
 .jobSector {
   display: inline-flex;
   align-items: center;
-  margin: 0;
+  margin: 0 0.4rem 0 0;
   vertical-align: middle;
   font-family: var(--font-mono);
   font-size: var(--font-size-mono);
@@ -725,7 +735,7 @@ a.jobCompany:focus {
 }
 
 .jobType {
-  margin: 0 0 0 0.4rem;
+  margin: 0 0.4rem 0 0;
   vertical-align: baseline;
   background: #d6e4f7;
   color: #1d4e89;
@@ -736,7 +746,7 @@ a.jobCompany:focus {
 .jobStaffPick {
   display: inline-flex;
   align-items: center;
-  margin: 0 0 0 0.4rem;
+  margin: 0 0.4rem 0 0;
   vertical-align: middle;
   background: var(--color-pick-bg);
   color: var(--color-pick-text);
@@ -953,6 +963,16 @@ a.jobDetailsLink:focus-visible {
     // the two boxes at the top leaves it riding high. Nudged down onto
     // the title's optical line.
     padding-top: 0.15rem;
+  }
+
+  // More air above the link than the 0.4rem it gets elsewhere. On a
+  // phone it is the last line of the card and sits directly under the
+  // sector pills (or, on the location pages, the description), where
+  // 0.4rem read as part of the block above it rather than as its own
+  // row — and the pills themselves now wrap onto two lines at this
+  // width, which closed the gap further.
+  .jobDetailsLink {
+    margin-top: 0.9rem;
   }
 }
 
