@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import {
-  fetchSheetCsv,
-  parseJobsCsv,
+  fetchSheetRows,
+  parseJobsRows,
   pruneExpiredJobs
 } from '../../../jobs/fetchJobs';
+import { sheetsApiConfigured } from '../../../jobs/sheetsClient';
 import { writeJobsSnapshot } from '../../../jobs/jobsSnapshot';
 import { isCronAuthorized } from '../../../../lib/cronAuth';
 
@@ -12,6 +13,11 @@ import { isCronAuthorized } from '../../../../lib/cronAuth';
 // Pulls the Google Sheet, parses it, and writes the result to the
 // jobs_snapshot table for fetchJobs() to read. Called by Vercel Cron
 // (see vercel.json).
+//
+// This is the only thing in the app that needs to reach Google: the
+// board itself reads the snapshot this writes. That is what lets the
+// sheet be Restricted and shared with a single service account — see
+// sheetsClient.ts.
 //
 // This exists to keep the ~1.6MB Sheet fetch off the request path. It
 // used to run inside the `force-dynamic` jobs render via Next's
@@ -41,24 +47,31 @@ export async function GET(request: Request) {
     );
   }
 
-  // true = bypass the Next Data Cache. Non-negotiable here: without it
-  // this cron re-reads the stale entry it exists to replace.
-  const csv = await fetchSheetCsv(true);
-  if (csv === null) {
+  // No cache-busting argument any more: the Sheets API read is an
+  // authenticated no-store request, so the Data Cache staleness that
+  // this endpoint was built to defeat cannot recur through it.
+  const rows = await fetchSheetRows();
+  if (rows === null) {
     // Leave the existing snapshot in place — a stale board beats an
     // empty one, and the TTL gives us hours of runway to notice.
     console.warn('[jobs/sync] sheet fetch failed, keeping previous snapshot');
     return NextResponse.json(
-      { ok: false, error: 'sheet-fetch-failed' },
+      // `configured` separates "the credentials are missing" from "the
+      // read failed", which are very different things to go and fix.
+      {
+        ok: false,
+        error: 'sheet-fetch-failed',
+        configured: sheetsApiConfigured()
+      },
       { status: 502 }
     );
   }
 
-  const parsed = parseJobsCsv(csv);
+  const parsed = parseJobsRows(rows);
   if (parsed.length === 0) {
     console.warn('[jobs/sync] sheet parsed to zero jobs, keeping previous');
     return NextResponse.json(
-      { ok: false, error: 'empty-parse', bytes: csv.length },
+      { ok: false, error: 'empty-parse', rows: rows.length },
       { status: 502 }
     );
   }
@@ -87,7 +100,7 @@ export async function GET(request: Request) {
     ok: true,
     parsed: parsed.length,
     kept: jobs.length,
-    bytes: csv.length,
+    rows: rows.length,
     syncedAt: new Date().toISOString()
   });
 }

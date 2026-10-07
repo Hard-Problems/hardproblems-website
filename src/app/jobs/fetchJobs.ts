@@ -1,6 +1,7 @@
 import { validateAndNormalizeUrl } from '../../lib/validateUrl';
 import { readJobsSnapshot } from './jobsSnapshot';
 import { buildJobSlugs, jobKey } from './jobSlug';
+import { fetchSheetRowsViaApi } from './sheetsClient';
 
 // Sanitize a raw URL string from the sheet into either a valid,
 // normalized URL or an empty string. Empty is safe for every consumer
@@ -65,13 +66,10 @@ export type SerializedJob = {
   expiresAt: string | null;
 };
 
-const SHEET_CSV_URL =
-  'https://docs.google.com/spreadsheets/d/1Vpvb3T_wVAdtvhxuYfg4YBYysE7_hE1qmP1qyiZWfk8/export?format=csv&gid=0';
-
 // Hide jobs once this many days have passed since their listed date.
 const MAX_AGE_DAYS = 45;
 
-// Last CSV body that parsed successfully, guarding the DIRECT-FETCH
+// Last sheet read that parsed successfully, guarding the DIRECT-FETCH
 // fallback only — the normal path reads the Redis snapshot and never
 // touches this. When that fallback's sheet fetch fails we re-parse this
 // instead of returning [], because a stale board beats an empty one.
@@ -79,48 +77,7 @@ const MAX_AGE_DAYS = 45;
 // Per-instance memory, not a durable cache: a cold lambda has nothing
 // to fall back on and still returns []. The durable equivalent is the
 // snapshot in jobsSnapshot.ts.
-let lastGoodCsv: string | null = null;
-
-function parseCSV(text: string): string[][] {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let field = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (inQuotes) {
-      if (c === '"') {
-        if (text[i + 1] === '"') {
-          field += '"';
-          i++;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        field += c;
-      }
-    } else if (c === '"') {
-      inQuotes = true;
-    } else if (c === ',') {
-      row.push(field);
-      field = '';
-    } else if (c === '\n' || c === '\r') {
-      if (c === '\r' && text[i + 1] === '\n') i++;
-      row.push(field);
-      rows.push(row);
-      row = [];
-      field = '';
-    } else {
-      field += c;
-    }
-  }
-  if (field.length > 0 || row.length > 0) {
-    row.push(field);
-    rows.push(row);
-  }
-  return rows;
-}
+let lastGoodRows: string[][] | null = null;
 
 // Parses Column P ("Date created") values formatted as "YYYY-MM-DD HH:MM:SS".
 // We treat the time as UTC since the sheet doesn't carry a timezone — this
@@ -162,35 +119,19 @@ function parseDate(s: string): Date | null {
   return null;
 }
 
-// Fetch the raw Sheet CSV. Returns null on a non-ok response or a
-// thrown network error; callers decide what to fall back to.
+// The sheet as rows of strings.
 //
-// Only the cron and the fallback path call this. It is deliberately NOT
-// on the normal render path any more — see jobsSnapshot.ts for why.
-export async function fetchSheetCsv(
-  // The sync cron MUST pass true. With the default caching this
-  // function re-read the very Data Cache entry the cron exists to
-  // bypass: it fetched, got the stale cached CSV, and wrote stale jobs
-  // into the snapshot — which is exactly how a working pipeline ended
-  // up faithfully serving a board that was missing a whole day.
-  //
-  // It is not the default because `/` and `/sitemap.xml` render
-  // statically at build time, and a no-store fetch makes Next bail out
-  // of static generation for them. Those callers only ever reach this
-  // via the rare fallback path, where a cached CSV is acceptable.
-  bypassCache = false
-): Promise<string | null> {
-  try {
-    const res = await fetch(
-      SHEET_CSV_URL,
-      bypassCache ? { cache: 'no-store' } : { next: { revalidate: 60 } }
-    );
-    if (res.ok) return await res.text();
-    console.warn(`[fetchJobs] sheet fetch not ok: ${res.status}`);
-  } catch (err) {
-    console.warn('[fetchJobs] sheet fetch threw:', err);
-  }
-  return null;
+// Reads through the Sheets API as a service account, which is what lets
+// the spreadsheet be shared "Restricted" rather than with anyone holding
+// the link. There is no unauthenticated path: the public CSV export this
+// used to fall back to only answers while the document is link-shared,
+// which is the exposure the service account exists to close.
+//
+// Returns null when the read failed — distinct from an empty sheet, and
+// callers treat it as "keep the previous snapshot". Missing credentials
+// land here too, logged by sheetsClient.
+export async function fetchSheetRows(): Promise<string[][] | null> {
+  return fetchSheetRowsViaApi();
 }
 
 // Column headers as they appear in row 1 of the sheet. Everything is
@@ -288,15 +229,17 @@ function readCell(row: string[], idx: number): string {
   return idx >= 0 ? (row[idx] ?? '') : '';
 }
 
-// Parse a Sheet CSV body into sorted jobs.
+// Parse sheet rows into sorted jobs. Takes the rows the Sheets API
+// returns; every column rule below, including the header-name matching,
+// is applied here rather than at the fetch.
 //
 // Deliberately does NOT apply the date window — that has to be
 // evaluated against the CURRENT time at read, not at sync time, so a
 // snapshot written 15 minutes ago still hides a job that expired since.
 // Returns [] for a body that isn't a usable sheet, which callers treat
 // as "don't persist this".
-export function parseJobsCsv(text: string): SerializedJob[] {
-  const rows = parseCSV(text).filter((r) => r.some((c) => c.trim().length > 0));
+export function parseJobsRows(input: string[][]): SerializedJob[] {
+  const rows = input.filter((r) => r.some((c) => c.trim().length > 0));
   if (rows.length < 2) return [];
 
   const col = resolveColumns(rows[0]);
@@ -507,17 +450,17 @@ async function loadJobs(): Promise<SerializedJob[]> {
   // `next build`, local dev without Supabase, or a database problem).
   // Pull the sheet directly — the pre-existing behaviour, kept so none
   // of those cases produce an empty board.
-  const fresh = await fetchSheetCsv();
-  if (fresh === null && lastGoodCsv !== null) {
-    console.warn('[fetchJobs] serving last known good CSV');
+  const fresh = await fetchSheetRows();
+  if (fresh === null && lastGoodRows !== null) {
+    console.warn('[fetchJobs] serving last known good sheet rows');
   }
-  const text = fresh ?? lastGoodCsv;
-  if (text === null) return [];
-  const jobs = parseJobsCsv(text);
+  const rows = fresh ?? lastGoodRows;
+  if (rows === null) return [];
+  const jobs = parseJobsRows(rows);
   if (jobs.length === 0) return [];
-  // Only promote a body that actually parsed, so a 200 carrying a
+  // Only promote a read that actually parsed, so a 200 carrying a
   // truncated response or an HTML error page can't poison the fallback.
-  if (fresh !== null) lastGoodCsv = fresh;
+  if (fresh !== null) lastGoodRows = fresh;
   return jobs;
 }
 
