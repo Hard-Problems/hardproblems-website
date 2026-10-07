@@ -4,6 +4,7 @@ import { Instrument_Serif } from 'next/font/google';
 import TopBar from '../components/TopBar';
 import CodeBlockCopyButtons from '../components/CodeBlockCopyButtons';
 import PostHogProvider from '../components/PostHogProvider';
+import { SITE_URL } from '../lib/siteUrl';
 import { Footer } from '../components/Footer';
 import FooterIntro from '../components/FooterIntro';
 import RotatingTagline from '../components/RotatingTagline';
@@ -30,7 +31,7 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://hardproblems.com'),
+  metadataBase: new URL(SITE_URL),
   title: 'Hard Problems',
   description:
     'Helping designers to work on the hard problems that matter in the world: problems like public health, climate change, poverty, and good government.',
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
     title: 'Hard Problems',
     description:
       'A nonprofit helping designers to work on the hard problems that matter in the world.',
-    url: 'https://hardproblems.com',
+    url: SITE_URL,
     siteName: 'Hard Problems',
     type: 'website'
     // og:image is supplied per-route via each opengraph-image.tsx;

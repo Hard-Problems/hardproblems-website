@@ -7,6 +7,7 @@ import {
   qualifyingCountries
 } from './jobs/locations';
 import { buildJobSlugs, jobKey } from './jobs/jobSlug';
+import { SITE_URL } from '../lib/siteUrl';
 import { META_REGIONS } from './jobs/filters';
 
 // Next.js auto-serves this at /sitemap.xml. Regenerates alongside
@@ -16,7 +17,7 @@ import { META_REGIONS } from './jobs/filters';
 // Priority + changeFrequency are hints, not hard signals — Google
 // mostly uses them for its own crawl-budget planning.
 
-const SITE = 'https://hardproblems.com';
+const SITE = SITE_URL;
 
 // Every top-level marketing page. Article-listing (/articles) and the
 // jobs board (/jobs) are the two "hub" pages, given a higher priority

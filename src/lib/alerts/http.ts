@@ -2,6 +2,8 @@
 // patterns from /api/subscribe so the newsletter and the job-alert
 // signup flows behave consistently.
 
+import { SITE_URL } from '../siteUrl';
+
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export const MAX_EMAIL_LENGTH = 254;
 
@@ -96,8 +98,7 @@ export function rateLimit(ip: string): boolean {
 // themselves; falls back to production.
 export function siteUrl(): string {
   return (
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
-    'https://hardproblems.com'
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || SITE_URL
   );
 }
 

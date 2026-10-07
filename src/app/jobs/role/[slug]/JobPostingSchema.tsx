@@ -11,8 +11,6 @@
 
 import type { SerializedJob } from '../../fetchJobs';
 
-const SITE_URL = 'https://hardproblems.com';
-
 // How long a listing stays valid for search purposes when the sheet
 // doesn't give us an explicit expiry (Column T). Mirrors fetchJobs's
 // MAX_AGE_DAYS so `validThrough` in the schema aligns with when the
@@ -160,5 +158,3 @@ export default function JobPostingSchema({ job }: { job: SerializedJob }) {
     />
   );
 }
-
-export { SITE_URL };

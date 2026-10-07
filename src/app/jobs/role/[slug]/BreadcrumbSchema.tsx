@@ -15,7 +15,7 @@
 
 import type { SerializedJob } from '../../fetchJobs';
 import { locationSlug } from '../../locations';
-import { SITE_URL } from './JobPostingSchema';
+import { SITE_URL } from '../../../../lib/siteUrl';
 
 // `</script>` inside a JSON string would otherwise close this block
 // early — the sheet's titles are team-authored, but escaping the
