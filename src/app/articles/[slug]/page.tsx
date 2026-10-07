@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { BookOpen } from 'lucide-react';
 import ArticleCard from '../../../components/ArticleCard';
+import { SITE_URL } from '../../../lib/siteUrl';
 import NewsletterModule from '../../../components/NewsletterModule';
 import {
   articleTypeSlug,
@@ -215,7 +216,7 @@ export default async function ArticlePage({ params }: Props) {
     headline: titleAsText(article.title),
     description: article.excerpt || article.seoDescription || undefined,
     image: article.image
-      ? [`https://hardproblems.com${article.image}`]
+      ? [`${SITE_URL}${article.image}`]
       : undefined,
     datePublished: article.publishedAt || undefined,
     dateModified: article.updatedAt || article.publishedAt || undefined,
@@ -227,7 +228,7 @@ export default async function ArticlePage({ params }: Props) {
         '@type': 'Person',
         name: article.author,
         url: profile
-          ? `https://hardproblems.com${authorInternalUrl(profile.slug)}`
+          ? `${SITE_URL}${authorInternalUrl(profile.slug)}`
           : undefined,
         sameAs: sameAs.length > 0 ? sameAs : undefined
       };
@@ -237,12 +238,12 @@ export default async function ArticlePage({ params }: Props) {
       name: 'Hard Problems',
       logo: {
         '@type': 'ImageObject',
-        url: 'https://hardproblems.com/opengraph-image'
+        url: `${SITE_URL}/opengraph-image`
       }
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
-      '@id': `https://hardproblems.com/articles/${article.slug}`
+      '@id': `${SITE_URL}/articles/${article.slug}`
     },
     articleSection: article.articleType || undefined,
     keywords: article.topics.length ? article.topics.join(', ') : undefined

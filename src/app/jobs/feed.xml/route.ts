@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { fetchJobs, type SerializedJob } from '../fetchJobs';
 import { filterJobs, parseFiltersFromParams } from '../filters';
 import { orgTypeDisplay } from '../orgType';
+import { SITE_URL } from '../../../lib/siteUrl';
 
 // Cache aligned with fetchJobs(): re-render the feed at most every 10 min.
 export const revalidate = 600;
@@ -14,7 +15,7 @@ export const maxDuration = 60;
 const FEED_TITLE = 'Hard Problems — Job board';
 const FEED_DESCRIPTION =
   'Jobs at organizations working on the hard problems: climate change, health, public services, and education.';
-const ORIGIN_FALLBACK = 'https://hardproblems.com';
+const ORIGIN_FALLBACK = SITE_URL;
 
 function escapeXml(value: string): string {
   return value

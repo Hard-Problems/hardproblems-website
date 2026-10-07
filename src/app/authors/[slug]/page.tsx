@@ -13,6 +13,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import ArticleCard from '../../../components/ArticleCard';
+import { SITE_URL } from '../../../lib/siteUrl';
 import {
   AUTHORS,
   authorSameAs,
@@ -135,13 +136,13 @@ export default async function AuthorPage({ params }: Props) {
     '@type': 'Person',
     name: author.name,
     description: bioParagraphs[0] ?? author.bio,
-    url: `https://hardproblems.com/authors/${author.slug}`,
-    image: avatar ? `https://hardproblems.com${avatar}` : undefined,
+    url: `${SITE_URL}/authors/${author.slug}`,
+    image: avatar ? `${SITE_URL}${avatar}` : undefined,
     sameAs: sameAs.length > 0 ? sameAs : undefined,
     worksFor: {
       '@type': 'Organization',
       name: 'Hard Problems',
-      url: 'https://hardproblems.com'
+      url: SITE_URL
     }
   };
 

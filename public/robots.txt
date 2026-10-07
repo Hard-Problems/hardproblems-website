@@ -7,7 +7,7 @@ Allow: /
 # Sitemap — Next.js generates this at build/revalidate time from
 # `src/app/sitemap.ts`. Advertising it here lets search engines
 # discover new content without waiting to crawl the whole site.
-Sitemap: https://hardproblems.com/sitemap.xml
+Sitemap: https://www.hardproblems.com/sitemap.xml
 
 # --- Search engines ---
 # Explicitly allowed. Left here so it's obvious we WANT to be indexed
