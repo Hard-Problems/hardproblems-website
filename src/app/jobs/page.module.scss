@@ -567,9 +567,21 @@ a.jobDescriptionDetails:focus-visible {
 }
 
 .jobDescriptionCompany {
+  // Block so the bottom margin below applies at all — a <strong> is
+  // inline by default and drops vertical margins. It already sat on its
+  // own line, since every element after it is a block, so this changes
+  // nothing about the layout.
+  display: block;
+  // One step up the scale from the tooltip's own xs, so the name reads as
+  // the heading of the card rather than as the first words of the
+  // description below it.
+  font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--color-text);
-  margin-right: 0.25rem;
+  // Just enough to separate the name from the description without
+  // opening a full paragraph break — a little under half the tooltip's
+  // 16.8px line.
+  margin: 0 0 0.375rem 0;
 }
 
 // Column U descriptions now come in two paragraphs (organisation, then role)
