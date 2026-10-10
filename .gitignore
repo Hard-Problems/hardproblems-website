@@ -40,3 +40,11 @@ yarn-error.log*
 .claude/settings.local.json
 .vercel
 .env*
+
+# Editor swap/backup files. A Vim swap file of .env.local was committed
+# once (June 2026) and is still in the repo's history — `.env*` above
+# covers that exact name now, but a swap file of any OTHER file would
+# still slip through without this.
+*.swp
+*.swo
+*~

@@ -1,0 +1,48 @@
+#!/bin/sh
+#
+# Scan staged changes for secrets before they become a commit.
+#
+# Why this exists: GitHub runs secret scanning and push protection for
+# free on PUBLIC repositories only. On an org-owned private repo the
+# same feature needs GitHub Secret Protection, which is billed per
+# committer. This hook covers the same ground locally and for nothing.
+#
+# It fails CLOSED — a missing gitleaks binary blocks the commit rather
+# than passing quietly, because a secret scanner that silently does
+# nothing is worse than no scanner at all. The escape hatch is
+# `git commit --no-verify`, for the rare case where you know better.
+#
+# Enabled by `git config core.hooksPath .githooks`, which the package's
+# `prepare` script runs on install. See README.
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo
+  echo "  pre-commit: gitleaks is not installed, so staged changes were NOT scanned."
+  echo
+  echo "    brew install gitleaks"
+  echo
+  echo "  Then commit again. To skip this check once: git commit --no-verify"
+  echo
+  exit 1
+fi
+
+# --staged is gitleaks' pre-commit mode: it reads the staged diff rather
+# than the worktree or history, so it sees exactly what is about to be
+# committed.
+#
+# --redact prints the rule and location but not the secret itself, so a
+# detected key does not end up in terminal scrollback on its way to
+# being fixed. -v is what makes it name the rule, file and line; without
+# it the output is just a count, which tells you nothing actionable.
+if ! gitleaks git --staged --redact --no-banner -v --log-level warn; then
+  echo
+  echo "  pre-commit: possible secret in your staged changes (above)."
+  echo
+  echo "  If it is real: unstage it, rotate the credential, and keep it in"
+  echo "  .env.local, which is gitignored."
+  echo
+  echo "  If it is a false positive: add a 'gitleaks:allow' comment on the"
+  echo "  line, or add the finding's fingerprint to .gitleaksignore."
+  echo
+  exit 1
+fi
