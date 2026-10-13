@@ -30,12 +30,10 @@ import {
   Banknote,
   Briefcase,
   Building2,
-  Earth,
   ChevronRight,
   Gem,
   Laptop,
   MapPin,
-  Sparkle,
   SquareMousePointer,
   UsersRound,
   type LucideIcon
@@ -51,7 +49,7 @@ import { orgCategory, orgTypeDisplay } from '../../orgType';
 import { getSectorIcon } from '../../sectorIcons';
 import CompanyFavicon from '../../CompanyFavicon';
 import { buildFaviconUrl } from '../../faviconUrl';
-import { formatRelativeDate } from '../../relativeDate';
+import JobRow from '../../JobRow';
 import JobPostingSchema from './JobPostingSchema';
 import BreadcrumbSchema from './BreadcrumbSchema';
 // The chips below reuse the board's own tag classes rather than
@@ -111,143 +109,57 @@ const MONTHS = [
   'Dec'
 ];
 
-// One related-role row, built from the board's own classes so it reads
-// identically to a row on /jobs. Deliberately not the board's full row:
-// no hover description (that text is the duplication these pages are
-// trying to avoid repeating) and no date column.
-//
-// The title links INTERNALLY here, unlike on the board where it goes to
-// the employer. These lists exist to put a role's own title in the
-// anchor text of a link to its page — pointing them outward would
-// remove the only reason to have them.
-const BULLET_SEPARATOR = '  \u2022  ';
-
 function RelatedJobRow({ job, href }: { job: SerializedJob; href: string }) {
-  const faviconUrl = buildFaviconUrl(job.companyUrl);
   const sector = job.sector ? displaySector(job.sector) : '';
   const SectorIcon = sector ? getSectorIcon(sector) : null;
   const typeLabel = orgTypeDisplay(job.typeOfOrg);
   const pick = isHardProblemsPick(job.goodForWorld);
   const hasSalary = job.salary && job.salary.toLowerCase() !== 'n/a';
 
-  const meta: { key: string; className: string; value: string }[] = [
-    { key: 'company', className: boardStyles.jobCompany, value: job.company },
-    { key: 'place', className: boardStyles.jobLocation, value: placeOf(job) },
-    {
-      key: 'salary',
-      className: boardStyles.jobSalary,
-      value: hasSalary ? job.salary : ''
-    }
-  ].filter((m) => m.value);
-
-  const relativeLabel = formatRelativeDate(job.date);
-  const isNewToday = relativeLabel === 'Today';
-
-  const globe = (
-    <Earth
-      className={boardStyles.companyFavicon}
-      strokeWidth={1.5}
-      aria-hidden="true"
-    />
-  );
-  const icon = faviconUrl ? (
-    <CompanyFavicon
-      src={faviconUrl}
-      alt=""
-      className={boardStyles.companyFavicon}
-      fallback={globe}
-    />
-  ) : (
-    globe
-  );
+  const chips =
+    sector || typeLabel || pick ? (
+      <>
+        {sector && (
+          <span className={`tag ${boardStyles.jobSector}`}>
+            {SectorIcon && (
+              <SectorIcon
+                className={boardStyles.jobSectorIcon}
+                aria-hidden="true"
+              />
+            )}
+            {sector}
+          </span>
+        )}
+        {typeLabel && (
+          <span className={`tag ${boardStyles.jobType}`}>{typeLabel}</span>
+        )}
+        {pick && (
+          <span className={`tag ${boardStyles.jobStaffPick}`}>
+            <Gem className={boardStyles.jobStaffPickStar} aria-hidden="true" />
+            Our Pick
+          </span>
+        )}
+      </>
+    ) : null;
 
   return (
-    <li className={boardStyles.job}>
-      {/* The board wraps the icon in a link to the company; matching it
-          keeps the inherited colour and weight identical too. */}
-      {job.companyUrl ? (
-        <a
-          href={job.companyUrl}
-          target="_blank"
-          rel="noreferrer"
-          aria-label={job.company ? `Visit ${job.company}` : 'Visit company'}
-          className={boardStyles.jobIcon}
-        >
-          {icon}
-        </a>
-      ) : (
-        <div className={boardStyles.jobIcon}>{icon}</div>
-      )}
-      <div className={boardStyles.jobMain}>
-        <h3 className={boardStyles.jobTitle}>
-          <Link href={href}>{job.title}</Link>
-        </h3>
-        <div className={boardStyles.jobMeta}>
-          {meta.map((m, i) => (
-            <Fragment key={m.key}>
-              {i > 0 && (
-                <span className={boardStyles.jobBullet}>
-                  {BULLET_SEPARATOR}
-                </span>
-              )}
-              {m.key === 'company' && job.companyUrl ? (
-                <a
-                  href={job.companyUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={m.className}
-                >
-                  {m.value}
-                </a>
-              ) : (
-                <span className={m.className}>{m.value}</span>
-              )}
-            </Fragment>
-          ))}
-        </div>
-        {(sector || typeLabel || pick) && (
-          <div className={boardStyles.jobSectorRow}>
-            {sector && (
-              <span className={`tag ${boardStyles.jobSector}`}>
-                {SectorIcon && (
-                  <SectorIcon
-                    className={boardStyles.jobSectorIcon}
-                    aria-hidden="true"
-                  />
-                )}
-                {sector}
-              </span>
-            )}
-            {typeLabel && (
-              <span className={`tag ${boardStyles.jobType}`}>{typeLabel}</span>
-            )}
-            {pick && (
-              <span className={`tag ${boardStyles.jobStaffPick}`}>
-                <Gem
-                  className={boardStyles.jobStaffPickStar}
-                  aria-hidden="true"
-                />
-                Our Pick
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-      <div className={boardStyles.jobAside}>
-        {relativeLabel && (
-          <small
-            className={`${boardStyles.jobDate} ${
-              isNewToday ? boardStyles.jobDateToday : ''
-            }`}
-          >
-            {isNewToday && (
-              <Sparkle className={boardStyles.jobDateIcon} aria-hidden="true" />
-            )}
-            {relativeLabel}
-          </small>
-        )}
-      </div>
-    </li>
+    <JobRow
+      job={job}
+      location={placeOf(job)}
+      salary={hasSalary ? job.salary : null}
+      // <h3> rather than the boards' <h4> so the heading order stays
+      // intact under this page's <h2>; `.relatedList h3` resets the serif
+      // the global h3 rule would otherwise apply.
+      headingLevel="h3"
+      // These rows are the one surface whose title points at OUR page
+      // rather than the employer, so they stay in the same tab.
+      titleHref={href}
+      titleIsExternal={false}
+      // The title beside it already names the company; labelling the icon
+      // too just repeats it for screen readers.
+      describeIcon={false}
+      chips={chips}
+    />
   );
 }
 
