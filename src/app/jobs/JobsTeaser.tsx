@@ -1,32 +1,26 @@
 'use client';
 
-import { Fragment, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePostHog } from 'posthog-js/react';
-import { Earth, Gem } from 'lucide-react';
+import { Gem } from 'lucide-react';
 import type { ListedJob } from './fetchJobs';
 import {
   displaySector,
   hoverDescription,
-  isHardProblemsPick,
-  OUR_PICK_EXPLAINER,
-  paragraphs
+  isHardProblemsPick
 } from './filters';
 import { getSectorIcon } from './sectorIcons';
-import CompanyFavicon from './CompanyFavicon';
-import { buildFaviconUrl } from './faviconUrl';
+import JobRow from './JobRow';
+import JobTooltip from './JobTooltip';
 import jobStyles from './page.module.scss';
 import teaserStyles from './jobsTeaser.module.scss';
 
 type ClickSource = 'title' | 'company' | 'favicon';
 
-
 // Country-only — the teaser omits city and remote/work-style tags.
 function formatLocation(job: ListedJob): string {
   return job.country.trim();
 }
-
-const BULLET_SEPARATOR = '  •  ';
 
 export default function JobsTeaser({
   jobs,
@@ -60,203 +54,75 @@ export default function JobsTeaser({
     <div className={teaserStyles.teaser}>
       <ul className={jobStyles.jobs}>
         {jobs.map((job, i) => {
-          const location = formatLocation(job);
-          const faviconUrl = buildFaviconUrl(job.companyUrl);
-          // `job.companyUrl` is pre-sanitized by fetchJobs — it's
-          // either a valid `https://…` URL or an empty string. No
-          // protocol-prefixing needed here.
-          const companyHref = job.companyUrl || null;
-          const hoverText = hoverDescription(job);
           const isStaffPick = isHardProblemsPick(job.goodForWorld);
+          const hoverText = hoverDescription(job);
+          const displayed = job.sector ? displaySector(job.sector) : '';
+          const SectorIcon = displayed ? getSectorIcon(displayed) : null;
 
-          const metaItems: ReactNode[] = [];
-          if (job.company) {
-            metaItems.push(
-              companyHref ? (
-                <Link
-                  href={companyHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={jobStyles.jobCompany}
-                  onClick={() => trackJobClick(job, 'company')}
-                >
-                  {job.company}
-                </Link>
-              ) : (
-                <span className={jobStyles.jobCompany}>{job.company}</span>
-              )
-            );
-          }
-          if (location) {
-            metaItems.push(
-              <span className={jobStyles.jobLocation}>{location}</span>
-            );
-          }
-
-          const globe = (
-            <Earth
-              className={jobStyles.companyFavicon}
-              strokeWidth={1.5}
-              aria-hidden="true"
-            />
-          );
-          const iconContents = faviconUrl ? (
-            <CompanyFavicon
-              src={faviconUrl}
-              alt={
-                companyHref
-                  ? job.company
-                    ? `Icon of ${job.company}`
-                    : 'Company icon'
-                  : ''
-              }
-              className={jobStyles.companyFavicon}
-              fallback={globe}
-            />
-          ) : (
-            globe
-          );
+          // Links to a pre-filtered board rather than toggling a filter in
+          // place: this component is a preview, with no filter UI of its
+          // own for a toggle to act on.
+          const chips =
+            displayed || isStaffPick ? (
+              <>
+                {displayed && (
+                  <Link
+                    href={`/jobs?sectorPick=${encodeURIComponent(
+                      displayed.toLowerCase()
+                    )}`}
+                    className={`tag ${jobStyles.jobSector} ${jobStyles.jobTagButton}`}
+                    aria-label={`See all ${displayed} jobs on the job board`}
+                  >
+                    {SectorIcon && (
+                      <SectorIcon
+                        className={jobStyles.jobSectorIcon}
+                        aria-hidden="true"
+                      />
+                    )}
+                    {displayed}
+                  </Link>
+                )}
+                {isStaffPick && (
+                  <Link
+                    href="/jobs?pick=1"
+                    className={`tag ${jobStyles.jobStaffPick} ${jobStyles.jobTagButton} ${teaserStyles.teaserPick}`}
+                    aria-label="See only Our Picks on the job board"
+                  >
+                    <Gem
+                      className={jobStyles.jobStaffPickStar}
+                      aria-hidden="true"
+                    />
+                    Our Pick
+                  </Link>
+                )}
+              </>
+            ) : null;
 
           return (
-            <li
+            <JobRow
               key={`${job.url}-${i}`}
-              className={`${jobStyles.job} ${teaserStyles.teaserJob}`}
-            >
-              {companyHref ? (
-                <Link
-                  href={companyHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={
-                    job.company ? `Visit ${job.company}` : 'Visit company'
-                  }
-                  className={jobStyles.jobIcon}
-                  onClick={() => trackJobClick(job, 'favicon')}
-                >
-                  {iconContents}
-                </Link>
-              ) : (
-                <div className={jobStyles.jobIcon}>{iconContents}</div>
-              )}
-              <div className={jobStyles.jobMain}>
-                <h4
-                  className={`${jobStyles.jobTitle} ${teaserStyles.teaserTitle}`}
-                >
-                  {job.url ? (
-                    <Link
-                      href={job.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={() => trackJobClick(job, 'title')}
-                    >
-                      {job.title}
-                    </Link>
-                  ) : (
-                    job.title
-                  )}
-                </h4>
-                <div
-                  className={`${jobStyles.jobMeta} ${teaserStyles.teaserMeta}`}
-                >
-                  {metaItems.map((item, idx) => (
-                    <Fragment key={idx}>
-                      {idx > 0 && (
-                        <span className={jobStyles.jobBullet}>
-                          {BULLET_SEPARATOR}
-                        </span>
-                      )}
-                      {item}
-                    </Fragment>
-                  ))}
-                </div>
-                {(job.sector || isStaffPick) && (
-                  <div className={jobStyles.jobSectorRow}>
-                    {job.sector &&
-                      (() => {
-                        const displayed = displaySector(job.sector);
-                        const SectorIcon = getSectorIcon(displayed);
-                        return (
-                          <Link
-                            href={`/jobs?sectorPick=${encodeURIComponent(
-                              displayed.toLowerCase()
-                            )}`}
-                            className={`tag ${jobStyles.jobSector} ${jobStyles.jobTagButton}`}
-                            aria-label={`See all ${displayed} jobs on the job board`}
-                          >
-                            {SectorIcon && (
-                              <SectorIcon
-                                className={jobStyles.jobSectorIcon}
-                                aria-hidden="true"
-                              />
-                            )}
-                            {displayed}
-                          </Link>
-                        );
-                      })()}
-                    {isStaffPick && (
-                      <Link
-                        href="/jobs?pick=1"
-                        className={`tag ${jobStyles.jobStaffPick} ${jobStyles.jobTagButton} ${teaserStyles.teaserPick}`}
-                        aria-label="See only Our Picks on the job board"
-                      >
-                        <Gem
-                          className={jobStyles.jobStaffPickStar}
-                          aria-hidden="true"
-                        />
-                        Our Pick
-                      </Link>
-                    )}
-                  </div>
-                )}
-              </div>
-              {(hoverText || isStaffPick) && (
-                <div className={jobStyles.jobDescription} role="tooltip">
-                  {/* Spans the gap to the row so the tooltip survives the
-                      pointer travelling into it. */}
-                  <span className={jobStyles.jobDescriptionBridge} aria-hidden="true" />
-                  {hoverText && (
-                    <>
-                      {job.company && (
-                        <strong className={jobStyles.jobDescriptionCompany}>
-                          {job.company}
-                        </strong>
-                      )}
-                      {/* One block per paragraph so blank lines in the
-                          sheet's text read as paragraph breaks. */}
-                      {paragraphs(hoverText).map((para, idx) => (
-                        <span
-                          key={idx}
-                          className={jobStyles.jobDescriptionText}
-                        >
-                          {para}
-                        </span>
-                      ))}
-                    </>
-                  )}
-                  {job.slug && (
-                    <Link
-                      href={`/jobs/role/${job.slug}`}
-                      className={jobStyles.jobDescriptionDetails}
-                    >
-                      Read full job description…
-                    </Link>
-                  )}
-                  {isStaffPick && (
-                    <div className={jobStyles.jobDescriptionPick}>
-                      <strong className={jobStyles.jobDescriptionPickHeading}>
-                        <Gem
-                          className={jobStyles.jobDescriptionPickIcon}
-                          aria-hidden="true"
-                        />
-                        Our Pick
-                      </strong>
-                      <p>{OUR_PICK_EXPLAINER}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-              {/* No .jobAside — the preview omits the relative date. */}
-            </li>
+              job={job}
+              liClassName={teaserStyles.teaserJob}
+              titleClassName={teaserStyles.teaserTitle}
+              metaClassName={teaserStyles.teaserMeta}
+              // Country only, and no salary: the preview column is narrow
+              // and the board beside it carries the detail.
+              location={formatLocation(job)}
+              chips={chips}
+              afterMain={
+                hoverText || isStaffPick ? (
+                  <JobTooltip
+                    company={job.company}
+                    text={hoverText}
+                    slug={job.slug}
+                    isStaffPick={isStaffPick}
+                  />
+                ) : null
+              }
+              // The preview omits the relative date.
+              showDate={false}
+              onLinkClick={(target: ClickSource) => trackJobClick(job, target)}
+            />
           );
         })}
       </ul>
