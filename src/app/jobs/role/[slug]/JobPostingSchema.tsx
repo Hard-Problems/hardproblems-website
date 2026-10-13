@@ -10,6 +10,7 @@
 // Docs: https://developers.google.com/search/docs/appearance/structured-data/job-posting
 
 import type { SerializedJob } from '../../fetchJobs';
+import { SITE_URL } from '../../../../lib/siteUrl';
 
 // How long a listing stays valid for search purposes when the sheet
 // doesn't give us an explicit expiry (Column T). Mirrors fetchJobs's
@@ -56,7 +57,7 @@ function validThrough(
 // omitted when the sheet value is missing (Google is fine with sparse
 // data; required-for-Jobs-Card fields are title, description, and
 // datePosted, all of which we always have).
-function buildJobPosting(job: SerializedJob) {
+function buildJobPosting(job: SerializedJob, canonicalUrl: string) {
   const remote = isRemote(job.remote);
 
   const posting: Record<string, unknown> = {
@@ -88,10 +89,17 @@ function buildJobPosting(job: SerializedJob) {
           sameAs: job.companyUrl || undefined
         }
       : undefined,
+    // Our page describes the role but does not take the application —
+    // applying is one more click out to the employer. That is exactly
+    // what directApply: false states, and it stays true now that `url`
+    // points here rather than at the employer.
     directApply: false,
-    // Direct link to the external listing so Google's Jobs Card sends
-    // clicks straight to the employer.
-    url: job.url || undefined
+    // The canonical URL of the posting, which Google wants to be the page
+    // this markup sits on. It used to be the employer's listing, which
+    // meant the Jobs Card sent clicks somewhere the structured data did
+    // not describe — and left this page, the one actually carrying the
+    // markup, unreferenced by it.
+    url: canonicalUrl
   };
 
   // Location handling — mutually-exclusive branches per Google's
@@ -147,8 +155,16 @@ function buildJobPosting(job: SerializedJob) {
 // describe the page it is on, so an array on a listing page was never
 // eligible for job rich results — it was removed when these per-job
 // pages were introduced. Keep it to a single posting here.
-export default function JobPostingSchema({ job }: { job: SerializedJob }) {
-  const json = JSON.stringify(buildJobPosting(job));
+export default function JobPostingSchema({
+  job,
+  slug
+}: {
+  job: SerializedJob;
+  slug: string;
+}) {
+  const json = JSON.stringify(
+    buildJobPosting(job, `${SITE_URL}/jobs/role/${slug}`)
+  );
   return (
     <script
       type="application/ld+json"

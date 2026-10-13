@@ -2,14 +2,9 @@
 
 import Link from 'next/link';
 import { usePostHog } from 'posthog-js/react';
-import { Gem } from 'lucide-react';
 import type { ListedJob } from './fetchJobs';
-import {
-  displaySector,
-  hoverDescription,
-  isHardProblemsPick
-} from './filters';
-import { getSectorIcon } from './sectorIcons';
+import { hoverDescription, isHardProblemsPick } from './filters';
+import JobChipLinks from './JobChipLinks';
 import JobRow from './JobRow';
 import JobTooltip from './JobTooltip';
 import jobStyles from './page.module.scss';
@@ -56,47 +51,18 @@ export default function JobsTeaser({
         {jobs.map((job, i) => {
           const isStaffPick = isHardProblemsPick(job.goodForWorld);
           const hoverText = hoverDescription(job);
-          const displayed = job.sector ? displaySector(job.sector) : '';
-          const SectorIcon = displayed ? getSectorIcon(displayed) : null;
-
-          // Links to a pre-filtered board rather than toggling a filter in
-          // place: this component is a preview, with no filter UI of its
-          // own for a toggle to act on.
-          const chips =
-            displayed || isStaffPick ? (
-              <>
-                {displayed && (
-                  <Link
-                    href={`/jobs?sectorPick=${encodeURIComponent(
-                      displayed.toLowerCase()
-                    )}`}
-                    className={`tag ${jobStyles.jobSector} ${jobStyles.jobTagButton}`}
-                    aria-label={`See all ${displayed} jobs on the job board`}
-                  >
-                    {SectorIcon && (
-                      <SectorIcon
-                        className={jobStyles.jobSectorIcon}
-                        aria-hidden="true"
-                      />
-                    )}
-                    {displayed}
-                  </Link>
-                )}
-                {isStaffPick && (
-                  <Link
-                    href="/jobs?pick=1"
-                    className={`tag ${jobStyles.jobStaffPick} ${jobStyles.jobTagButton} ${teaserStyles.teaserPick}`}
-                    aria-label="See only Our Picks on the job board"
-                  >
-                    <Gem
-                      className={jobStyles.jobStaffPickStar}
-                      aria-hidden="true"
-                    />
-                    Our Pick
-                  </Link>
-                )}
-              </>
-            ) : null;
+          // Links to a pre-filtered board rather than toggling a filter
+          // in place: this is a preview, with no filter UI of its own for
+          // a toggle to act on. No org-type chip — the column is narrow.
+          const chips = (
+            <JobChipLinks
+              sector={job.sector}
+              typeOfOrg={job.typeOfOrg}
+              goodForWorld={job.goodForWorld}
+              showOrgType={false}
+              pickClassName={teaserStyles.teaserPick}
+            />
+          );
 
           return (
             <JobRow
@@ -109,12 +75,16 @@ export default function JobsTeaser({
               // and the board beside it carries the detail.
               location={formatLocation(job)}
               chips={chips}
+              // As on the board: the title opens the job's own page, and
+              // the tooltip's button is the outbound route.
+              titleHref={job.slug ? `/jobs/role/${job.slug}` : job.url}
+              titleIsExternal={!job.slug}
               afterMain={
                 hoverText || isStaffPick ? (
                   <JobTooltip
                     company={job.company}
                     text={hoverText}
-                    slug={job.slug}
+                    applyHref={job.url}
                     isStaffPick={isStaffPick}
                   />
                 ) : null

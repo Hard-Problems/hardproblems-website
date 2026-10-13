@@ -81,12 +81,13 @@ export type JobRowProps = {
    * `.relatedList h3` resets.
    */
   headingLevel?: 'h3' | 'h4';
-  /** Defaults to the employer's listing (job.url). */
-  titleHref?: string | null;
   /**
-   * Whether the title opens in a new tab. True for the employer's listing,
-   * false for the related lists, which link to our own job pages.
+   * Where the title points. Every surface now passes the job's own page
+   * on this site; it falls back to the employer's listing for the rare
+   * job with no slug.
    */
+  titleHref?: string | null;
+  /** Whether the title opens in a new tab. Only an outbound link does. */
   titleIsExternal?: boolean;
 
   liClassName?: string;
@@ -105,8 +106,13 @@ export type JobRowProps = {
   belowChips?: ReactNode;
   /** Sibling of `.jobMain` — the hover tooltip on the board and teaser. */
   afterMain?: ReactNode;
-  /** "Read full job description…" link to the job's own page. */
-  detailsHref?: string | null;
+  /**
+   * The outbound "View listing and apply" link, pointing at the
+   * employer's own listing (Column B). Named for what it does rather
+   * than where it sits: on the board it is only visible on mobile, since
+   * the tooltip carries the same link at desktop width.
+   */
+  applyHref?: string | null;
 
   /**
    * The homepage preview omits the relative date — its column is narrow
@@ -133,7 +139,7 @@ export default function JobRow({
   chips,
   belowChips,
   afterMain,
-  detailsHref,
+  applyHref,
   showDate = true,
   onLinkClick
 }: JobRowProps) {
@@ -251,9 +257,14 @@ export default function JobRow({
         {chips && <div className={styles.jobSectorRow}>{chips}</div>}
         {belowChips}
 
-        {detailsHref && (
-          <Link href={detailsHref} className={styles.jobDetailsLink}>
-            Read full job description…
+        {applyHref && (
+          <Link
+            href={applyHref}
+            target="_blank"
+            rel="noreferrer"
+            className={styles.jobDetailsLink}
+          >
+            View listing and apply
           </Link>
         )}
       </div>

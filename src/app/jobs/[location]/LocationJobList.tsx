@@ -7,8 +7,8 @@
 //
 // What this surface does differently, and why:
 //   - no client interactivity (the page is already location-filtered), so
-//     the sector / type / Our-Pick tags are inert <span>s rather than
-//     filter <button>s;
+//     the sector / type / Our-Pick chips link to a pre-filtered board
+//     rather than toggling a filter in place as the board's do;
 //   - the description is printed inline in the card instead of appearing
 //     in a hover tooltip, which is what gives these pages crawlable,
 //     location-specific text;
@@ -16,11 +16,9 @@
 //     each card already carries more than a board row does.
 
 import Link from 'next/link';
-import { Gem } from 'lucide-react';
 import type { ListedJob } from '../fetchJobs';
-import { displaySector, isHardProblemsPick, hoverDescription } from '../filters';
-import { orgTypeDisplay } from '../orgType';
-import { getSectorIcon } from '../sectorIcons';
+import { hoverDescription } from '../filters';
+import JobChipLinks from '../JobChipLinks';
 import JobRow from '../JobRow';
 import styles from '../page.module.scss';
 import locationStyles from './page.module.scss';
@@ -45,38 +43,16 @@ export default function LocationJobList({ jobs }: { jobs: ListedJob[] }) {
   return (
     <ul className={styles.jobs}>
       {jobs.map((job, i) => {
-        const isStaffPick = isHardProblemsPick(job.goodForWorld);
-        const sector = displaySector(job.sector);
-        const SectorIcon = sector ? getSectorIcon(sector) : null;
-        const typeLabel = orgTypeDisplay(job.typeOfOrg);
         const hasSalary = job.salary && job.salary.toLowerCase() !== 'n/a';
         const description = hoverDescription(job);
 
-        const chips =
-          sector || typeLabel || isStaffPick ? (
-            <>
-              {sector && (
-                <span className={`tag ${styles.jobSector}`}>
-                  {SectorIcon && (
-                    <SectorIcon
-                      className={styles.jobSectorIcon}
-                      aria-hidden="true"
-                    />
-                  )}
-                  {sector}
-                </span>
-              )}
-              {typeLabel && (
-                <span className={`tag ${styles.jobType}`}>{typeLabel}</span>
-              )}
-              {isStaffPick && (
-                <span className={`tag ${styles.jobStaffPick}`}>
-                  <Gem className={styles.jobStaffPickStar} aria-hidden="true" />
-                  Our Pick
-                </span>
-              )}
-            </>
-          ) : null;
+        const chips = (
+          <JobChipLinks
+            sector={job.sector}
+            typeOfOrg={job.typeOfOrg}
+            goodForWorld={job.goodForWorld}
+          />
+        );
 
         return (
           <JobRow
@@ -93,11 +69,12 @@ export default function LocationJobList({ jobs }: { jobs: ListedJob[] }) {
                 </p>
               ) : null
             }
-            // Without this these hubs linked only outwards, so /jobs was
-            // the sole internal route to ~583 job pages while those pages'
-            // breadcrumbs pointed back up here — a one-way link. The TITLE
-            // still goes straight to the employer.
-            detailsHref={job.slug ? `/jobs/role/${job.slug}` : null}
+            // The title goes to the job's own page here too, which is
+            // also what gives these hubs an internal route to the ~583
+            // job pages whose breadcrumbs point back up at them.
+            titleHref={job.slug ? `/jobs/role/${job.slug}` : job.url}
+            titleIsExternal={!job.slug}
+            applyHref={job.url}
           />
         );
       })}

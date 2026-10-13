@@ -6,9 +6,12 @@
 // results. One page per job gives that markup somewhere valid to live,
 // and gives each role a URL that can rank for its own long-tail query.
 //
-// The job TITLE on these pages still links out to the employer's real
-// listing — we are not trying to intercept applications, and
-// `directApply: false` in the schema says so explicitly.
+// Every job row across the site — the board, the homepage preview, the
+// location hubs and the related lists here — now titles through to one
+// of these pages, with the employer's own listing reached from the
+// "View listing and apply" link beside it. We still take no
+// applications ourselves, which `directApply: false` in the JobPosting
+// markup states explicitly.
 //
 // Lifecycle: the sync cron prunes expired jobs from the snapshot (see
 // pruneExpiredJobs), so a closed role disappears from the data and this
@@ -31,7 +34,6 @@ import {
   Briefcase,
   Building2,
   ChevronRight,
-  Gem,
   Laptop,
   MapPin,
   SquareMousePointer,
@@ -45,16 +47,14 @@ import {
   paragraphs,
   splitCountries
 } from '../../filters';
-import { orgCategory, orgTypeDisplay } from '../../orgType';
-import { getSectorIcon } from '../../sectorIcons';
 import CompanyFavicon from '../../CompanyFavicon';
 import { buildFaviconUrl } from '../../faviconUrl';
 import JobRow from '../../JobRow';
+import JobChipLinks from '../../JobChipLinks';
 import JobPostingSchema from './JobPostingSchema';
 import BreadcrumbSchema from './BreadcrumbSchema';
 // The chips below reuse the board's own tag classes rather than
 // restyling them here, so the two stay in step.
-import boardStyles from '../../page.module.scss';
 import styles from './page.module.scss';
 
 // Hourly, matching the location pages. The underlying snapshot only
@@ -110,37 +110,7 @@ const MONTHS = [
 ];
 
 function RelatedJobRow({ job, href }: { job: SerializedJob; href: string }) {
-  const sector = job.sector ? displaySector(job.sector) : '';
-  const SectorIcon = sector ? getSectorIcon(sector) : null;
-  const typeLabel = orgTypeDisplay(job.typeOfOrg);
-  const pick = isHardProblemsPick(job.goodForWorld);
   const hasSalary = job.salary && job.salary.toLowerCase() !== 'n/a';
-
-  const chips =
-    sector || typeLabel || pick ? (
-      <>
-        {sector && (
-          <span className={`tag ${boardStyles.jobSector}`}>
-            {SectorIcon && (
-              <SectorIcon
-                className={boardStyles.jobSectorIcon}
-                aria-hidden="true"
-              />
-            )}
-            {sector}
-          </span>
-        )}
-        {typeLabel && (
-          <span className={`tag ${boardStyles.jobType}`}>{typeLabel}</span>
-        )}
-        {pick && (
-          <span className={`tag ${boardStyles.jobStaffPick}`}>
-            <Gem className={boardStyles.jobStaffPickStar} aria-hidden="true" />
-            Our Pick
-          </span>
-        )}
-      </>
-    ) : null;
 
   return (
     <JobRow
@@ -151,14 +121,18 @@ function RelatedJobRow({ job, href }: { job: SerializedJob; href: string }) {
       // intact under this page's <h2>; `.relatedList h3` resets the serif
       // the global h3 rule would otherwise apply.
       headingLevel="h3"
-      // These rows are the one surface whose title points at OUR page
-      // rather than the employer, so they stay in the same tab.
       titleHref={href}
       titleIsExternal={false}
       // The title beside it already names the company; labelling the icon
       // too just repeats it for screen readers.
       describeIcon={false}
-      chips={chips}
+      chips={
+        <JobChipLinks
+          sector={job.sector}
+          typeOfOrg={job.typeOfOrg}
+          goodForWorld={job.goodForWorld}
+        />
+      }
     />
   );
 }
@@ -359,13 +333,9 @@ export default async function JobPage({ params }: Props) {
   ];
   const visibleFacts = facts.filter((f) => f.value && f.value.trim());
 
-  // Same three chips the board puts on each row, with the same
-  // thresholds, linking to the board pre-filtered the way clicking the
-  // chip there would filter it.
+  // The chips themselves come from <JobChipLinks>; these two are read by
+  // the related-roles logic and the "Why this work matters" section below.
   const sectorLabel = job.sector ? displaySector(job.sector) : '';
-  const SectorIcon = sectorLabel ? getSectorIcon(sectorLabel) : null;
-  const typeLabel = orgTypeDisplay(job.typeOfOrg);
-  const orgCat = orgCategory(job.typeOfOrg);
   const isStaffPick = isHardProblemsPick(job.goodForWorld);
 
   // Related roles. Two jobs: they give the page content that exists
@@ -450,7 +420,10 @@ export default async function JobPage({ params }: Props) {
             href={job.url}
             target="_blank"
             rel="noreferrer"
-            className="black-button"
+            // The site-wide small variant rather than a one-off override:
+            // this button sits inside the apply card, which is one of the
+            // "tighter contexts" that variant exists for.
+            className="black-button black-button--small"
           >
             View the full listing and apply →
           </a>
@@ -497,7 +470,7 @@ export default async function JobPage({ params }: Props) {
 
   return (
     <main className={styles.job}>
-      <JobPostingSchema job={job} />
+      <JobPostingSchema job={job} slug={slug} />
       <BreadcrumbSchema job={job} slug={slug} country={countryCrumb} />
 
       <p className={styles.breadcrumb}>
@@ -536,53 +509,13 @@ export default async function JobPage({ params }: Props) {
           {where && <span className={styles.where}>, {where}</span>}
         </p>
 
-        {(sectorLabel || typeLabel || isStaffPick) && (
-          <div className={styles.chipRow}>
-            {sectorLabel && (
-              <Link
-                href={`/jobs?sectorPick=${encodeURIComponent(
-                  sectorLabel.toLowerCase()
-                )}`}
-                className={`tag ${boardStyles.jobSector} ${boardStyles.jobTagButton}`}
-              >
-                {SectorIcon && (
-                  <SectorIcon
-                    className={boardStyles.jobSectorIcon}
-                    aria-hidden="true"
-                  />
-                )}
-                {sectorLabel}
-              </Link>
-            )}
-
-            {typeLabel &&
-              (orgCat ? (
-                <Link
-                  href={`/jobs?org=${encodeURIComponent(orgCat)}`}
-                  className={`tag ${boardStyles.jobType} ${boardStyles.jobTagButton}`}
-                >
-                  {typeLabel}
-                </Link>
-              ) : (
-                <span className={`tag ${boardStyles.jobType}`}>
-                  {typeLabel}
-                </span>
-              ))}
-
-            {isStaffPick && (
-              <Link
-                href="/jobs?pick=1"
-                className={`tag ${boardStyles.jobStaffPick} ${boardStyles.jobTagButton}`}
-              >
-                <Gem
-                  className={boardStyles.jobStaffPickStar}
-                  aria-hidden="true"
-                />
-                Our Pick
-              </Link>
-            )}
-          </div>
-        )}
+        <div className={styles.chipRow}>
+          <JobChipLinks
+            sector={job.sector}
+            typeOfOrg={job.typeOfOrg}
+            goodForWorld={job.goodForWorld}
+          />
+        </div>
 
         {applyAfter === null && applyBlock}
       </div>

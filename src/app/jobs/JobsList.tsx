@@ -1003,21 +1003,26 @@ export default function JobsList({
                 location={formatLocation(job)}
                 salary={hasSalary ? job.salary : null}
                 chips={chips}
+                // The title goes to the job's own page on this site; the
+                // employer's listing is reached from the apply link below
+                // and from the tooltip's button. Jobs with no slug (none
+                // in practice) keep the outbound title as a fallback.
+                titleHref={job.slug ? `/jobs/role/${job.slug}` : job.url}
+                titleIsExternal={!job.slug}
                 afterMain={
                   hoverText || isStaffPick ? (
                     <JobTooltip
                       company={job.company}
                       text={hoverText}
-                      slug={job.slug}
+                      applyHref={job.url}
                       isStaffPick={isStaffPick}
                     />
                   ) : null
                 }
                 // Only ever seen on mobile — at desktop the tooltip's
                 // button goes to the same place and `.board
-                // .jobDetailsLink` hides this one. The TITLE still goes
-                // straight to the employer's listing.
-                detailsHref={job.slug ? `/jobs/role/${job.slug}` : null}
+                // .jobDetailsLink` hides this one.
+                applyHref={job.url}
                 onLinkClick={(target: ClickSource) => trackJobClick(job, target)}
               />
             );

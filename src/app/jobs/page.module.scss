@@ -462,8 +462,8 @@
   // The tooltip shows the full Column U job description (~1,100 chars
   // median) untruncated, so width is what keeps it from becoming an
   // extremely tall column of text — but it no longer has to carry the
-  // whole thing, since the "Read full job description…" button now leads
-  // to the job's own page.
+  // whole thing, since the job's own page does, and the row's title now
+  // leads there.
   width: 264px;
   background: #fef9e7;
   border: 1px solid #ebd2b3;
@@ -503,8 +503,13 @@
 // rather than the site's green pill, which would overwhelm it at this
 // size.
 .jobDescriptionDetails {
-  display: block;
-  text-align: center;
+  // Flex rather than block + text-align so the trailing arrow sits on the
+  // text's optical centre line. Still block-level, so the button keeps
+  // the full width of the tooltip.
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3em;
   margin-top: 0.75rem;
   // On top of the tooltip's own 10px bottom padding, so the button has
   // room under it rather than sitting against the edge.
@@ -532,6 +537,18 @@ a.jobDescriptionDetails:focus-visible {
   background: #f8ebc9;
   color: #3f2a06;
   outline: none;
+}
+
+// Trailing arrow on the tooltip's button, marking it as the link that
+// leaves the site. Sized in `em` so it tracks the button's font-size, as
+// the sector and pick icons do. Only the tooltip's button carries it —
+// the inline link on mobile sits in the flow of the card and reads as
+// text, not as a button.
+.jobDescriptionDetailsIcon {
+  width: 0.95em;
+  height: 0.95em;
+  flex-shrink: 0;
+  stroke-width: 2;
 }
 
 // Arrow on the right side of the tooltip pointing toward the job row.
@@ -747,8 +764,16 @@ a.jobCompany:focus {
 }
 
 .jobType {
+  // Same box model as the sector and pick chips, which are inline-flex
+  // with centred items because each wraps an icon. This one has no icon,
+  // so it had stayed an inline-block sitting on the BASELINE — which put
+  // it 1.3px lower than its neighbours on every row on the site. Most
+  // visible on the location hubs, where the chips are smaller and sit
+  // closer together.
+  display: inline-flex;
+  align-items: center;
   margin: 0 0.4rem 0 0;
-  vertical-align: baseline;
+  vertical-align: middle;
   background: #d6e4f7;
   color: #1d4e89;
   font-family: var(--font-mono);
@@ -1054,10 +1079,10 @@ a.jobDetailsLink:focus-visible {
     display: block;
   }
 
-  // …and drop the meta-row "Details" link at the same breakpoint, since
-  // the tooltip now carries "Read full job description…" to the same
-  // place. The two are exactly complementary: the link is the only route
-  // to a job's page below this width, where the tooltip never shows.
+  // …and drop the meta-row "View listing and apply" link at the same
+  // breakpoint, since the tooltip carries the same outbound link. The two
+  // are exactly complementary: the link is the only route to the
+  // employer's listing below this width, where the tooltip never shows.
   //
   // Scoped to `.board` on purpose. The location pages (/jobs/<country>)
   // render the same rows OUTSIDE that wrapper and have no tooltip at all
