@@ -14,21 +14,26 @@
 // it to overlay, so they print the description inline in the card instead.
 
 import Link from 'next/link';
-import { Gem } from 'lucide-react';
+import { ArrowRight, Gem } from 'lucide-react';
 import { paragraphs, OUR_PICK_EXPLAINER } from './filters';
 import styles from './page.module.scss';
 
 export default function JobTooltip({
   company,
   text,
-  slug,
+  applyHref,
   isStaffPick
 }: {
   company: string;
   /** The sheet's description — Column U, or Column M as a fallback. */
   text: string;
-  /** Slug of the job's own page, for the button at the bottom. */
-  slug?: string;
+  /**
+   * The employer's own listing (Column B), for the button at the bottom.
+   * The row's title now goes to the job's page on this site, so this is
+   * the outbound route — which is why the button carries the apply
+   * wording rather than pointing deeper into our own pages.
+   */
+  applyHref?: string;
   isStaffPick: boolean;
 }) {
   return (
@@ -50,12 +55,18 @@ export default function JobTooltip({
           ))}
         </>
       )}
-      {slug && (
+      {applyHref && (
         <Link
-          href={`/jobs/role/${slug}`}
+          href={applyHref}
+          target="_blank"
+          rel="noreferrer"
           className={styles.jobDescriptionDetails}
         >
-          Read full job description…
+          View listing and apply
+          <ArrowRight
+            className={styles.jobDescriptionDetailsIcon}
+            aria-hidden="true"
+          />
         </Link>
       )}
       {isStaffPick && (
