@@ -109,13 +109,40 @@
 // the heading order stays intact under the section's <h2>; the global h3
 // rule would otherwise render them at 28px in Instrument Serif, which
 // would outweigh the section heading above them.
-.contentHeading {
+// The "## " subheadings inside Column X. They carry the global
+// `section-label` class, so the family, weight, size and line-height
+// come from the same rule the section <h2>s above them use and the two
+// cannot drift apart. Only two things are left to set here:
+//
+//   - the margins, which are this page's own rhythm;
+//   - the tracking, because globals applies it as `h2.section-label` and
+//     so it never reaches an <h3>.
+//
+// Selector is `h3.contentHeading` (0,1,1) rather than the bare class so
+// it reliably outranks `.section-label` (0,1,0) for letter-spacing,
+// whatever order the module and global stylesheets land in.
+h3.contentHeading {
   margin: 1.9rem 0 0.5rem 0;
-  font-family: inherit;
-  font-size: var(--font-size-base);
-  font-weight: 600;
-  line-height: 1.4;
-  letter-spacing: 0;
+  letter-spacing: -0.025em;
+}
+
+// Section headings on this page run smaller than the site-wide
+// `.section-label` 1.3rem. A job page is a dense stack of short
+// sections — Why this work matters, About <org>, Details, then three
+// related-role lists — and at the full size those headings competed with
+// the <h1> instead of organising the page under it.
+//
+// Scoped to `.job` so only this page changes. Note `:global(...)` on the
+// h2: `section-label` lives in globals.css, and a bare `.section-label`
+// written inside a CSS module is hashed like a local class and matches
+// nothing — which is exactly how the first attempt at this silently
+// shrank only the h3s.
+//
+// Deliberately NOT applied to the related rows' `h3.jobTitle` — those are
+// job titles that have to keep matching the board's rows.
+.job h2:global(.section-label),
+.job h3.contentHeading {
+  font-size: 1rem;
 }
 
 // Bullet lists inside the prose sections. The global `p, li, dd` rule
@@ -236,14 +263,6 @@
   stroke-width: 1.8;
 }
 
-// The organisation's own site, under its description. `.job .companySite`
-// to outweigh `.block p`, whose margin shorthand would otherwise zero the
-// top margin.
-.job .companySite {
-  margin-top: 0.85rem;
-  font-size: var(--font-size-sm);
-}
-
 // Related-role lists. Rows come from RelatedJobRow, which uses the
 // board's own classes, so this only has to strip the <ul> defaults and
 // give the first row the top rule that `.job`'s bottom border implies.
@@ -299,12 +318,56 @@
 // Sits above the related-role modules, so it needs clearance below as
 // well as above — otherwise it reads as a caption on the first list
 // rather than a note about this job.
+// Yellow info banner, matching the `.note` blocks used in article
+// content (see `:global(.note)` in articles/[slug]/article.module.scss,
+// which is the reference for these values).
+//
+// Replicated rather than shared because that rule is nested inside the
+// article body wrapper, so lifting it into globals.css would drop its
+// specificity below several article link rules and risk restyling every
+// article to add one banner here. Worth extracting properly if a third
+// caller ever appears.
 .footerNote {
-  margin-top: 3rem;
-  margin-bottom: 3.5rem;
-  padding-top: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  margin: 3rem 0 3.5rem 0;
+  padding: 1rem 1.25rem;
+  background: lemonchiffon;
+  border-left: 1px solid #e8c200;
+  color: #746100;
   font-size: var(--font-size-sm);
-  color: #666;
+  line-height: 1.5;
+
+  // Lucide `badge-info`, as a background-image on ::before so it scales
+  // with the banner rather than needing an element in the markup.
+  &::before {
+    content: '';
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    margin-top: 0.1em;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23746100' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z'/%3E%3Cline x1='12' x2='12' y1='16' y2='12'/%3E%3Cline x1='12' x2='12.01' y1='8' y2='8'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+  }
+
+  // The site link green only reaches 4.01:1 on lemonchiffon, failing
+  // WCAG AA. This rust clears AAA, as on the article notes.
+  a,
+  a:visited {
+    color: #8a3d00;
+    text-decoration-color: #d3a171;
+  }
+
+  a:hover,
+  a:focus {
+    color: #6b2f00;
+    text-decoration-color: currentColor;
+  }
+
+  p {
+    margin: 0;
+  }
 }
 
 // On desktop the apply block becomes a bordered card floated to the

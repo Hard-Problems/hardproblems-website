@@ -197,7 +197,7 @@ function RichText({ text }: { text: string }) {
     const heading = para.match(SUBHEADING);
     blocks.push(
       heading ? (
-        <h3 key={i} className={styles.contentHeading}>
+        <h3 key={i} className={`section-label ${styles.contentHeading}`}>
           {heading[1]}
         </h3>
       ) : (
@@ -219,13 +219,6 @@ function formatDate(iso: string | null): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-}
-
-// Readable form of a company URL for display: drop the scheme and any
-// trailing slash, keep the rest. `companyUrl` is already sanitised by
-// fetchJobs — it is either a valid https:// URL or an empty string.
-function displayUrl(url: string): string {
-  return url.replace(/^https?:\/\//, '').replace(/\/+$/, '');
 }
 
 // Just the physical place. The remote/hybrid field is shown as its own
@@ -459,14 +452,11 @@ export default async function JobPage({ params }: Props) {
 
   // The apply block closes the first prose section on the page, so this
   // chain follows the section order below: impact, then the role
-  // write-up, then the company blurb.
-  const applyAfter = impact
-    ? 'why'
-    : aboutRole
-      ? 'role'
-      : job.description
-        ? 'about'
-        : null;
+  // write-up. There used to be a third fallback — a separate company
+  // blurb from Column M — but that section is gone, so a job with
+  // neither of the two now falls through to null and the block renders
+  // in the header instead.
+  const applyAfter = impact ? 'why' : aboutRole ? 'role' : null;
 
   return (
     <main className={styles.job}>
@@ -539,7 +529,9 @@ export default async function JobPage({ params }: Props) {
 
       {aboutRole && (
         <section className={styles.block}>
-          <h2 className="section-label">About the role</h2>
+          <h2 className="section-label">
+            About {job.company || 'the organisation'}
+          </h2>
           <RichText text={aboutRole} />
           {applyAfter === 'role' && applyBlock}
         </section>
@@ -562,29 +554,14 @@ export default async function JobPage({ params }: Props) {
         </section>
       )}
 
-      {(job.description || job.companyUrl) && (
-        <section className={styles.block}>
-          <h2 className="section-label">
-            About {job.company || 'the organisation'}
-          </h2>
-          {job.description && <RichText text={job.description} />}
-          {job.companyUrl && (
-            <p className={styles.companySite}>
-              <a href={job.companyUrl} target="_blank" rel="noreferrer">
-                {displayUrl(job.companyUrl)}
-              </a>
-            </p>
-          )}
-          {applyAfter === 'about' && applyBlock}
-        </section>
-      )}
-
-      <p className={styles.footerNote}>
-        This job is listed on the{' '}
-        <Link href="/jobs">Hard Problems job board</Link>, but details come from
-        the employer&rsquo;s own listing and may have changed — always check the
-        original posting.
-      </p>
+      <div className={styles.footerNote}>
+        <p>
+          This job is listed on the{' '}
+          <Link href="/jobs">Hard Problems job board</Link>, but details come
+          from the employer&rsquo;s own listing and may have changed — always
+          check the original posting.
+        </p>
+      </div>
 
       {(sameCompany.length > 0 ||
         sameSector.length > 0 ||
