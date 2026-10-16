@@ -344,6 +344,44 @@ export default function Page() {
         </h3>
         <p>Directly from you</p>
 
+        <h3 className="space-top-large" id="survey">
+          The annual survey
+        </h3>
+        <p>
+          Once a year we run a survey about working in design (for example, the{' '}
+          <Link href="/survey/2026">State of Design 2026</Link>). Your answers
+          are <strong>anonymous</strong>. We do not ask who you are, we do not
+          record your IP address with your answers, and nothing in the
+          questionnaire is used to identify you.
+        </p>
+        <p>
+          When you submit the survey we store your answers along with a random
+          token, and a short label indicating where you found the link (for
+          example <em>smashing-magazine</em>, taken from the shared URL). The
+          token is shown only to you.
+        </p>
+        <p>
+          At the end you may optionally give us an email address to receive the
+          results, and separately choose whether to join our newsletter. That
+          address is stored in a different table from your answers, linked only
+          by the token, so the two are not joined together in normal use. Giving
+          an address is entirely optional — your answers are recorded either
+          way.
+        </p>
+        <p>
+          Our lawful basis for the anonymous answers is legitimate interest
+          (understanding the design profession in order to publish research).
+          Our lawful basis for emailing you the results, and for the newsletter,
+          is your consent, which you can withdraw at any time.
+        </p>
+        <p>
+          <strong>To have your survey response deleted</strong>, email us at{' '}
+          <em>contact@hardproblems.com</em> with the token shown to you when you
+          finished, or with the email address you gave us. Because the answers
+          themselves are anonymous, the token or that address is the only way we
+          can find your response.
+        </p>
+
         <h3 className="space-top-large" id="keep">
           How long we keep information
         </h3>
@@ -366,9 +404,16 @@ export default function Page() {
           Contact information provided for the purpose of attending an event or
           applying for a service are removed after 3 months.
         </p>
+        <p>
+          Anonymous survey answers are kept indefinitely so that each year can
+          be compared with the last. Email addresses given to receive the survey
+          results are deleted once that year&rsquo;s report has been sent,
+          unless you also asked to join the newsletter — in which case the
+          newsletter rules above apply.
+        </p>
 
         <h3 className="space-top-large">Last updated</h3>
-        <p>8 July 2026</p>
+        <p>16 October 2026</p>
       </section>
       <section className="right">
         <h3 id="complain">How to complain</h3>

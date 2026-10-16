@@ -99,9 +99,17 @@ li a:focus {
 }
 
 /* Black pill button — same look as the one used inside articles. Explicit
-   :visited and `a` selectors override the site link-color rules above. */
+   :visited and `a` selectors override the site link-color rules above.
+   
+   `button.black-button` is listed alongside because the class was
+   written for links only: a <button> carrying it inherited none of this
+   and rendered as a raw grey browser button. The survey's controls are
+   real buttons rather than links, since they submit and navigate within
+   a form rather than going to a URL. `font: inherit` and the reset
+   properties are only needed for that element. */
 a.black-button,
-a.black-button:visited {
+a.black-button:visited,
+button.black-button {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
@@ -114,6 +122,8 @@ a.black-button:visited {
   border: 1px solid var(--color-dark-green);
   border-radius: 100px;
   text-decoration: none;
+  font-family: inherit;
+  cursor: pointer;
   transition:
     background 0.2s ease,
     border-color 0.2s ease,
@@ -121,22 +131,43 @@ a.black-button:visited {
     transform 0.2s ease;
 }
 
+/* Larger variant, for a single prominent call to action — the survey's
+   "Start the survey". */
+a.black-button.black-button--large,
+a.black-button.black-button--large:visited,
+button.black-button.black-button--large {
+  padding: 14px 28px;
+  font-size: var(--font-size-md);
+  gap: 0.5rem;
+}
+
+button.black-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 /* Smaller variant — applied alongside the base class for tighter
    contexts (e.g. inline buttons inside compact cards or asides). */
 a.black-button.black-button--small,
-a.black-button.black-button--small:visited {
+a.black-button.black-button--small:visited,
+button.black-button.black-button--small {
   padding: 6px 12px;
   font-size: var(--font-size-sm);
   gap: 0.35rem;
 }
 
 /* Arrow/icon inside the button (any inline child) slides right on hover. */
-a.black-button > span {
+a.black-button > span,
+button.black-button > span {
   transition: transform 0.2s ease;
 }
 
 a.black-button:hover,
-a.black-button:focus {
+a.black-button:focus,
+button.black-button:hover:not(:disabled),
+button.black-button:focus-visible {
   background: var(--color-mid-green);
   color: #fff;
   border-color: var(--color-mid-green);
@@ -147,7 +178,8 @@ a.black-button:focus {
 }
 
 a.black-button:hover > span,
-a.black-button:focus > span {
+a.black-button:focus > span,
+button.black-button:hover > span {
   transform: translateX(3px);
 }
 
@@ -1063,8 +1095,7 @@ ul ul li {
   margin-top: -2rem;
 }
 
-.newsletter-module.newsletter-module--under-nav
-  .newsletter-module-inner {
+.newsletter-module.newsletter-module--under-nav .newsletter-module-inner {
   padding: 0.75rem 0;
 }
 

@@ -24,12 +24,29 @@ export default function ArticleCard({
   article,
   compact = false,
   hero = false,
-  hideDate = false
+  hideDate = false,
+  href,
+  kickerLabel
 }: {
   article: Article;
   compact?: boolean;
   hero?: boolean;
   hideDate?: boolean;
+  /**
+   * Where the card links, when that is not an article. The annual
+   * survey appears in the homepage list and lives at /survey/<year>.
+   *
+   * An override rather than a second card component: these cards have
+   * a lot of markup and a lot of layout variants, and a copy of them
+   * for the survey would be one more thing to keep in step by eye.
+   */
+  href?: string;
+  /**
+   * A kicker that is a plain label rather than a link to
+   * /articles/type/<type>. The survey needs one — it is not an article
+   * type, and linking it would point at a page that 404s.
+   */
+  kickerLabel?: string;
 }) {
   const articleTypeLower = article.articleType?.toLowerCase();
   const isVideo = articleTypeLower === 'video';
@@ -54,15 +71,19 @@ export default function ArticleCard({
         compact ? styles.articleCardCompact : ''
       } ${hero ? styles.articleCardHero : ''}`}
     >
-      {(isNew || article.articleType) && (
+      {(isNew || article.articleType || kickerLabel) && (
         <div className={styles.articleCardKicker}>
-          {article.articleType && (
-            <Link
-              href={`/articles/type/${articleTypeSlug(article.articleType)}`}
-              className={styles.articleType}
-            >
-              {article.articleType}
-            </Link>
+          {kickerLabel ? (
+            <span className={styles.articleType}>{kickerLabel}</span>
+          ) : (
+            article.articleType && (
+              <Link
+                href={`/articles/type/${articleTypeSlug(article.articleType)}`}
+                className={styles.articleType}
+              >
+                {article.articleType}
+              </Link>
+            )
           )}
           {isNew && (
             <span className={styles.articleCardNew}>
@@ -76,7 +97,7 @@ export default function ArticleCard({
         </div>
       )}
       <Link
-        href={`/articles/${article.slug}`}
+        href={href ?? `/articles/${article.slug}`}
         className={`${styles.articleCardLink} hover-saturate`}
       >
         {(article.image || article.thumbnailVideo) && (

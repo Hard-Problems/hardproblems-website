@@ -5,6 +5,7 @@ import ArticleCard from '../components/ArticleCard';
 import CoworkingRotator from '../components/CoworkingRotator';
 import NewsletterModule from '../components/NewsletterModule';
 import { getAllArticles } from '../lib/articles';
+import { getSurvey, isOpen, surveyAsArticle } from '../lib/survey';
 import { fetchJobs, toListedJobs } from './jobs/fetchJobs';
 import JobsTeaser from './jobs/JobsTeaser';
 import styles from './articles/page.module.scss';
@@ -31,6 +32,11 @@ const COWORKING_HERO_SLUG = 'hard-problems-coworking-space';
 // columns 2-3, so they only line up when emitted as a pair.
 const COWORKING_SLOT_INDEX = 9;
 
+// Which survey the homepage promotes. While it is open it is the hero
+// card; once it closes the newest article takes the slot back and the
+// survey leaves the homepage entirely.
+const CURRENT_SURVEY_YEAR = 2026;
+
 // Without this the page inherits the layout's site-wide title and
 // description, which nine pages were sharing verbatim. openGraph and
 // twitter are set too: Next does not derive them from `title`, and each
@@ -56,8 +62,17 @@ export const metadata: Metadata = {
 
 export default async function Home() {
   const articles = getAllArticles();
-  const heroArticle = articles[0];
-  let remainingArticles = articles.slice(1);
+
+  // While the survey is open it takes the hero slot — it runs for six
+  // weeks and then never again, so it outranks the newest article for
+  // that window. The article it displaces is NOT dropped: when the
+  // survey is the hero, the whole list below starts at articles[0]
+  // instead of articles[1].
+  const survey = getSurvey(CURRENT_SURVEY_YEAR);
+  const surveyIsHero = survey !== null && isOpen(survey);
+
+  const heroArticle = surveyIsHero ? null : articles[0];
+  let remainingArticles = surveyIsHero ? [...articles] : articles.slice(1);
 
   // Pin the coworking article into the secondary-hero slot.
   const coworkingIdx = remainingArticles.findIndex(
@@ -76,6 +91,18 @@ export default async function Home() {
   const jobs = await fetchJobs();
   const recentJobs = jobs.slice(0, 5);
 
+  // The hero card: the survey while it is open, otherwise the newest
+  // article. Same component either way, so the slot looks the same.
+  const heroCard = surveyIsHero ? (
+    <ArticleCard
+      article={surveyAsArticle(survey)}
+      href={`/survey/${survey.year}`}
+      kickerLabel="Survey"
+    />
+  ) : heroArticle ? (
+    <ArticleCard article={heroArticle} />
+  ) : null;
+
   return (
     <>
       {/* The homepage is a grid of cards with no visible heading of its
@@ -90,11 +117,9 @@ export default async function Home() {
       </h1>
 
       <section className={styles.articles}>
-        {heroArticle && (
+        {heroCard && (
           <div className={styles.heroRow}>
-            <ul className={styles.heroList}>
-              <ArticleCard article={heroArticle} />
-            </ul>
+            <ul className={styles.heroList}>{heroCard}</ul>
             <aside className={styles.heroJobs}>
               <h3>New on the job board</h3>
               <JobsTeaser
