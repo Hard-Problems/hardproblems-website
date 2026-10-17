@@ -30,7 +30,6 @@ import type {
   SurveyQuestion
 } from '../../../lib/survey/types';
 import {
-  advancesOnSelect,
   LIKERT_MAX,
   LIKERT_MIN,
   OTHER_MAX_LENGTH
@@ -118,11 +117,21 @@ export default function SurveyForm({
     }
   }, [phase, seed, answers, step, survey.year]);
 
-  // Move focus to the new question so a screen reader announces it.
-  // Without this, changing step silently swaps the content and leaves
-  // focus wherever the last click was.
+  // On each step: back to the top of the page, and move focus to the new
+  // question so a screen reader announces it. Without the focus move,
+  // changing step silently swaps the content and leaves focus wherever
+  // the last click was.
+  //
+  // `preventScroll` matters — focusing an element scrolls it into view
+  // by default, which would drag the page back down and undo the
+  // scrollTo below.
   useEffect(() => {
-    if (phase === 'questions') headingRef.current?.focus();
+    if (phase !== 'questions') return;
+    headingRef.current?.focus({ preventScroll: true });
+    const reduce = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches;
+    window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
   }, [step, phase]);
 
   useEffect(() => {
@@ -345,18 +354,6 @@ export default function SurveyForm({
           seed={seed}
           countries={countries}
           onAnswer={(a) => setAnswer(question.id, a)}
-          onAutoAdvance={(candidate) => {
-            // Validates the answer BEING chosen, not `answers[...]` from
-            // state: this runs inside the same click that sets it, and
-            // React has not applied that update yet, so reading state
-            // here always saw the question as unanswered and never
-            // advanced.
-            //
-            // It still validates rather than advancing blindly, because
-            // an "Other…" option sets a value but needs its text too.
-            const message = validateAnswer(question, candidate, countries);
-            if (message === null && step < total - 1) goTo(step + 1);
-          }}
         />
       </div>
 
@@ -466,8 +463,7 @@ function QuestionBody({
   answer,
   seed,
   countries,
-  onAnswer,
-  onAutoAdvance
+  onAnswer
 }: {
   question: SurveyQuestion;
   heading: string;
@@ -478,7 +474,6 @@ function QuestionBody({
   seed: string;
   countries: readonly string[];
   onAnswer: (a: Answer) => void;
-  onAutoAdvance: (candidate: Answer) => void;
 }) {
   const hint = question.hint ? (
     <p className={styles.hint} id={hintId}>
@@ -517,10 +512,37 @@ function QuestionBody({
         ? selected.includes(otherOption.id)
         : false;
 
+      // "Choose up to three" questions get a live count, and a tick past
+      // the limit is refused rather than accepted and rejected a click
+      // later at Continue.
+      //
+      // The counter is what makes the refusal fair: it has been saying
+      // how many are left the whole time, so reaching the limit is not a
+      // surprise. Disabling the remaining boxes would be the obvious
+      // alternative and is worse — disabled controls leave the tab order
+      // and carry no explanation, so a keyboard or screen reader user
+      // just finds options that have quietly disappeared.
+      const max = multi && question.kind === 'multi' ? question.max : undefined;
+      const atLimit = max !== undefined && selected.length >= max;
+
       return (
         <fieldset className={styles.fieldset} aria-describedby={describedBy}>
           <legend className={styles.legend}>{title}</legend>
           {hint}
+          {max !== undefined && (
+            <p
+              className={`${styles.selectionCount} ${
+                atLimit ? styles.selectionCountFull : ''
+              }`}
+              // polite, so it is announced after whatever the tick
+              // itself said rather than interrupting it.
+              aria-live="polite"
+            >
+              {atLimit
+                ? `You have chosen ${max}. Untick one to choose another.`
+                : `You can choose ${max - selected.length} more.`}
+            </p>
+          )}
           <div className={styles.options}>
             {options.map((option) => (
               <OptionRow
@@ -529,6 +551,12 @@ function QuestionBody({
                 name={question.id}
                 multi={multi}
                 checked={selected.includes(option.id)}
+                // Ticking a NEW option once the limit is reached does
+                // nothing; unticking always works, so there is always a
+                // way out.
+                blocked={
+                  atLimit && !selected.includes(option.id) ? true : false
+                }
                 onChange={(checked) => {
                   const next = multi
                     ? checked
@@ -540,20 +568,6 @@ function QuestionBody({
                     otherText: answer?.otherText
                   });
                 }}
-                // Auto-advance happens on pointer clicks only. Arrow keys
-                // move the selection within a radio group, so advancing
-                // on every change would make a keyboard user skip
-                // several questions trying to reach the option they
-                // want. They use Continue instead.
-                onPointerSelect={
-                  advancesOnSelect(question) && !option.isOther
-                    ? () =>
-                        onAutoAdvance({
-                          value: option.id,
-                          otherText: answer?.otherText
-                        })
-                    : undefined
-                }
               />
             ))}
           </div>
@@ -599,10 +613,6 @@ function QuestionBody({
                     value={n}
                     checked={answer?.value === n}
                     onChange={() => onAnswer({ value: n })}
-                    onClick={() => {
-                      onAnswer({ value: n });
-                      onAutoAdvance({ value: n });
-                    }}
                   />
                   <span aria-hidden="true">{n}</span>
                   <span className="sr-only">
@@ -691,29 +701,33 @@ function OptionRow({
   name,
   multi,
   checked,
-  onChange,
-  onPointerSelect
+  blocked = false,
+  onChange
 }: {
   option: SurveyOption;
   name: string;
   multi: boolean;
   checked: boolean;
+  /**
+   * The selection limit is reached and this option is not one of the
+   * chosen ones, so ticking it should do nothing. NOT `disabled` — the
+   * control stays focusable and announced, it simply declines.
+   */
+  blocked?: boolean;
   onChange: (checked: boolean) => void;
-  onPointerSelect?: () => void;
 }) {
   return (
-    <label className={styles.option}>
+    <label
+      className={`${styles.option} ${blocked ? styles.optionBlocked : ''}`}
+    >
       <input
         type={multi ? 'checkbox' : 'radio'}
         name={name}
         value={option.id}
         checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        onClick={() => {
-          if (onPointerSelect) {
-            onChange(true);
-            onPointerSelect();
-          }
+        onChange={(e) => {
+          if (blocked && e.target.checked) return;
+          onChange(e.target.checked);
         }}
       />
       <span>{option.label}</span>

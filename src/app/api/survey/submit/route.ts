@@ -6,7 +6,10 @@ import {
   looksLikeBot,
   rateLimit
 } from '../../../../lib/alerts/http';
-import { isAllowedByRateLimit } from '../../../../lib/alerts/rate-limit';
+import {
+  SURVEY_RATE_LIMIT_PREFIX,
+  isAllowedByRateLimit
+} from '../../../../lib/alerts/rate-limit';
 import { alertsDb } from '../../../../lib/alerts/supabase';
 import { logError } from '../../../../lib/posthog-server';
 import { COUNTRY_NAMES } from '../../../../lib/countries';
@@ -63,8 +66,11 @@ export async function POST(request: Request) {
   }
 
   const ip = clientIp(request);
-  const upstashOk = await isAllowedByRateLimit(ip);
-  if (!upstashOk || !rateLimit(ip)) {
+  // Both limiters are namespaced to the survey: the Upstash one by
+  // prefix, the in-memory one by key, so neither shares a budget with
+  // the newsletter and job-alert forms.
+  const upstashOk = await isAllowedByRateLimit(ip, SURVEY_RATE_LIMIT_PREFIX);
+  if (!upstashOk || !rateLimit(`survey:${ip}`)) {
     return NextResponse.json(
       { ok: false, error: 'Too many submissions. Please try again shortly.' },
       { status: 429 }

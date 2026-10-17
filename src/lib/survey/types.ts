@@ -115,15 +115,6 @@ export type SurveyQuestion =
   | TextareaQuestion
   | CountryQuestion;
 
-/**
- * Questions answered with one click. These advance to the next step on
- * selection, as the brief asks. Everything else needs a Continue button,
- * because the respondent has more to say before they are done.
- */
-export function advancesOnSelect(q: SurveyQuestion): boolean {
-  return q.kind === 'single' || q.kind === 'likert';
-}
-
 export const LIKERT_MIN = 0;
 export const LIKERT_MAX = 5;
 

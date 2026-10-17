@@ -60,6 +60,7 @@
 .startFacts {
   margin: 0 0 1.5rem 0;
   padding-left: 1.15rem;
+  font-size: var(--font-size-sm);
 
   li {
     margin: 0 0 0.6rem 0;
@@ -142,9 +143,9 @@
   // markup lets focus move here on each step without adding it to the
   // tab order, so the new question is announced.
   font-family: var(--font-sans);
-  font-size: 1.6rem;
+  font-size: 1.35rem;
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.3;
   letter-spacing: -0.02em;
   margin: 0 0 0.4rem 0;
 
@@ -168,7 +169,7 @@
 .hint {
   margin: 0 0 1.25rem 0;
   color: #555;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
 }
 
 .label {
@@ -178,6 +179,21 @@
 }
 
 // ------------------------------------------------------------- options
+
+// Live count for "choose up to N" questions. Same role as the character
+// counter under the text questions, so the two read as one idea.
+.selectionCount {
+  margin: 0 0 0.75rem 0;
+  font-size: var(--font-size-xs);
+  color: #555;
+}
+
+// At the limit it stops being a running total and becomes an
+// instruction, so it takes the colour of one.
+.selectionCountFull {
+  color: #8a3d00;
+  font-weight: 500;
+}
 
 .options {
   display: flex;
@@ -193,9 +209,13 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.85rem 1rem;
-  border: 2px solid #e2e2e2;
+  padding: 0.8rem 1rem;
+  // 1px rather than the GDS 2px, by choice. The checked state leans on
+  // the background tint more than the border as a result, which is why
+  // that stays.
+  border: 1px solid #e2e2e2;
   border-radius: 8px;
+  font-size: var(--font-size-sm);
   cursor: pointer;
   transition:
     border-color 0.12s ease,
@@ -224,6 +244,19 @@
   &:has(input:checked) {
     border-color: var(--color-dark-green);
     background: #f2f8f4;
+  }
+}
+
+// At the limit, options that are not already chosen read as
+// unavailable — but they are NOT disabled: still focusable, still
+// announced, and a click simply does not take. Hover is suppressed so
+// the row does not promise something it will not do.
+.optionBlocked {
+  opacity: 0.55;
+
+  &:hover {
+    border-color: #e2e2e2;
+    background: transparent;
   }
 }
 
@@ -257,7 +290,7 @@
 }
 
 .scaleEnd {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   line-height: 1.3;
   color: #555;
 
@@ -287,10 +320,11 @@
   flex-direction: column;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.85rem 0.25rem;
-  border: 2px solid #e2e2e2;
+  padding: 0.8rem 0.25rem;
+  border: 1px solid #e2e2e2;
   border-radius: 8px;
   cursor: pointer;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   transition:
     border-color 0.12s ease,
@@ -330,10 +364,14 @@
   width: 100%;
   margin-top: 1.25rem;
   padding: 0.7rem 0.8rem;
-  border: 2px solid #8f8f8f;
+  border: 1px solid #8f8f8f;
   border-radius: 6px;
   background: #fff;
   font: inherit;
+  // Deliberately NOT reduced with the rest. iOS Safari zooms the page
+  // whenever a focused input's text is under 16px, and the zoom does
+  // not undo itself — the respondent is left on a magnified page
+  // mid-survey. 16px is the threshold, so this stays at base.
   font-size: var(--font-size-base);
 
   &:focus-visible {

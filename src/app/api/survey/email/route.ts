@@ -7,7 +7,10 @@ import {
   looksLikeBot,
   rateLimit
 } from '../../../../lib/alerts/http';
-import { isAllowedByRateLimit } from '../../../../lib/alerts/rate-limit';
+import {
+  SURVEY_RATE_LIMIT_PREFIX,
+  isAllowedByRateLimit
+} from '../../../../lib/alerts/rate-limit';
 import { alertsDb } from '../../../../lib/alerts/supabase';
 import { logError } from '../../../../lib/posthog-server';
 import { getSurvey } from '../../../../lib/survey';
@@ -51,8 +54,11 @@ export async function POST(request: Request) {
   }
 
   const ip = clientIp(request);
-  const upstashOk = await isAllowedByRateLimit(ip);
-  if (!upstashOk || !rateLimit(ip)) {
+  // Both limiters are namespaced to the survey: the Upstash one by
+  // prefix, the in-memory one by key, so neither shares a budget with
+  // the newsletter and job-alert forms.
+  const upstashOk = await isAllowedByRateLimit(ip, SURVEY_RATE_LIMIT_PREFIX);
+  if (!upstashOk || !rateLimit(`survey:${ip}`)) {
     return NextResponse.json(
       { ok: false, error: 'Too many requests. Please try again shortly.' },
       { status: 429 }
@@ -88,10 +94,15 @@ export async function POST(request: Request) {
     );
   }
 
-  // The token proves the sender just completed a response. It is a v4
-  // UUID generated server-side and returned only to that respondent, so
-  // this both links the address to the right row and stops the endpoint
-  // being used as an open mailing-list injector.
+  // The token is a v4 UUID generated server-side and returned only to
+  // the respondent who submitted that response.
+  //
+  // The format check is a cheap filter, not the control: it only proves
+  // the string LOOKS like a UUID, and anyone can generate one of those.
+  // The lookup below is what actually ties this request to a real
+  // submission — without it this endpoint would accept any well-formed
+  // UUID plus any address, which is an open door for writing email
+  // addresses somebody does not own into a list we intend to mail.
   const token = typeof payload.token === 'string' ? payload.token.trim() : '';
   const UUID_RE =
     /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -112,6 +123,36 @@ export async function POST(request: Request) {
   }
 
   const newsletter = payload.newsletter === true;
+
+  // The token must belong to a response we actually stored, for this
+  // survey year. Matching the year too means a token from one year
+  // cannot be replayed against another.
+  try {
+    const { data, error } = await alertsDb()
+      .from('survey_responses')
+      .select('token')
+      .eq('token', token)
+      .eq('survey_year', survey.year)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!data) {
+      // Deliberately the same message and status as a malformed token:
+      // distinguishing "no such response" from "not a UUID" would let
+      // someone probe for valid tokens.
+      return NextResponse.json(
+        { ok: false, error: 'Invalid request.' },
+        { status: 400 }
+      );
+    }
+  } catch (err) {
+    logError('survey/email: could not verify token', err, {
+      year: survey.year
+    });
+    return NextResponse.json(
+      { ok: false, error: 'We could not save that. Please try again.' },
+      { status: 503 }
+    );
+  }
 
   try {
     const { error } = await alertsDb().from('survey_report_signups').upsert(
