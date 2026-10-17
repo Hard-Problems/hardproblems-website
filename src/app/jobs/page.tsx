@@ -9,21 +9,30 @@ import { getAllArticles } from '../../lib/articles';
 import articleStyles from '../articles/page.module.scss';
 import styles from './page.module.scss';
 
-// Render on every request instead of serving an ISR-cached HTML
-// snapshot. The jobs board is the canonical "here's what's open right
-// now" view — visitors expect it to reflect a sheet update within
-// seconds, not up to 10 minutes stale. The underlying Sheet CSV is
-// still Data-Cached per fetchJobs's `next.revalidate` (currently 60s
-// — see fetchJobs.ts), so Google Sheets is hit at most once a minute
-// regardless of how many users land on the page.
-export const dynamic = 'force-dynamic';
+// Was `force-dynamic`, on the reasoning that the board is the canonical
+// "what's open right now" view and should reflect a sheet edit within
+// seconds. That reasoning predates the snapshot: the page no longer
+// reads the sheet, it reads what /api/cron/sync-jobs last wrote, and
+// that cron runs every 15 minutes. Re-rendering per request could not
+// make the data fresher than its source — it just paid the snapshot
+// read again for bytes that had not changed.
+//
+// The cost of that grew quietly. Column X pushed the snapshot to 2.8MB,
+// so every uncached request did a multi-second read before rendering,
+// and under cold starts `/jobs` began timing out entirely.
+//
+// 60s is still fifteen times fresher than the data can change.
+export const revalidate = 60;
 
-// Headroom for the fallback path only. Normal renders read the Redis
-// snapshot (see jobsSnapshot.ts) and finish in ~1.5s, but if that
+// Headroom for the fallback path only. Normal renders read the Supabase
+// snapshot (see jobsSnapshot.ts) and finish quickly, but if that
 // snapshot is ever unavailable fetchJobs() drops back to pulling the
-// ~1.6MB Sheet inline — which is exactly what was exceeding Vercel's
-// 15s default and leaving the board stale. Pro allows up to 60s, so
-// the degraded path now completes instead of being killed.
+// whole sheet through the Sheets API inside the render.
+//
+// Note this ceiling is why a slow render surfaced as a TIMEOUT rather
+// than an error: a request that could not get the snapshot promptly sat
+// here holding the connection instead of failing fast, which is what an
+// uptime monitor reports as "no headers received".
 export const maxDuration = 60;
 
 export const metadata: Metadata = {

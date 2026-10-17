@@ -22,7 +22,7 @@ import { Fragment, type ReactNode } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { fetchJobs, type SerializedJob } from '../../fetchJobs';
+import { fetchJobsWithFullText, type SerializedJob } from '../../fetchJobs';
 import { buildJobSlugs, findJobBySlug, jobKey } from '../../jobSlug';
 import {
   countryQualifies,
@@ -76,7 +76,7 @@ export const maxDuration = 60;
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateStaticParams() {
-  const jobs = await fetchJobs();
+  const jobs = await fetchJobsWithFullText();
   const slugs = buildJobSlugs(jobs);
   // Deduped: the sheet carries a few genuinely duplicate rows (same
   // apply URL listed twice), which share a slug and so describe one
@@ -242,7 +242,7 @@ function summarise(job: {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const found = findJobBySlug(await fetchJobs(), slug);
+  const found = findJobBySlug(await fetchJobsWithFullText(), slug);
   if (!found) return { title: 'Job — Hard Problems' };
   const { job } = found;
   const where = summarise(job);
@@ -294,7 +294,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function JobPage({ params }: Props) {
   const { slug } = await params;
-  const jobs = await fetchJobs();
+  const jobs = await fetchJobsWithFullText();
   // buildJobSlugs rather than findJobBySlug: the related-job lists below
   // need the whole map, and findJobBySlug would build a second copy of it
   // for every render.
