@@ -23,8 +23,28 @@ import type { SerializedJob } from './fetchJobs';
 
 const TABLE = 'jobs_snapshot';
 
-// The single pinned row. See the migration for why there's only one.
-const ROW_ID = 1;
+// Two pinned rows, not one.
+//
+// Row 1 is every field the sheet has. Row 2 is the same jobs with
+// `fullJobDescription` (Column X) blanked — and that one field is 67%
+// of the payload, so the board's read drops from ~2.8MB to ~0.9MB.
+//
+// Why this exists: Column X was added for the per-job pages, and only
+// those pages read it. The board, the location hubs, the homepage
+// teaser and the RSS feed never show it — but every one of them was
+// pulling it across the network and parsing it on each render, because
+// the snapshot is one blob. As Column X filled in, that read grew past
+// a second and `/jobs` started timing out under cold starts.
+const ROW_ID_FULL = 1;
+const ROW_ID_BOARD = 2;
+
+/**
+ * Which snapshot to read.
+ *
+ * 'board' for anything that renders a list of jobs; 'full' only for a
+ * job's own page, which is the one surface that shows Column X.
+ */
+export type SnapshotVariant = 'board' | 'full';
 
 // How long a snapshot stays usable. Postgres has no TTL, so staleness
 // is enforced here on read. Comfortably longer than the 15-minute sync
@@ -91,25 +111,37 @@ function getDb(): SupabaseClient | null {
 // (Supabase unconfigured, no row yet, row too old, or any query error).
 // Never throws — a database problem must degrade to the direct-fetch
 // fallback, not take the jobs board down.
-export async function readJobsSnapshot(): Promise<JobsSnapshot | null> {
+export async function readJobsSnapshot(
+  variant: SnapshotVariant = 'board'
+): Promise<JobsSnapshot | null> {
   const db = getDb();
   if (!db) return null;
   try {
     const { data, error } = await db
       .from(TABLE)
       .select('synced_at, jobs')
-      .eq('id', ROW_ID)
+      .eq('id', variant === 'full' ? ROW_ID_FULL : ROW_ID_BOARD)
       .maybeSingle();
     if (error) {
       console.warn('[jobsSnapshot] read failed:', error.message);
       return null;
     }
     if (!data) {
+      // The board row does not exist until the first sync after this
+      // was deployed. Fall back to the full row rather than dropping to
+      // the Sheets API, so a deploy does not blank the board for up to
+      // fifteen minutes while waiting for the cron.
+      if (variant === 'board') {
+        console.warn('[jobsSnapshot] no board row yet, using the full one');
+        return readJobsSnapshot('full');
+      }
       console.warn('[jobsSnapshot] no snapshot row found');
       return null;
     }
     if (!Array.isArray(data.jobs)) {
-      console.warn(`[jobsSnapshot] jobs column is ${typeof data.jobs}, not array`);
+      console.warn(
+        `[jobsSnapshot] jobs column is ${typeof data.jobs}, not array`
+      );
       return null;
     }
     // An empty array is a valid parse in principle but always means
@@ -123,7 +155,9 @@ export async function readJobsSnapshot(): Promise<JobsSnapshot | null> {
     const syncedAt = data.synced_at as string;
     const age = Date.now() - new Date(syncedAt).getTime();
     if (!Number.isFinite(age) || age > MAX_SNAPSHOT_AGE_MS) {
-      console.warn(`[jobsSnapshot] snapshot too old (${syncedAt}), falling back`);
+      console.warn(
+        `[jobsSnapshot] snapshot too old (${syncedAt}), falling back`
+      );
       return null;
     }
 
@@ -150,12 +184,22 @@ export async function writeJobsSnapshot(
   // the board.
   if (jobs.length === 0) return false;
   try {
-    const { error } = await db
-      .from(TABLE)
-      .upsert(
-        { id: ROW_ID, synced_at: new Date().toISOString(), jobs },
-        { onConflict: 'id' }
-      );
+    const syncedAt = new Date().toISOString();
+    // Blanked rather than deleted, so the shape stays identical to
+    // SerializedJob and nothing downstream has to special-case a
+    // missing key — `fullJobDescription || jobDescription` already
+    // falls through on an empty string.
+    const boardJobs = jobs.map((job) => ({ ...job, fullJobDescription: '' }));
+
+    // Both rows in one call, so the two can never be left describing
+    // different syncs.
+    const { error } = await db.from(TABLE).upsert(
+      [
+        { id: ROW_ID_FULL, synced_at: syncedAt, jobs },
+        { id: ROW_ID_BOARD, synced_at: syncedAt, jobs: boardJobs }
+      ],
+      { onConflict: 'id' }
+    );
     if (error) {
       console.warn('[jobsSnapshot] write failed:', error.message);
       return false;
