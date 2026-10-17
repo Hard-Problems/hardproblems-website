@@ -24,9 +24,16 @@ type Props = {
   // label. Defaults to a colon for the compact header pill; the footer
   // passes a longer descriptive sentence.
   labelSuffix?: string;
+  // Drops the "Join our newsletter…" line, for places where the
+  // surrounding copy already says it. The input keeps its own
+  // aria-label, so nothing is lost for screen readers.
+  hideLabel?: boolean;
 };
 
-export default function NewsletterForm({ labelSuffix = ':' }: Props = {}) {
+export default function NewsletterForm({
+  labelSuffix = ':',
+  hideLabel = false
+}: Props = {}) {
   const [email, setEmail] = useState('');
   const [honeypot, setHoneypot] = useState('');
   const [status, setStatus] = useState<Status>('idle');
@@ -145,10 +152,12 @@ export default function NewsletterForm({ labelSuffix = ':' }: Props = {}) {
           />
         </label>
 
-        <span className="newsletter-form-label">
-          Join our <Link href="/newsletter">newsletter</Link>
-          {labelSuffix}
-        </span>
+        {!hideLabel && (
+          <span className="newsletter-form-label">
+            Join our <Link href="/newsletter">newsletter</Link>
+            {labelSuffix}
+          </span>
+        )}
         <div className="newsletter-form-field">
           <Mail
             className="newsletter-form-icon"

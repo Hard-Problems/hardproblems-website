@@ -348,14 +348,22 @@
 // One number on the scale. Boxed like the option rows, so a Likert
 // reads as the same kind of choice as a radio list rather than as bare
 // numerals — and so each point is a target the size of a thumb.
+//
+// Each point is tinted along a red-to-green gradient, from a
+// --scale-hue set inline per point. Resting points get a pale wash and
+// a coloured edge; the chosen one fills in more strongly.
 .scalePoint {
+  --scale-hue: 140;
+
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.4rem;
   padding: 0.8rem 0.25rem;
-  border: 1px solid #e2e2e2;
+  border: 1px solid hsl(var(--scale-hue) 55% 78%);
   border-radius: 8px;
+  background: hsl(var(--scale-hue) 70% 97%);
+  color: hsl(var(--scale-hue) 70% 24%);
   cursor: pointer;
   font-size: var(--font-size-sm);
   font-weight: 600;
@@ -364,14 +372,14 @@
     background 0.12s ease;
 
   &:hover {
-    border-color: var(--color-mid-green);
-    background: #f7fbf8;
+    border-color: hsl(var(--scale-hue) 60% 50%);
+    background: hsl(var(--scale-hue) 70% 93%);
   }
 
   input {
     width: 18px;
     height: 18px;
-    accent-color: var(--color-dark-green);
+    accent-color: hsl(var(--scale-hue) 70% 36%);
     margin: 0;
   }
 
@@ -383,8 +391,8 @@
   }
 
   &:has(input:checked) {
-    border-color: var(--color-dark-green);
-    background: #f2f8f4;
+    border-color: hsl(var(--scale-hue) 65% 38%);
+    background: hsl(var(--scale-hue) 65% 86%);
   }
 }
 
@@ -481,6 +489,41 @@
   margin-top: 2.5rem;
 }
 
+// The prize card, floated top right from the very top of the
+// thank-you screen — beside the title and the text below it — and
+// stacked, cover above words, to fit the narrow column.
+.donePrize {
+  float: right;
+  width: 260px;
+  margin: 0 0 1.5rem 2rem;
+
+  .prize {
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 0;
+    padding: 1.25rem;
+  }
+
+  // The full width of the box, inside its padding.
+  .prizeImage {
+    width: 100%;
+  }
+
+  .prizeHeading {
+    margin-top: 0;
+  }
+}
+
+// Too narrow to sit beside anything on a phone: back into the flow,
+// full width, above the title.
+@media only screen and (max-width: 600px) {
+  .donePrize {
+    float: none;
+    width: auto;
+    margin: 0 0 2rem;
+  }
+}
+
 .thankYouHeading {
   font-family: var(--font-sans);
   font-size: 1.1rem;
@@ -490,6 +533,9 @@
 }
 
 .shareBox {
+  // flow-root so the tinted box stops at the floated prize card
+  // instead of running its background underneath it.
+  display: flow-root;
   margin-top: 1rem;
   padding: 1.25rem;
   background: #f2f8f4;
@@ -501,32 +547,118 @@
   font-size: var(--font-size-sm);
 }
 
-.emailForm {
+// The shared newsletter form, which ships its own styling from
+// globals.css. The box is only here to give it the same tinted card
+// the share block sits in, so the two asks on this page match.
+.newsletterBox {
+  // No tinted box: the form sits straight on the page. flow-root keeps
+  // it beside the floated prize card rather than running under it.
+  display: flow-root;
   margin-top: 1rem;
 }
 
-.checkboxRow {
+// --------------------------------------------------------- prize draw
+
+// Cover on the left, offer on the right. `clear: both` because the
+// landing screen's illustration floats right and this must start below
+// it rather than wrapping into whatever space is left.
+.prize {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
-  margin: 1.25rem 0 1.5rem 0;
-  font-size: var(--font-size-sm);
-  cursor: pointer;
+  gap: 1.5rem;
+  clear: both;
+  margin-top: 2.5rem;
+  padding: 1.5rem 2.5rem 1.5rem 1.5rem;
+  // White, not the pale green the share box uses: the cover photograph
+  // is shot on white, so anything tinted puts a visible rectangle
+  // around it. On a white page that leaves nothing to mark the card
+  // out, hence the hairline — the same 1px treatment as the option
+  // rows above.
+  background: #fff;
+  border: 1px solid #e2e2e2;
+  border-radius: 10px;
+}
 
-  input {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-    margin: 0;
-    accent-color: var(--color-dark-green);
+// No border, radius or shadow: the cover is already a photograph of a
+// book sitting on white, and it reads as an object on its own. An edge
+// would only draw a box around the photo's own white margin.
+.prizeImage {
+  width: 148px;
+  height: auto;
+  flex-shrink: 0;
+}
+
+// The landing screen's cover, where the book is part of the pitch.
+.prizeImageLarge {
+  width: 210px;
+}
+
+.prizeBody {
+  // Without this a flex item refuses to shrink below its content's
+  // intrinsic width, and the long terms list pushes the card wider
+  // than the column.
+  min-width: 0;
+
+  p {
+    margin: 0 0 0.75rem 0;
+    font-size: var(--font-size-sm);
   }
 }
 
-.emailDone {
-  margin-top: 1.5rem;
-  padding: 1rem 1.25rem;
-  background: #f2f8f4;
-  border-radius: 10px;
+.prizeHeading {
+  font-family: var(--font-sans);
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin: 1rem 0 0.5rem 0;
+}
+
+.prizeNote {
+  color: #4a5c50;
+}
+
+.prizeTerms {
+  font-size: var(--font-size-xs);
+  color: #4a5c50;
+
+  summary {
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  ol {
+    margin: 0.75rem 0 0 0;
+    padding-left: 1.15rem;
+  }
+
+  li {
+    margin: 0 0 0.5rem 0;
+    line-height: 1.5;
+  }
+}
+
+// Stacked on a narrow column: 148px of cover beside the text leaves
+// too little room for the terms to be readable.
+@media only screen and (max-width: 600px) {
+  .prize {
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 1.25rem;
+  }
+
+  .prizeImage {
+    width: 104px;
+  }
+
+  .prizeImageLarge {
+    width: 136px;
+  }
+
+  // Stacked under the cover here, so the gap above already separates
+  // it — the desktop top margin would only widen that.
+  .prizeHeading {
+    margin-top: 0;
+  }
 }
 
 // -------------------------------------------------------------- closed
@@ -652,6 +784,6 @@
   }
 
   .progress {
-    margin-bottom: 1.25rem;
+    margin-bottom: 2.5rem;
   }
 }

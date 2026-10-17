@@ -81,13 +81,6 @@ export default async function SurveyPage({ params, searchParams }: Props) {
           the <main>, and this element only groups the content. It used
           to reference a `styles.intro` rule that was never written. */}
       <article>
-        <p className={styles.kicker}>Survey</p>
-        {/* The site-wide page-title treatment: Instrument Serif at the
-            article-title size, left aligned. Same class /conduct,
-            /privacy, /events and the job permalinks use, so the survey
-            leads the same way every other page does. */}
-        <h1 className="page-title">{survey.title}</h1>
-
         {/* The intro belongs to the landing state, not to every step —
             left here it sat above all 25 questions, repeating what the
             survey is while someone is in the middle of answering it. The
@@ -102,6 +95,10 @@ export default async function SurveyPage({ params, searchParams }: Props) {
           />
         ) : (
           <>
+            {/* While open, SurveyForm renders the title itself so the
+                thank-you screen can change it. */}
+            <p className={styles.kicker}>Survey</p>
+            <h1 className="page-title">{survey.title}</h1>
             <p className="intro">{survey.intro}</p>
             <ClosedNotice survey={survey} />
           </>
