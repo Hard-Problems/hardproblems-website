@@ -21,9 +21,16 @@
 // progress. They are cleared on successful submit.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { DoorOpen } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { applyTerm, orderedOptions, termFor } from '../../../lib/survey';
+import {
+  applyTerm,
+  orderedOptions,
+  subjectFor,
+  termFor
+} from '../../../lib/survey';
 import type {
   SurveyDefinition,
   SurveyOption,
@@ -117,6 +124,36 @@ export default function SurveyForm({
     }
   }, [phase, seed, answers, step, survey.year]);
 
+  // The site header lives in the root layout, outside this component's
+  // tree, so the exit link is portalled into it. That makes it a real
+  // grid item beside the logo rather than something floated on top and
+  // kept in place by guesswork — and it lands in the header's reading
+  // order for a screen reader too.
+  //
+  // Null outside the question steps, so it only exists while there is
+  // something to exit from.
+  const [headerEl, setHeaderEl] = useState<Element | null>(null);
+  useEffect(() => {
+    setHeaderEl(
+      phase === 'questions' ? document.querySelector('.site-header') : null
+    );
+  }, [phase]);
+
+  // Strip the site chrome while someone is answering — see
+  // `body.survey-focus` in globals.css. Only the question steps: the
+  // landing screen and the thank-you page keep the full navigation,
+  // because at those two moments going elsewhere is a reasonable thing
+  // to want.
+  //
+  // The cleanup matters more than it looks. Without it, navigating away
+  // mid-survey would leave the class on the body and the next page
+  // would render with no navigation at all.
+  useEffect(() => {
+    const focused = phase === 'questions';
+    document.body.classList.toggle('survey-focus', focused);
+    return () => document.body.classList.remove('survey-focus');
+  }, [phase]);
+
   // On each step: back to the top of the page, and move focus to the new
   // question so a screen reader announces it. Without the focus move,
   // changing step silently swaps the content and leaves focus wherever
@@ -140,6 +177,13 @@ export default function SurveyForm({
 
   const term = useMemo(
     () => termFor(survey, flatten(answers)),
+    [survey, answers]
+  );
+  // The subject form, for the questions that open on the role rather
+  // than referring to it mid-sentence. Same answer, different word for
+  // the handful of roles where one noun cannot do both jobs.
+  const subject = useMemo(
+    () => subjectFor(survey, flatten(answers)),
     [survey, answers]
   );
 
@@ -260,16 +304,45 @@ export default function SurveyForm({
           priority
         />
         <p className="intro">{survey.intro}</p>
+        {/* What taking part involves — kept short, so the button is
+            reachable without reading a privacy notice first. */}
         <h2 className="section-label">Before you start</h2>
         <ul className={styles.startFacts}>
-          <li>{total} questions, about five minutes.</li>
-          <li>
-            Your answers are anonymous. We do not ask who you are, and we do not
-            record your IP address.
-          </li>
+          <li>{total} questions.</li>
           <li>
             Your progress is saved in this browser, so you can stop and come
             back.
+          </li>
+        </ul>
+        <button
+          type="button"
+          className="black-button black-button--large"
+          onClick={() => {
+            // Only on a genuinely fresh start. Re-entering after Exit
+            // keeps the existing seed, so the shuffled questions come
+            // back in the order that respondent already saw.
+            if (!seed) setSeed(newSeed());
+            setPhase('questions');
+          }}
+        >
+          {/* The <span> is what the global `.black-button > span` rule
+              slides right on hover. aria-hidden so the arrow is
+              decoration, not something a screen reader reads out. */}
+          Start the survey <span aria-hidden="true">→</span>
+        </button>
+
+        {/* Below the button on purpose. It is still read before anyone
+            answers anything, but it no longer stands between someone and
+            starting. A direct child of the panel like everything else —
+            the <section> wrapper it used to have put it in a container
+            of its own for no benefit. */}
+        <h2 className={`section-label ${styles.privacyHeading}`}>
+          Your privacy
+        </h2>
+        <ul className={styles.startFacts}>
+          <li>
+            Your answers are anonymous. We do not ask who you are, and we do not
+            record your IP address.
           </li>
           <li>
             At the end you can optionally give us an email address to receive
@@ -281,19 +354,6 @@ export default function SurveyForm({
           See our <Link href="/privacy">privacy notice</Link> for how we handle
           this data and how to ask us to delete it.
         </p>
-        <button
-          type="button"
-          className="black-button black-button--large"
-          onClick={() => {
-            setSeed(newSeed());
-            setPhase('questions');
-          }}
-        >
-          {/* The <span> is what the global `.black-button > span` rule
-              slides right on hover. aria-hidden so the arrow is
-              decoration, not something a screen reader reads out. */}
-          Start the survey <span aria-hidden="true">→</span>
-        </button>
       </div>
     );
   }
@@ -309,7 +369,7 @@ export default function SurveyForm({
   }
 
   // ---- a question ------------------------------------------------------
-  const heading = applyTerm(question.text, term);
+  const heading = applyTerm(question.text, term, subject);
   const hintId = question.hint ? `${question.id}-hint` : undefined;
   const errorId = error ? `${question.id}-error` : undefined;
   const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
@@ -317,6 +377,44 @@ export default function SurveyForm({
 
   return (
     <div className={styles.step}>
+      {headerEl &&
+        createPortal(
+          // A plain class, not a module one: globals.css places it in
+          // the header grid, and a hashed name could not be targeted
+          // from there.
+          //
+          // Back to the survey's own first screen rather than off the
+          // site — "exit" here means step out of the questionnaire, and
+          // the answers stay saved in this browser, so Start picks up
+          // where they left off.
+          <button
+            type="button"
+            className="survey-exit"
+            onClick={() => setPhase('start')}
+          >
+            {/* aria-hidden: the word beside it already says what this
+                does, so announcing the icon would just repeat it. */}
+            <DoorOpen className="survey-exit-icon" aria-hidden="true" />
+            Exit survey
+          </button>,
+          headerEl
+        )}
+      {headerEl &&
+        createPortal(
+          // Top right, mirroring Exit. A new tab on purpose: this is
+          // the one thing someone part-way through a form may
+          // reasonably want to read, and navigating away to read it
+          // would drop them out of the questionnaire.
+          <a
+            className="survey-privacy"
+            href="/privacy"
+            target="_blank"
+            rel="noopener"
+          >
+            Privacy policy
+          </a>,
+          headerEl
+        )}
       <Progress
         step={step}
         total={total}

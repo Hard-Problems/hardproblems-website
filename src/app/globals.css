@@ -11,6 +11,25 @@
   --color-pick-bg: #fff3c4;
   --color-pick-text: #8a5a00;
 
+  /* Form validation. One red for every error and limit message on the
+     site, so a warning looks the same whether it comes from the survey,
+     the job-alert form, the job submission form or the intern
+     application.
+
+     #d4351c is the GOV.UK error red: deliberately louder than the rest
+     of this palette, which is the point — a validation message that
+     blends in gets missed. It is also about the brightest red that
+     still clears 4.5:1 against white, so it stays readable as body
+     text rather than only working as an accent.
+
+     --color-error-text is the same hue darkened for use ON the tinted
+     background, where the bright red would fall under 4.5:1. Colour is
+     never the only signal: every message that uses these is also
+     wording, and the error summary carries a border and a tint. */
+  --color-error: #d4351c;
+  --color-error-text: #8c1d13;
+  --color-error-bg: #fdecea;
+
   /* Type stacks. `--font-instrument-serif` is supplied by next/font in
      layout.tsx, so it isn't re-declared here. */
   --font-sans:
@@ -1413,7 +1432,7 @@ ul ul li {
 }
 
 .newsletter-modal--error .newsletter-modal-icon {
-  color: #c2310f;
+  color: var(--color-error);
 }
 
 .newsletter-modal-title {
@@ -1915,4 +1934,138 @@ ul ul li {
   .illustration-home img {
     width: 100%;
   }
+}
+
+/* Focus mode for the survey's question steps.
+   =========================================================
+   The body gets `survey-focus` while someone is partway through the
+   questionnaire, and everything that invites them to go somewhere else
+   is hidden: the rotating tagline, both header nav rails, the section
+   nav bar, the footer call-to-action and the footer itself.
+
+   Only the "Hard Problems." logo stays, still linking home — it says
+   whose survey this is, and leaves one deliberate way out.
+
+   Done with a body class rather than a route-group layout because the
+   trigger is client state: the chrome is live on the survey's landing
+   screen and on the thank-you page, and only disappears between the
+   first question and the last. SurveyForm adds and removes the class,
+   and removes it on unmount so it cannot leak to another page. */
+body.survey-focus .site-tagline,
+body.survey-focus .site-header-nav,
+body.survey-focus .site-nav-bar,
+body.survey-focus .footer-intro,
+body.survey-focus .site-footer {
+  display: none;
+}
+
+/* The header is a three-column GRID with the logo in the middle track,
+   so it stays centred on its own once the nav rails are hidden —
+   `justify-content: center` just says so explicitly rather than relying
+   on it. Padding shrinks because this is now one short line of text
+   rather than three columns of navigation. */
+/* The page's own top padding, which is what puts the gap above the
+   logo. 48px is right for a page that opens with a tagline bar and a
+   nav; in focus mode the logo is the first thing on the page and does
+   not need that much room above it. */
+body.survey-focus {
+  /* Zero, with the 16px handed to the header's bottom padding below.
+     That lifts the logo and the exit link by 1rem while leaving the
+     rule under them exactly where it was — the pair move up inside the
+     header band rather than the whole band moving. */
+  padding-top: 0;
+}
+
+body.survey-focus .site-header {
+  /* The header is a three-column grid: nav, logo, nav. Hiding the two
+     nav rails with `display: none` takes them out of the grid's item
+     flow entirely, so the LOGO becomes the first item and lands in
+     column 1 — pinned to the left edge, 292px off centre at 1200px
+     wide. Collapsing to a single full-width column and centring the
+     item inside it is what actually centres it. */
+  /* Three tracks again, now that the exit link occupies the left one.
+     Both items are placed EXPLICITLY by grid-column below rather than
+     by source order — the exit link is portalled in after the logo, so
+     relying on DOM order would put it on the wrong side. */
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  /* Asymmetric on purpose — see the note on body padding above. */
+  padding: 8px 0 24px;
+  /* The rule above the logo closes a band that no longer exists — the
+     rotating tagline above it is hidden in focus mode, so the border
+     was drawing a line under nothing. The bottom border stays: it
+     separates the logo from the survey. */
+  border-top: 0;
+}
+
+body.survey-focus .site-logo {
+  /* `grid-row: 1` on both items is what keeps them on one line. The
+     exit link is portalled in AFTER the logo, so with auto row
+     placement the grid cursor had already moved past row 1 and dropped
+     it onto a second row beneath. */
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+  font-size: 1.2rem;
+}
+
+/* The way out, top left. Quiet on purpose: visible to anyone looking
+   for it, not competing with the question. Answers are kept in this
+   browser, so leaving is not losing them. */
+body.survey-focus .survey-exit {
+  grid-column: 1;
+  justify-self: start;
+  cursor: pointer;
+}
+
+/* The privacy policy, top right, mirroring Exit. It is a real link
+   rather than a control, and opens in a new tab so reading it does not
+   take anyone out of a half-finished questionnaire. */
+body.survey-focus .survey-privacy {
+  grid-column: 3;
+  justify-self: end;
+}
+
+body.survey-focus .survey-exit,
+body.survey-focus .survey-privacy {
+  grid-row: 1;
+  /* Exit is a <button>, not a link — it steps back to the survey's own
+     first screen rather than navigating — so the browser's button
+     chrome has to be reset to make it read as the quiet control it is.
+     The privacy link shares the reset so the two sides match. */
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  color: var(--color-link);
+  /* No underline: the icon beside it already marks this as a control,
+     and an underlined button in the header read as a stray link. */
+  text-decoration: none;
+}
+
+body.survey-focus .survey-exit:hover,
+body.survey-focus .survey-exit:focus-visible,
+body.survey-focus .survey-privacy:hover,
+body.survey-focus .survey-privacy:focus-visible {
+  color: var(--color-dark-green);
+}
+
+/* Inline-flex so the icon sits on the text's optical centre rather than
+   its baseline — the same reason the tooltip's arrow button is a flex
+   row. */
+body.survey-focus .survey-exit,
+body.survey-focus .survey-privacy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  text-decoration: none;
+}
+
+/* Sized in em so it tracks the label, as the sector and pick icons do. */
+.survey-exit-icon {
+  width: 1.05em;
+  height: 1.05em;
+  flex-shrink: 0;
+  stroke-width: 1.8;
 }

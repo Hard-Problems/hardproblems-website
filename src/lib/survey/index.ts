@@ -64,6 +64,26 @@ export function termFor(
 }
 
 /**
+ * The sentence-subject form of the role, for `{Subject}`.
+ *
+ * Falls back to `termFor` — only the roles listed in `roleSubjects`
+ * need a different word in subject position.
+ */
+export function subjectFor(
+  survey: SurveyDefinition,
+  answers: Record<string, unknown>
+): string {
+  const chosen = answers[survey.termSourceId];
+  const id =
+    typeof chosen === 'string'
+      ? chosen
+      : Array.isArray(chosen) && typeof chosen[0] === 'string'
+        ? (chosen[0] as string)
+        : '';
+  return survey.roleSubjects?.[id] ?? termFor(survey, answers);
+}
+
+/**
  * Substitute `{term}` and `{Term}` in a question's text.
  *
  * `{Term}` is the sentence-initial form — "Design in 2026 feels like…" —
@@ -71,9 +91,17 @@ export function termFor(
  * "Product management" rather than being title-cased into something
  * nobody writes.
  */
-export function applyTerm(text: string, term: string): string {
-  const capitalised = term.charAt(0).toUpperCase() + term.slice(1);
-  return text.replace(/\{term\}/g, term).replace(/\{Term\}/g, capitalised);
+export function applyTerm(
+  text: string,
+  term: string,
+  subject: string = term
+): string {
+  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+  return text
+    .replace(/\{term\}/g, term)
+    .replace(/\{Term\}/g, cap(term))
+    .replace(/\{subject\}/g, subject)
+    .replace(/\{Subject\}/g, cap(subject));
 }
 
 // ---------------------------------------------------------------------

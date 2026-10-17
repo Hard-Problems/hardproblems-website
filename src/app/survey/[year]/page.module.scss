@@ -16,6 +16,27 @@
   padding: 3rem 1rem 6rem;
 }
 
+// The global `h1.page-title` rule carries 0.83em of top margin — about
+// 40px at this size — which margin-collapsing resolves against the
+// kicker's 8px to leave a 40px hole between the two. They are a pair:
+// the kicker labels the title directly above it.
+//
+// `:global(.page-title)` because that class lives in globals.css, and a
+// bare `.page-title` written inside a CSS module gets hashed and matches
+// nothing. The two-class selector also reliably outranks the global rule
+// without depending on stylesheet order.
+// PADDING, not margin, for the extra space underneath. Two reasons:
+// the title's bottom margin collapses against the next block's top
+// margin, so adding to it would be partly swallowed; and the global
+// rule tightens that margin to 0.2em under 1000px, which a
+// margin-bottom here (higher specificity, outside the media query)
+// would silently undo. Padding sidesteps both and adds the same
+// 0.2rem at every width.
+.survey h1:global(.page-title) {
+  margin-top: 0;
+  padding-bottom: 0.2rem;
+}
+
 .kicker {
   font-family: var(--font-mono);
   font-size: var(--font-size-mono);
@@ -67,10 +88,19 @@
   }
 }
 
+// The heading that opens the privacy block under the Start button.
+// `clear: both` because the illustration floats right and this must
+// start below it rather than wrapping alongside; the margin separates
+// it from the button.
+.privacyHeading {
+  clear: both;
+  margin-top: 3rem;
+}
+
 .privacyLine {
   font-size: var(--font-size-sm);
   color: #555;
-  margin-bottom: 2rem;
+  margin-bottom: 0;
 }
 
 // ------------------------------------------------------------- progress
@@ -134,8 +164,9 @@
   font: inherit;
   font-size: var(--font-size-sm);
   color: var(--color-link);
-  text-decoration: underline;
-  text-underline-offset: 0.15em;
+  // No underline, matching Exit survey in the header: the arrow beside
+  // it already marks it as a control.
+  text-decoration: none;
 }
 
 .questionHeading {
@@ -189,10 +220,12 @@
 }
 
 // At the limit it stops being a running total and becomes an
-// instruction, so it takes the colour of one.
+// instruction, so it takes the colour of one: the site's validation
+// red. Size stays as the running total's — only the colour and weight
+// change, so the line does not reflow when it crosses the limit.
 .selectionCountFull {
-  color: #8a3d00;
-  font-weight: 500;
+  color: var(--color-error);
+  font-weight: 600;
 }
 
 .options {
@@ -397,13 +430,15 @@
 .errorSummary {
   margin: 0 0 1.25rem 0;
   padding: 0.85rem 1rem;
-  border-left: 4px solid #d64530;
-  background: #fdecea;
-  color: #8c1d13;
+  border-left: 4px solid var(--color-error);
+  background: var(--color-error-bg);
+  // The darker token, not --color-error: the bright red falls under
+  // 4.5:1 against the tint. The border carries the brightness.
+  color: var(--color-error-text);
   font-weight: 500;
 
   &:focus {
-    outline: 3px solid #d64530;
+    outline: 3px solid var(--color-error);
     outline-offset: 2px;
   }
 }
@@ -580,5 +615,43 @@
     to {
       opacity: 1;
     }
+  }
+}
+
+// Compact chrome while answering.
+// ====================================================================
+// Between the top of the page and the first question sat the site
+// header, 48px of page padding, the kicker, a 48px title, and the
+// progress block's margins — pushing the question to y=305 on a laptop.
+// None of that is what someone is here to read on question 14.
+//
+// So in focus mode every band above the question gives up space: the
+// title drops to a size that still identifies the survey without
+// competing with the question below it, and the gaps close. The markup
+// is unchanged — this is only about how much room it takes.
+:global(body.survey-focus) {
+  .survey {
+    padding-top: 1rem;
+  }
+
+  .kicker {
+    margin-bottom: 0.25rem;
+  }
+
+  .survey h1:global(.page-title) {
+    font-size: 1.5rem;
+    line-height: 1.15;
+    margin-bottom: 0.35rem;
+    // The landing page's extra 0.2rem does not belong here — this
+    // band is deliberately compact so the question sits high.
+    padding-bottom: 0;
+  }
+
+  .step {
+    margin-top: 0.75rem;
+  }
+
+  .progress {
+    margin-bottom: 1.25rem;
   }
 }

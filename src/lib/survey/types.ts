@@ -150,6 +150,18 @@ export type SurveyDefinition = {
   termSourceId: string;
   /** Option id → the wording used for `{term}` in later questions. */
   roleTerms: Record<string, string>;
+  /**
+   * Option id → the sentence SUBJECT used for `{Subject}`, for roles
+   * whose field noun cannot also serve as one.
+   *
+   * Most roles need only `roleTerms`: "design" works both as the
+   * subject of "Design in 2026 feels like…" and inside "a career in
+   * design". "Founder" has no single noun that does both — "Being a
+   * founder in 2026 feels like…" but "a career in startups" — so the
+   * two forms are allowed to diverge. Partial: anything absent here
+   * falls back to its `roleTerms` entry.
+   */
+  roleSubjects?: Record<string, string>;
   /** Fallback when the role question is somehow unanswered. */
   defaultTerm: string;
   questions: SurveyQuestion[];

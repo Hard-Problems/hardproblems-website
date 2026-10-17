@@ -81,7 +81,7 @@ export default async function SurveyPage({ params, searchParams }: Props) {
           the <main>, and this element only groups the content. It used
           to reference a `styles.intro` rule that was never written. */}
       <article>
-        <p className={styles.kicker}>Annual survey</p>
+        <p className={styles.kicker}>Survey</p>
         {/* The site-wide page-title treatment: Instrument Serif at the
             article-title size, left aligned. Same class /conduct,
             /privacy, /events and the job permalinks use, so the survey

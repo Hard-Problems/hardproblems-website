@@ -17,7 +17,7 @@ export const SURVEY_2026: SurveyDefinition = {
   year: 2026,
   title: 'The State of Design 2026',
   intro:
-    'An annual survey of how designers, researchers, writers and product people feel about their work — how secure, how well paid, how hopeful. It takes about five minutes, and every answer is anonymous.',
+    'A survey of how designers, researchers, writers and product people feel about their work. It takes about five minutes, and every answer is anonymous.',
   image: '/images/content/thumb-survey-2026.jpg',
   opensAt: '2026-10-16T00:00:00.000Z',
   // Exclusive: the form closes as 30 November ends.
@@ -27,19 +27,29 @@ export const SURVEY_2026: SurveyDefinition = {
   // Supplies `{term}` / `{Term}` in later questions, so a product
   // manager is asked about "product management" rather than "design".
   //
-  // REVIEW: the wording for `founder` and `other` is a guess — every
-  // other entry falls out of the role name, those two do not.
+  // Every entry but the last two falls out of the role name. `founder`
+  // and `other` do not, so they also carry a `roleSubjects` override
+  // below: the noun that works in "a career in …" is not the one that
+  // works as the subject of "… in 2026 feels like…".
   roleTerms: {
     'product-designer': 'design',
     'graphic-designer': 'design',
+    illustrator: 'illustration',
+    'motion-designer': 'motion design',
+    'service-designer': 'service design',
     'industrial-designer': 'design',
     'design-researcher': 'design research',
     'ux-designer': 'design',
     'ui-designer': 'design',
-    'design-writer': 'design writing',
+    'design-writer': 'writing',
     'product-manager': 'product management',
-    founder: 'your work',
+    founder: 'startups',
     other: 'design'
+  },
+  // Subject position only — see roleSubjects on SurveyDefinition.
+  roleSubjects: {
+    founder: 'being a founder',
+    other: 'my career'
   },
   defaultTerm: 'design',
 
@@ -54,11 +64,14 @@ export const SURVEY_2026: SurveyDefinition = {
       options: [
         { id: 'product-designer', label: 'Digital Product Designer' },
         { id: 'graphic-designer', label: 'Graphic/Brand Designer' },
+        { id: 'illustrator', label: 'Illustrator' },
+        { id: 'motion-designer', label: 'Motion Designer' },
+        { id: 'service-designer', label: 'Service Designer' },
         { id: 'industrial-designer', label: 'Industrial Designer' },
         { id: 'design-researcher', label: 'Design Researcher' },
         { id: 'ux-designer', label: 'UX Designer' },
         { id: 'ui-designer', label: 'UI Designer' },
-        { id: 'design-writer', label: 'Design Writer' },
+        { id: 'design-writer', label: 'Writer' },
         { id: 'product-manager', label: 'Product Manager' },
         { id: 'founder', label: 'Founder' },
         { id: 'other', label: 'Other…', isOther: true }
@@ -152,7 +165,7 @@ export const SURVEY_2026: SurveyDefinition = {
     {
       kind: 'text',
       id: 'metaphor',
-      text: '{Term} in 2026 feels like…',
+      text: '{Subject} in 2026 feels like…',
       hint: 'Finish the sentence with a metaphor.',
       maxLength: 200
     },

@@ -3,6 +3,7 @@ import {
   getSurvey,
   isOpen,
   termFor,
+  subjectFor,
   applyTerm,
   orderedOptions,
   normalizeSource
@@ -37,6 +38,12 @@ check(
   'every role option has a term',
   'options' in roleQ &&
     roleQ.options.every((o) => o.id in SURVEY_2026.roleTerms)
+);
+check(
+  'every roleSubjects key is a real role option',
+  Object.keys(SURVEY_2026.roleSubjects ?? {}).every(
+    (id) => 'options' in roleQ && roleQ.options.some((o) => o.id === id)
+  )
 );
 check(
   'exactly one optional question',
@@ -75,10 +82,43 @@ check('PM term', pm === 'product management', pm);
 check('graphic designer term', gd === 'design', gd);
 check('unanswered falls back', termFor(SURVEY_2026, {}) === 'design');
 const metaphor = qs.find((q) => q.id === 'metaphor')!;
+// How the metaphor question actually reads for a given role.
+const asks = (role: string) =>
+  applyTerm(
+    metaphor.text,
+    termFor(SURVEY_2026, { role }),
+    subjectFor(SURVEY_2026, { role })
+  );
 check(
-  '{Term} capitalises',
-  applyTerm(metaphor.text, pm) === 'Product management in 2026 feels like…',
-  applyTerm(metaphor.text, pm)
+  '{Subject} capitalises',
+  asks('product-manager') === 'Product management in 2026 feels like…',
+  asks('product-manager')
+);
+// The two roles whose subject form is NOT their field noun.
+check(
+  'founder metaphor',
+  asks('founder') === 'Being a founder in 2026 feels like…',
+  asks('founder')
+);
+check(
+  'other metaphor',
+  asks('other') === 'My career in 2026 feels like…',
+  asks('other')
+);
+check(
+  'founder keeps a field noun for "a career in …"',
+  applyTerm(
+    qs.find((q) => q.id === 'would-recommend')!.text,
+    termFor(SURVEY_2026, { role: 'founder' })
+  ).includes('a career in startups'),
+  applyTerm(
+    qs.find((q) => q.id === 'would-recommend')!.text,
+    termFor(SURVEY_2026, { role: 'founder' })
+  )
+);
+check(
+  'writer term',
+  termFor(SURVEY_2026, { role: 'design-writer' }) === 'writing'
 );
 const five = qs.find((q) => q.id === 'still-here-in-5')!;
 check(
