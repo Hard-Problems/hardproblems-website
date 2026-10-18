@@ -349,10 +349,10 @@ export default function Page() {
         </h3>
         <p>
           Once a year we run a survey about working in design (for example, the{' '}
-          <Link href="/survey/2026">State of Design 2026</Link>). Your answers
-          are <strong>anonymous</strong>. We do not ask who you are, we do not
-          record your IP address with your answers, and nothing in the
-          questionnaire is used to identify you.
+          <Link href="/survey/2026">State of Design &amp; Product in 2026</Link>
+          ). Your answers are <strong>anonymous</strong>. We do not ask who you
+          are, we do not record your IP address with your answers, and nothing
+          in the questionnaire is used to identify you.
         </p>
         <p>
           When you submit the survey we store your answers along with a random

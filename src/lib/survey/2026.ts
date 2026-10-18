@@ -1,4 +1,4 @@
-// The 2026 State of Design survey.
+// The 2026 State of Design & Product survey.
 //
 // Pure data — see types.ts for why. To run this again next year, copy
 // this file to 2027.ts, change the dates, adjust the questions, and
@@ -15,7 +15,7 @@ function likert(id: string, text: string, lowLabel: string, highLabel: string) {
 
 export const SURVEY_2026: SurveyDefinition = {
   year: 2026,
-  title: 'The State of Design 2026',
+  title: 'The State of Design & Product in 2026',
   intro:
     'A survey of how designers, researchers, writers and product people feel about their work. It takes about five minutes, and every answer is anonymous.',
   image: '/images/content/thumb-survey-2026.jpg',
