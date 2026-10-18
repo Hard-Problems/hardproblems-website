@@ -41,13 +41,34 @@ async function postToWebhook(
 // podcast guest suggestions. Kept in its own channel so the noise
 // stays contained and the channel can be restricted to people who
 // need to triage submissions.
-export async function postToSlackForms(
-  payload: SlackPayload
-): Promise<void> {
+export async function postToSlackForms(payload: SlackPayload): Promise<void> {
   const url = process.env.SLACK_FORMS_WEBHOOK_URL;
   if (!url) {
     console.warn(
       '[slack] SLACK_FORMS_WEBHOOK_URL not set — skipping notification'
+    );
+    return;
+  }
+  await postToWebhook(url, payload);
+}
+
+// Post to the "website" channel — operational alerts about the site
+// itself, not user submissions. Currently the jobs sync cron, which is
+// the one pipeline whose failure is otherwise invisible: it returns a
+// 5xx *response*, which Vercel counts as a successful invocation, and
+// the uptime monitor only sees the site, which stays up on the board's
+// fallback. On 2026-10-17 that combination hid a broken sync for eight
+// hours. PostHog records these too; Slack is what actually reaches
+// someone.
+//
+// Keep this channel for things a human should act on. Anything that
+// fires per request belongs in PostHog alone — see the degradation
+// flag in jobsSnapshot.ts.
+export async function postToSlackWebsite(payload: SlackPayload): Promise<void> {
+  const url = process.env.SLACK_WEBSITE_WEBHOOK_URL;
+  if (!url) {
+    console.warn(
+      '[slack] SLACK_WEBSITE_WEBHOOK_URL not set — skipping notification'
     );
     return;
   }
