@@ -1,32 +1,55 @@
+// The team grid on /about. One nested block, because every rule here
+// is a descendant of .team and the repeated prefix was the only thing
+// separating them.
+
 .team {
-	display: flex;
-	flex-direction: row;
-	flex-wrap: wrap;
-    padding: 20px 0 0 0;
-}
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  padding: 20px 0 0;
 
-.team img {
-	width: 90%;
-	height: auto;
-	margin: 0 5% 8px 5%;
-}
+  // One person: portrait above a name. A div rather than a class
+  // because the markup has no other children — see Team.tsx.
+  div {
+    width: 25%;
+    margin: 1.5rem 0 0;
+    color: #333;
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.08em;
+    text-align: center;
+    text-transform: uppercase;
+  }
 
-.team div {
-	width: 33%;
-	color: #333;
-	font-family: var(--font-mono);
-	font-size: var(--font-size-xs);
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
-	margin: 1.5rem 0 0 0;
-	text-align: center;
-}
+  // 90% wide with the remainder split as margin, so the portraits have
+  // air between them without the column itself being padded.
+  img {
+    width: 90%;
+    height: auto;
+    margin: 0 5% 8px;
+  }
 
-.team a, .team a:visited {
-  color: inherit;
-}
+  // The whole cell is the link, so it takes the label's colour rather
+  // than the site's link colour, and only shifts on hover.
+  a,
+  a:visited {
+    color: inherit;
+  }
 
-.team a:hover {
-  color: var(--color-link);
-}
+  a:hover {
+    color: var(--color-link);
+  }
 
+  // Two across on phones.
+  //
+  // Not the site's usual 600px break: the longest name, ARFITA VANIA
+  // DEWI, needs 139px on one line in uppercase mono, and a 600px
+  // viewport leaves 25% columns of 138px — it would wrap right at the
+  // breakpoint. 760px leaves 178px, clearing it with room for a longer
+  // name than any currently on the team.
+  @media only screen and (max-width: 760px) {
+    div {
+      width: 50%;
+    }
+  }
+}
