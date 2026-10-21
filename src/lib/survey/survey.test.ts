@@ -1,4 +1,5 @@
 import { SURVEY_2026 } from './2026';
+import { LIKERT_POINTS } from './types';
 import {
   getSurvey,
   isOpen,
@@ -44,6 +45,25 @@ check(
   Object.keys(SURVEY_2026.roleSubjects ?? {}).every(
     (id) => 'options' in roleQ && roleQ.options.some((o) => o.id === id)
   )
+);
+// A scale one label short renders a point with no name, which is the
+// kind of thing nobody notices until the results are in.
+check(
+  'every likert scale labels every point',
+  qs
+    .filter((q) => q.kind === 'likert')
+    .every((q) => q.kind === 'likert' && q.labels.length === LIKERT_POINTS)
+);
+check(
+  'likert labels are non-empty and distinct',
+  qs
+    .filter((q) => q.kind === 'likert')
+    .every(
+      (q) =>
+        q.kind === 'likert' &&
+        q.labels.every((l) => l.trim().length > 0) &&
+        new Set(q.labels).size === q.labels.length
+    )
 );
 check(
   'exactly one optional question',

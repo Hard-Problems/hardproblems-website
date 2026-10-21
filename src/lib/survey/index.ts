@@ -84,6 +84,30 @@ export function subjectFor(
 }
 
 /**
+ * Group the flat question list into steps.
+ *
+ * Consecutive questions carrying the same `group` become one step;
+ * everything else is a step of its own. Consecutive, deliberately — a
+ * group is a run of questions in the order they are written, not a
+ * selector that can reorder the questionnaire from a distance. If two
+ * runs share an id they stay two steps, which is almost certainly a
+ * mistake in the definition but not one worth silently repairing by
+ * moving questions around.
+ */
+export function buildSteps(
+  questions: readonly SurveyQuestion[]
+): SurveyQuestion[][] {
+  const steps: SurveyQuestion[][] = [];
+  for (const q of questions) {
+    const last = steps[steps.length - 1];
+    const previous = last?.[0];
+    if (q.group && previous?.group === q.group) last.push(q);
+    else steps.push([q]);
+  }
+  return steps;
+}
+
+/**
  * Substitute `{term}` and `{Term}` in a question's text.
  *
  * `{Term}` is the sentence-initial form — "Design in 2026 feels like…" —

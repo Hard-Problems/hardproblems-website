@@ -57,10 +57,20 @@ function isBlank(a: Answer | undefined): boolean {
 export function validateAnswer(
   question: SurveyQuestion,
   answer: Answer | undefined,
-  countryNames: readonly string[] = []
+  countryNames: readonly string[] = [],
+  label?: string
 ): string | null {
   if (isBlank(answer)) {
-    return question.optional ? null : 'Please answer this question.';
+    if (question.optional) return null;
+    // Named when the caller can supply the wording. A step holding
+    // five questions produces five identical "Please answer this
+    // question" lines otherwise, which says nothing about which one —
+    // and the summary is what a screen reader reads on failure,
+    // without the headings around it for context.
+    //
+    // The caller passes the question as DISPLAYED, with `{term}`
+    // already substituted; this module has no way to resolve those.
+    return label ? `Please answer “${label}”` : 'Please answer this question.';
   }
   const a = answer as Answer;
 

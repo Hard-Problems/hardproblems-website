@@ -56,6 +56,22 @@ type BaseQuestion = {
   hint?: string;
   /** Only question 25 is optional; everything else must be answered. */
   optional?: boolean;
+  /**
+   * Put this question on a shared step with its neighbours.
+   *
+   * One question per page is the GDS default and the right one for
+   * anything that needs thought. It is the wrong one for a run of
+   * short factual questions — role, experience, country, company size
+   * — where a page each turns five seconds of typing into five page
+   * loads, and the length of the survey becomes the reason people
+   * leave it.
+   *
+   * CONSECUTIVE questions sharing a group id render as one step, under
+   * the heading in `groups`. The questions stay separate entries here,
+   * so storage, validation and analysis are unchanged — this only
+   * affects how many of them appear at once.
+   */
+  group?: string;
 };
 
 /** One choice from a list. Radio buttons; selecting one advances the step. */
@@ -63,6 +79,15 @@ export type SingleQuestion = BaseQuestion & {
   kind: 'single';
   options: SurveyOption[];
   order?: OptionOrder;
+  /**
+   * Radios by default. `select` is for long lists of ordered values —
+   * years of experience, company size — where radios take a screenful
+   * for something nobody needs to compare side by side.
+   *
+   * Presentation only: the answer is still one option id, validated by
+   * exactly the same rule.
+   */
+  as?: 'radio' | 'select';
 };
 
 /** Several choices from a list. Checkboxes; needs an explicit Continue. */
@@ -82,8 +107,20 @@ export type MultiQuestion = BaseQuestion & {
  */
 export type LikertQuestion = BaseQuestion & {
   kind: 'likert';
-  lowLabel: string;
-  highLabel: string;
+  /**
+   * One label per point, low to high — LIKERT_POINTS of them.
+   *
+   * Every point is named rather than just the two ends. A bare 0-5 row
+   * with captions underneath asks the respondent to invent the middle
+   * for themselves, and two people reading "3" as "fine" and "could be
+   * worse" produce the same number from different answers. Naming each
+   * point is what makes the results comparable.
+   *
+   * It is also why these render as a vertical list: six labels do not
+   * fit across a reading column, and shrinking them to fit is how you
+   * get a scale nobody reads.
+   */
+  labels: readonly string[];
 };
 
 /** Single-line free text. */
@@ -117,6 +154,8 @@ export type SurveyQuestion =
 
 export const LIKERT_MIN = 0;
 export const LIKERT_MAX = 5;
+/** How many labels a Likert question must carry. */
+export const LIKERT_POINTS = LIKERT_MAX - LIKERT_MIN + 1;
 
 /** Cap on the free text behind an "Other…" option. */
 export const OTHER_MAX_LENGTH = 100;
@@ -148,6 +187,11 @@ export type SurveyDefinition = {
    * a `term`; see roleTerms below.
    */
   termSourceId: string;
+  /**
+   * Headings for the shared steps — see `group` on a question. Keyed by
+   * group id; a group with no entry here falls back to no heading.
+   */
+  groups?: Record<string, { title: string; hint?: string }>;
   /** Option id → the wording used for `{term}` in later questions. */
   roleTerms: Record<string, string>;
   /**

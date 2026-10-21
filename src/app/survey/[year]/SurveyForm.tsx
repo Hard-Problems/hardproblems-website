@@ -35,6 +35,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {
   applyTerm,
+  buildSteps,
   orderedOptions,
   subjectFor,
   termFor
@@ -92,7 +93,7 @@ export default function SurveyForm({
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
   const [seed, setSeed] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   // Which way the last move went, so the incoming step animates from
   // the side it came from — forward slides in from the right, Back from
   // the left. Without the direction, going back looks identical to
@@ -106,9 +107,15 @@ export default function SurveyForm({
   // field it finds. Matches the `hp` field the site's other forms use.
   const [honeypot, setHoneypot] = useState('');
 
-  const questions = survey.questions;
-  const total = questions.length;
-  const question = questions[step];
+  // Steps, not questions: most steps hold one question, but a `group`
+  // puts several on the same one — see buildSteps(). Everything below
+  // counts, validates and navigates in steps; the questions inside a
+  // step are still wholly separate answers.
+  const steps = useMemo(() => buildSteps(survey.questions), [survey.questions]);
+  const total = steps.length;
+  const current = steps[step];
+  const groupId = current[0].group;
+  const group = groupId ? survey.groups?.[groupId] : undefined;
 
   // ---- persistence --------------------------------------------------
   useEffect(() => {
@@ -117,10 +124,23 @@ export default function SurveyForm({
       if (!raw) return;
       const saved = JSON.parse(raw) as Saved;
       if (saved && typeof saved.seed === 'string' && saved.answers) {
+        const restored = Math.min(Math.max(saved.step ?? 0, 0), total - 1);
         setSeed(saved.seed);
         setAnswers(saved.answers);
-        setStep(Math.min(Math.max(saved.step ?? 0, 0), total - 1));
+        setStep(restored);
         setPhase('questions');
+        // The history entry has to describe where the session actually
+        // resumed, not where a cold load would have started. Without
+        // this the bottom entry said "start screen" while the page was
+        // showing question 18, so one Back jumped the whole survey.
+        try {
+          window.history.replaceState(
+            { hpSurvey: { phase: 'questions', step: restored } },
+            ''
+          );
+        } catch {
+          // See pushHistory.
+        }
       }
     } catch {
       // A corrupt or unreadable entry is not worth failing over — the
@@ -138,6 +158,30 @@ export default function SurveyForm({
     const params = new URLSearchParams(window.location.search);
     if (params.get('preview') === 'thanks') setPhase('done');
   }, []);
+
+  // The entry for however this page first appeared. replaceState, not
+  // push: it describes the load itself rather than a move away from it.
+  const seeded = useRef(false);
+  useEffect(() => {
+    if (seeded.current || phase === 'sending') return;
+    seeded.current = true;
+    // A restored session has already written its own entry, and it
+    // knows the step; this one would overwrite it with the cold-load
+    // default.
+    if ((window.history.state as { hpSurvey?: unknown } | null)?.hpSurvey) {
+      return;
+    }
+    try {
+      window.history.replaceState(
+        {
+          hpSurvey: { phase: phase === 'start' ? 'start' : 'questions', step }
+        },
+        ''
+      );
+    } catch {
+      // See pushHistory.
+    }
+  }, [phase, step]);
 
   useEffect(() => {
     if (phase !== 'questions' || !seed) return;
@@ -199,8 +243,38 @@ export default function SurveyForm({
   }, [step, phase]);
 
   useEffect(() => {
-    if (error) errorRef.current?.focus();
-  }, [error]);
+    if (Object.keys(errors).length > 0) errorRef.current?.focus();
+  }, [errors]);
+
+  // Apply a popped entry, and seed one for however the page was first
+  // rendered — a restored session opens mid-survey, and without an
+  // entry describing that there would be nothing to come back to.
+  useEffect(() => {
+    function onPop(event: PopStateEvent) {
+      const state = (
+        event.state as { hpSurvey?: { phase: Phase; step: number } } | null
+      )?.hpSurvey;
+      // No entry of ours: an older entry from before this page, which
+      // the browser is navigating to on its own. Leave it alone.
+      if (!state) return;
+      fromPopState.current = true;
+      setErrors({});
+      // 'sending' and 'done' are not navigable — a submitted response
+      // cannot be un-submitted, so Back out of the thank-you page goes
+      // to the questions, never back into the middle of a form whose
+      // answers have already gone.
+      setPhase(state.phase === 'start' ? 'start' : 'questions');
+      setDirection(-1);
+      setStep(Math.min(Math.max(state.step, 0), total - 1));
+      // Cleared after React has applied the above, so the pushes those
+      // setters would otherwise trigger are suppressed.
+      window.setTimeout(() => {
+        fromPopState.current = false;
+      }, 0);
+    }
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [total]);
 
   const term = useMemo(
     () => termFor(survey, flatten(answers)),
@@ -216,24 +290,89 @@ export default function SurveyForm({
 
   const setAnswer = useCallback((id: string, answer: Answer) => {
     setAnswers((prev) => ({ ...prev, [id]: answer }));
-    setError(null);
+    // Clear only THIS question's error. On a grouped step the others
+    // are still wrong, and wiping the whole summary because one field
+    // was touched would hide them.
+    setErrors((prev) => {
+      if (!(id in prev)) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }, []);
+
+  // ---- browser Back -------------------------------------------------
+  //
+  // The survey is one URL, so without this the browser's Back button
+  // left the site from question 17 — the single most jarring thing a
+  // long form can do, and the reason people distrust multi-step forms
+  // in the first place.
+  //
+  // So each move pushes a history entry describing where it went, and
+  // popstate puts that back. The URL never changes: a fragment per
+  // question would be shareable but would also invite someone to open
+  // /survey/2026#question-14 cold, with no answers and no way to make
+  // sense of it.
+  //
+  // `fromPopState` stops the loop. Applying a popped entry sets state
+  // the same way a click does, and without the guard that would push a
+  // fresh entry for a move the user made by going backwards.
+  const fromPopState = useRef(false);
+
+  const pushHistory = useCallback((next: { phase: Phase; step: number }) => {
+    if (fromPopState.current) return;
+    try {
+      window.history.pushState({ hpSurvey: next }, '');
+    } catch {
+      // History is unavailable (rare, but a sandboxed iframe will do
+      // it). Navigation still works, Back just behaves as before.
+    }
   }, []);
 
   const goTo = useCallback(
     (next: number) => {
-      setError(null);
+      setErrors({});
       const clamped = Math.min(Math.max(next, 0), total - 1);
       setDirection(clamped >= step ? 1 : -1);
       setStep(clamped);
+      pushHistory({ phase: 'questions', step: clamped });
     },
-    [total, step]
+    [total, step, pushHistory]
   );
 
+  // Back from the first step lands on the survey's own opening screen
+  // rather than doing nothing. It is a real place — the intro, the
+  // prize draw and the privacy notice live there — so "back" from
+  // question one should reach it, and the browser's own Back button
+  // does the same thing by the same route.
+  const goBack = useCallback(() => {
+    if (step > 0) {
+      goTo(step - 1);
+      return;
+    }
+    setErrors({});
+    setPhase('start');
+    pushHistory({ phase: 'start', step: 0 });
+  }, [step, goTo, pushHistory]);
+
+  // Keyed by question id, because a grouped step can fail in more than
+  // one place at once and "fix one, discover the next" is a miserable
+  // way through a form. Every question on the step is checked on each
+  // Continue, so the summary always lists everything outstanding.
   const validateStep = useCallback(() => {
-    const message = validateAnswer(question, answers[question.id], countries);
-    setError(message);
-    return message === null;
-  }, [question, answers, countries]);
+    const found: Record<string, string> = {};
+    for (const q of current) {
+      const message = validateAnswer(
+        q,
+        answers[q.id],
+        countries,
+        applyTerm(q.text, term, subject)
+      );
+      if (message) found[q.id] = message;
+    }
+    setErrors(found);
+    return Object.keys(found).length === 0;
+  }, [current, answers, countries, term, subject]);
 
   const onContinue = useCallback(() => {
     if (!validateStep()) return;
@@ -306,7 +445,7 @@ export default function SurveyForm({
           setAnswers({});
           setStep(0);
           setSeed('');
-          setError(null);
+          setErrors({});
           setSubmitError(null);
           setPhase('start');
         }}
@@ -320,14 +459,22 @@ export default function SurveyForm({
   // site-wide page-title treatment: Instrument Serif at the article-title
   // size, left aligned — the same class /conduct, /privacy, /events and
   // the job permalinks use, so the survey leads the way every page does.
-  const masthead = (
+  // The masthead takes an optional Back control, shown beside the title
+  // on wide screens — see .titleRow. Only the question steps pass one:
+  // there is nowhere to go back to from the start screen, and the
+  // thank-you page is past the point of going back at all.
+  const mastheadWith = (back?: ReactNode) => (
     <>
       <p className={styles.kicker}>Survey</p>
-      <h1 className="page-title">
-        {phase === 'done' ? 'Thank you!' : survey.title}
-      </h1>
+      <div className={styles.titleRow}>
+        {back}
+        <h1 className="page-title">
+          {phase === 'done' ? 'Thank you!' : survey.title}
+        </h1>
+      </div>
     </>
   );
+  const masthead = mastheadWith();
 
   // ---- start ---------------------------------------------------------
   if (phase === 'start') {
@@ -351,7 +498,10 @@ export default function SurveyForm({
             reachable without reading a privacy notice first. */}
           <h2 className="section-label">Before you start</h2>
           <ul className={styles.startFacts}>
-            <li>{total} questions.</li>
+            {/* Questions, not steps. `total` is the step count now that
+              some steps hold several questions, and "21 questions"
+              would be a straightforwardly wrong promise. */}
+            <li>{survey.questions.length} questions.</li>
             <li>
               Your progress is saved in this browser, so you can stop and come
               back.
@@ -366,6 +516,9 @@ export default function SurveyForm({
               // back in the order that respondent already saw.
               if (!seed) setSeed(newSeed());
               setPhase('questions');
+              // An entry for the questions, so Back from step 1 comes
+              // straight back here.
+              pushHistory({ phase: 'questions', step });
             }}
           >
             {/* The <span> is what the global `.black-button > span` rule
@@ -441,16 +594,26 @@ export default function SurveyForm({
     );
   }
 
-  // ---- a question ------------------------------------------------------
-  const heading = applyTerm(question.text, term, subject);
-  const hintId = question.hint ? `${question.id}-hint` : undefined;
-  const errorId = error ? `${question.id}-error` : undefined;
-  const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
+  // ---- a step ----------------------------------------------------------
+  const errorList = current
+    .map((q) => ({ id: q.id, message: errors[q.id] }))
+    .filter((e): e is { id: string; message: string } => Boolean(e.message));
   const sending = phase === 'sending';
+  // Only a single-question step can be optional — a group has no one
+  // thing to skip, and none of the grouped questions are optional.
+  const skippable = current.length === 1 && current[0].optional;
 
   return (
     <>
-      {masthead}
+      {mastheadWith(
+        <button
+          type="button"
+          className={`black-button black-button--small ${styles.titleBack}`}
+          onClick={goBack}
+        >
+          <span aria-hidden="true">←</span> Back
+        </button>
+      )}
       <div className={styles.step}>
         {headerEl &&
           createPortal(
@@ -470,7 +633,10 @@ export default function SurveyForm({
               {/* aria-hidden: the word beside it already says what this
                 does, so announcing the icon would just repeat it. */}
               <DoorOpen className="survey-exit-icon" aria-hidden="true" />
-              Exit survey
+              {/* The second word goes on a phone, along with the icon —
+                  see globals.css. Marked up rather than swapped in JS,
+                  so the server and the client render the same thing. */}
+              Exit<span className="survey-word-long"> survey</span>
             </button>,
             headerEl
           )}
@@ -486,25 +652,35 @@ export default function SurveyForm({
               target="_blank"
               rel="noopener"
             >
-              Privacy policy
+              Privacy<span className="survey-word-long"> policy</span>
             </a>,
             headerEl
           )}
-        <Progress
-          step={step}
-          total={total}
-          onBack={step > 0 ? () => goTo(step - 1) : null}
-        />
+        <Progress step={step} total={total} onBack={goBack} />
 
-        {error && (
+        {errorList.length > 0 && (
           <div
             className={styles.errorSummary}
             role="alert"
             tabIndex={-1}
             ref={errorRef}
-            id={errorId}
           >
-            {error}
+            {/* One message reads as a sentence; several need to be a
+                list, and each carries the id its field points at with
+                aria-describedby. */}
+            {errorList.length === 1 ? (
+              <span id={`${errorList[0].id}-error`}>
+                {errorList[0].message}
+              </span>
+            ) : (
+              <ul className={styles.errorList}>
+                {errorList.map((e) => (
+                  <li key={e.id} id={`${e.id}-error`}>
+                    {e.message}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
 
@@ -517,17 +693,47 @@ export default function SurveyForm({
             direction === -1 ? styles.stepBodyBack : ''
           }`}
         >
-          <QuestionBody
-            question={question}
-            heading={heading}
-            headingRef={headingRef}
-            hintId={hintId}
-            describedBy={describedBy}
-            answer={answers[question.id]}
-            seed={seed}
-            countries={countries}
-            onAnswer={(a) => setAnswer(question.id, a)}
-          />
+          {/* A grouped step gets one heading of its own, and each
+              question below it drops to a sub-heading. A single-question
+              step is unchanged: the question IS the heading. */}
+          {group && (
+            <>
+              <h2
+                className={styles.questionHeading}
+                tabIndex={-1}
+                ref={headingRef}
+              >
+                {group.title}
+              </h2>
+              {group.hint && <p className={styles.hint}>{group.hint}</p>}
+            </>
+          )}
+          {current.map((q, i) => (
+            <QuestionBody
+              key={q.id}
+              question={q}
+              heading={applyTerm(q.text, term, subject)}
+              // Focus goes to the step's heading, which is the group's
+              // when there is one — so only an ungrouped question takes
+              // the ref.
+              headingRef={group ? undefined : headingRef}
+              inGroup={Boolean(group)}
+              hintId={q.hint ? `${q.id}-hint` : undefined}
+              describedBy={
+                [
+                  q.hint ? `${q.id}-hint` : null,
+                  errors[q.id] ? `${q.id}-error` : null
+                ]
+                  .filter(Boolean)
+                  .join(' ') || undefined
+              }
+              answer={answers[q.id]}
+              seed={seed}
+              countries={countries}
+              onAnswer={(a) => setAnswer(q.id, a)}
+              first={i === 0}
+            />
+          ))}
         </div>
 
         {/* Honeypot — visually hidden, never announced, never tabbable. */}
@@ -566,7 +772,7 @@ export default function SurveyForm({
               </>
             )}
           </button>
-          {question.optional && step < total - 1 && (
+          {skippable && step < total - 1 && (
             <button
               type="button"
               className={styles.skipLink}
@@ -597,8 +803,13 @@ function Progress({
 }: {
   step: number;
   total: number;
-  /** Null on the first question, where there is nowhere to go back to. */
-  onBack: (() => void) | null;
+  /**
+   * Always present. On the first step it goes to the survey's opening
+   * screen rather than nowhere — that screen holds the intro, the
+   * prize draw and the privacy notice, so it is somewhere worth being
+   * able to get back to.
+   */
+  onBack: () => void;
 }) {
   const done = step; // questions completed, not counting the current one
   const pct = Math.round((done / total) * 100);
@@ -621,7 +832,7 @@ function Progress({
           <span />
         )}
         <p className={styles.progressLabel}>
-          Question {step + 1} of {total}
+          Step {step + 1} of {total}
         </p>
       </div>
     </div>
@@ -632,6 +843,8 @@ function QuestionBody({
   question,
   heading,
   headingRef,
+  inGroup,
+  first,
   hintId,
   describedBy,
   answer,
@@ -641,7 +854,12 @@ function QuestionBody({
 }: {
   question: SurveyQuestion;
   heading: string;
-  headingRef: React.RefObject<HTMLHeadingElement | null>;
+  /** Absent on a grouped step, where the group's heading takes focus. */
+  headingRef?: React.RefObject<HTMLHeadingElement | null>;
+  /** Render the question as a sub-heading under a group's heading. */
+  inGroup?: boolean;
+  /** First question on the step, so it does not need a top margin. */
+  first?: boolean;
   hintId?: string;
   describedBy?: string;
   answer: Answer | undefined;
@@ -663,7 +881,15 @@ function QuestionBody({
   // with a flat, ambiguous outline. It is styled as the dominant
   // heading and still takes focus on each step, which is what the
   // guidance is actually for.
-  const title = (
+  const title = inGroup ? (
+    // Under a group heading the question is no longer what the step is
+    // about, so it steps down a level and gives up focus and the
+    // dominant size — otherwise five of them would compete with the
+    // one heading above and with each other.
+    <h3 className={`${styles.groupQuestion} ${first ? styles.groupFirst : ''}`}>
+      {heading}
+    </h3>
+  ) : (
     <h2 className={styles.questionHeading} tabIndex={-1} ref={headingRef}>
       {heading}
     </h2>
@@ -672,6 +898,73 @@ function QuestionBody({
   switch (question.kind) {
     case 'single':
     case 'multi': {
+      // A single-choice question asked as a dropdown. Same answer and
+      // same validation as the radio version — only the control
+      // differs, so nothing downstream knows about this.
+      //
+      // Not a fieldset: one <select> is one control with one label, and
+      // wrapping a single control in a group is noise for a screen
+      // reader. The visible heading is repeated as an sr-only <label>
+      // for the same reason the country picker does it — a heading is
+      // not an accessible name.
+      if (question.kind === 'single' && question.as === 'select') {
+        const chosen = typeof answer?.value === 'string' ? answer.value : '';
+        const selectOptions = orderedOptions(question, seed);
+        const other = selectOptions.find((o) => o.isOther);
+        return (
+          <div
+            className={`${styles.selectField} ${
+              inGroup ? styles.selectFieldGrouped : ''
+            }`}
+          >
+            {title}
+            {hint}
+            <label className="sr-only" htmlFor={question.id}>
+              {heading}
+            </label>
+            <select
+              id={question.id}
+              className={styles.select}
+              aria-describedby={describedBy}
+              value={chosen}
+              onChange={(e) =>
+                onAnswer({
+                  value: e.target.value,
+                  otherText: answer?.otherText
+                })
+              }
+            >
+              <option value="">Choose one</option>
+              {selectOptions.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            {other && chosen === other.id && (
+              <div className={styles.otherWrap}>
+                <label
+                  className={styles.label}
+                  htmlFor={`${question.id}-other`}
+                >
+                  Please say more
+                </label>
+                <input
+                  id={`${question.id}-other`}
+                  className={styles.input}
+                  type="text"
+                  maxLength={OTHER_MAX_LENGTH}
+                  value={answer?.otherText ?? ''}
+                  onChange={(e) =>
+                    onAnswer({ value: chosen, otherText: e.target.value })
+                  }
+                />
+              </div>
+            )}
+          </div>
+        );
+      }
+
       const options = orderedOptions(question, seed);
       const multi = question.kind === 'multi';
       const selected: string[] = multi
@@ -696,11 +989,23 @@ function QuestionBody({
       // alternative and is worse — disabled controls leave the tab order
       // and carry no explanation, so a keyboard or screen reader user
       // just finds options that have quietly disappeared.
+      // Yes/No side by side rather than stacked. Detected from the
+      // options rather than flagged in the definition, so any question
+      // that is genuinely a yes/no gets it without anyone remembering
+      // to say so — and a question that stops being one loses it.
+      const yesNo =
+        question.kind === 'single' &&
+        options.length === 2 &&
+        options.every((o) => o.id === 'yes' || o.id === 'no');
+
       const max = multi && question.kind === 'multi' ? question.max : undefined;
       const atLimit = max !== undefined && selected.length >= max;
 
       return (
-        <fieldset className={styles.fieldset} aria-describedby={describedBy}>
+        <fieldset
+          className={`${styles.fieldset} ${inGroup ? styles.groupFieldset : ''}`}
+          aria-describedby={describedBy}
+        >
           <legend className={styles.legend}>{title}</legend>
           {hint}
           {max !== undefined && (
@@ -717,7 +1022,9 @@ function QuestionBody({
                 : `You can choose ${max - selected.length} more.`}
             </p>
           )}
-          <div className={styles.options}>
+          <div
+            className={`${styles.options} ${yesNo ? styles.optionsInline : ''}`}
+          >
             {options.map((option) => (
               <OptionRow
                 key={option.id}
@@ -770,19 +1077,30 @@ function QuestionBody({
     }
 
     case 'likert': {
-      const points = [];
-      for (let n = LIKERT_MIN; n <= LIKERT_MAX; n++) points.push(String(n));
+      // Every point named, and no numbers shown. The stored value is
+      // still the number — 0-5 is what makes these comparable across
+      // questions and across years — but a respondent should be
+      // choosing a description, not translating their feeling into a
+      // digit and hoping we read it the same way.
+      //
+      // Vertical, for the same reason: six labels will not fit across
+      // a reading column, and the row of numbered circles only worked
+      // because "3" is one character wide.
       return (
         <fieldset className={styles.fieldset} aria-describedby={describedBy}>
           <legend className={styles.legend}>{title}</legend>
           {hint}
           <div className={styles.scale}>
-            <span className={styles.scaleEnd}>{question.lowLabel}</span>
-            <div className={styles.scalePoints}>
-              {points.map((n) => (
+            {question.labels.map((label, i) => {
+              const n = String(LIKERT_MIN + i);
+              return (
                 <label
                   key={n}
                   className={styles.scalePoint}
+                  // The low-to-high colour run survives the change to a
+                  // list: it is the radio's own accent now rather than
+                  // a filled circle, so the scale still reads as a
+                  // scale at a glance.
                   style={
                     { '--scale-hue': scaleHue(Number(n)) } as CSSProperties
                   }
@@ -794,22 +1112,27 @@ function QuestionBody({
                     checked={answer?.value === n}
                     onChange={() => onAnswer({ value: n })}
                   />
-                  <span aria-hidden="true">{n}</span>
-                  <span className="sr-only">
-                    {n} out of {LIKERT_MAX}
-                  </span>
+                  <span>{label}</span>
                 </label>
-              ))}
-            </div>
-            <span className={styles.scaleEnd}>{question.highLabel}</span>
+              );
+            })}
           </div>
         </fieldset>
       );
     }
 
     case 'country':
+      // Same .selectField wrapper as the `as: 'select'` branch above,
+      // and for its sake rather than this one's: that class is what
+      // pulls a dropdown up under its label inside a grouped step.
+      // Without it this question alone kept the default 1.25rem gap
+      // and sat visibly looser than the three dropdowns around it.
       return (
-        <>
+        <div
+          className={`${styles.selectField} ${
+            inGroup ? styles.selectFieldGrouped : ''
+          }`}
+        >
           {title}
           {hint}
           <label className="sr-only" htmlFor={question.id}>
@@ -829,7 +1152,7 @@ function QuestionBody({
               </option>
             ))}
           </select>
-        </>
+        </div>
       );
 
     case 'text':

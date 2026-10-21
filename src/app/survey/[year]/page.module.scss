@@ -10,10 +10,26 @@
   // got its own width (398px to 704px at a 1200px viewport) and the
   // whole column slid sideways between steps. `max-width` never bit,
   // because the element never grew that wide on its own.
+  // border-box, or `width: 100%` and 1rem of side padding add up to
+  // 32px MORE than the parent allows. On a phone that pushed the right
+  // edge past the viewport — an 8px horizontal scroll, and gutters of
+  // 40px on the left against 16px on the right, which is what made the
+  // page look off-centre rather than merely tight.
+  box-sizing: border-box;
   width: 100%;
   max-width: 48rem;
   margin: 0 auto;
   padding: 3rem 1rem 6rem;
+}
+
+// One gutter on a phone, not two. The body already insets the page by
+// 1.5rem; adding another 1rem here left 295px of content inside a
+// 375px screen and made every box look squeezed toward the middle.
+@media only screen and (max-width: 600px) {
+  .survey {
+    padding-left: 0;
+    padding-right: 0;
+  }
 }
 
 // The global `h1.page-title` rule carries 0.83em of top margin — about
@@ -35,6 +51,45 @@
 .survey h1:global(.page-title) {
   margin-top: 0;
   padding-bottom: 0.2rem;
+}
+
+// The title line, with a Back button out in the left gutter on wide
+// screens.
+//
+// Back lives in the progress row by default, next to "Step 4 of 21",
+// which is where it belongs when the column is the whole screen. Once
+// the window is wide enough to leave a margin beside the column, it
+// moves out into that margin level with the title and the progress-row
+// copy is hidden. Only one is ever rendered to assistive tech — the
+// other is display: none.
+.titleRow {
+  position: relative;
+}
+
+// `.titleRow .titleBack`, not `.titleBack` alone: this button also
+// carries the global `black-button` classes, and globals.css styles
+// those as `button.black-button` — specificity (0,1,1), which beats a
+// lone class. Written as one class this rule lost every time and the
+// button showed at every width.
+.titleRow .titleBack {
+  display: none;
+  flex-shrink: 0;
+}
+
+// Overriding two things the global button does on hover.
+//
+// `button.titleBack` rather than `.titleBack`: globals.css writes its
+// hover as `button.black-button:hover:not(:disabled)`, and an element
+// in the selector outranks a plain class at the same count. These have
+// to carry one more class and the element to win — see the same
+// problem solved on the display rule above.
+.titleRow button.titleBack {
+  // The arrow points back, so it should travel back. Sliding right on
+  // a ← is the animation contradicting the glyph.
+  &:hover:not(:disabled) > span,
+  &:focus-visible > span {
+    transform: translateX(-3px);
+  }
 }
 
 .kicker {
@@ -235,6 +290,23 @@
   margin-top: 1.25rem;
 }
 
+// Yes and No share a line: two short, opposed answers read faster
+// beside each other than stacked, and stacking them wasted a whole row
+// of a grouped step.
+//
+// Sized rather than split across the column. Two words do not need
+// 280px each, and a pair of boxes that wide reads as two separate
+// questions rather than one either/or. 9rem is still far wider than
+// the 44px minimum touch target, and `flex-shrink` lets them give way
+// on a very narrow screen instead of overflowing.
+.optionsInline {
+  flex-direction: row;
+
+  > * {
+    flex: 0 1 9rem;
+  }
+}
+
 // A whole-row target rather than just the control: GDS sizes these for
 // a thumb, and a label that only responds on the 20px circle is the
 // single most common complaint about radio groups on a phone.
@@ -312,61 +384,52 @@
 // No media query: this works the same at every width, which the
 // side-by-side version could not — six options plus two labels in one
 // row left the options too narrow to tap on a phone.
+// A Likert scale: six named points in a row, low to high, so the shape
+// of the scale is visible at a glance and its order is obvious without
+// reading every label.
 .scale {
-  margin-top: 1.5rem;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-areas:
-    'points points'
-    'low high';
-  gap: 0.6rem 1rem;
-}
-
-.scaleEnd {
-  font-size: var(--font-size-xs);
-  line-height: 1.3;
-  color: #555;
-
-  &:first-child {
-    grid-area: low;
-    text-align: left;
-  }
-
-  &:last-child {
-    grid-area: high;
-    text-align: right;
-  }
-}
-
-.scalePoints {
-  grid-area: points;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 0.5rem;
+  gap: 0.4rem;
+  margin-top: 1.5rem;
 }
 
-// One number on the scale. Boxed like the option rows, so a Likert
-// reads as the same kind of choice as a radio list rather than as bare
-// numerals — and so each point is a target the size of a thumb.
-//
-// Each point is tinted along a red-to-green gradient, from a
-// --scale-hue set inline per point. Resting points get a pale wash and
-// a coloured edge; the chosen one fills in more strongly.
 .scalePoint {
   --scale-hue: 140;
 
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.8rem 0.25rem;
+  // Centred, not top-aligned. `height: 100%` below stretches every box
+  // to match the tallest label, so pinning the contents to the top
+  // left the one-line points with all their slack underneath — a row
+  // of boxes whose contents sat high and empty below. Centring spends
+  // that slack evenly above and below instead.
+  justify-content: center;
+  gap: 0.6rem;
+  // Roomier than it looks like it needs to be. The boxes are only
+  // ~120px wide, so text that starts a few pixels from the edge reads
+  // as crammed against it — and the extra height under the radio is
+  // what separates the control from its label instead of leaving them
+  // stacked flush. The phone layout overrides this below; it is a row
+  // there and has its own spacing.
+  padding: 1.1rem 0.65rem 0.9rem;
+  text-align: center;
   border: 1px solid hsl(var(--scale-hue) 55% 78%);
   border-radius: 8px;
   background: hsl(var(--scale-hue) 70% 97%);
   color: hsl(var(--scale-hue) 70% 24%);
   cursor: pointer;
-  font-size: var(--font-size-sm);
-  font-weight: 600;
+  // A sixth of the column is narrow, so labels wrap. xs keeps that to
+  // two or three short lines rather than five.
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  line-height: 1.25;
+  // Equal heights come from the grid, which stretches its items by
+  // default — a `height: 100%` here resolved against the row height
+  // and then had this box's 32px of padding added on top of it, so
+  // every box stood 34px taller than its row with the slack showing
+  // as dead space under the label.
   transition:
     border-color 0.12s ease,
     background 0.12s ease;
@@ -379,6 +442,7 @@
   input {
     width: 18px;
     height: 18px;
+    flex-shrink: 0;
     accent-color: hsl(var(--scale-hue) 70% 36%);
     margin: 0;
   }
@@ -433,7 +497,66 @@
   color: #555;
 }
 
+// ---------------------------------------------------- grouped steps
+
+// A question inside a grouped step. It is a sub-heading, not the thing
+// the step is about, so it is smaller than .questionHeading and sits in
+// the body text's own size — five of these at heading size would fight
+// the group heading above them and each other.
+.groupQuestion {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0;
+  // Generous above, tight below. On a step holding five questions the
+  // gap under a label was the same as the gap between two questions,
+  // so the labels floated between their neighbours instead of reading
+  // as attached to the control underneath. The controls carry their
+  // own top margins for the single-question steps, so those are
+  // cancelled here rather than reduced globally.
+  margin: 2rem 0 0.5rem 0;
+
+  + * {
+    margin-top: 0;
+  }
+}
+
+// Same again for the controls that are not the h3's immediate sibling:
+// a select sits inside .selectField, and a radio group's .options
+// follows the <legend> that wraps the heading.
+//
+// Grouped steps only. A dropdown that is a step on its own still wants
+// the standard gap under its heading, the same as a text input does —
+// the tightening is about packing five questions onto one step, not
+// about dropdowns.
+.selectFieldGrouped select,
+.groupFieldset .options {
+  margin-top: 0;
+}
+
+// The first question sits directly under the group's heading and hint,
+// which already provide the gap.
+.groupFirst {
+  margin-top: 1rem;
+}
+
+// Keeps a dropdown from butting against the next question's heading.
+.selectField {
+  margin-bottom: 0.5rem;
+}
+
 // -------------------------------------------------------------- errors
+
+// Several failures at once, which only a grouped step can produce.
+.errorList {
+  margin: 0;
+  padding-left: 1.15rem;
+
+  li {
+    margin: 0 0 0.25rem 0;
+  }
+}
 
 .errorSummary {
   margin: 0 0 1.25rem 0;
@@ -785,5 +908,93 @@
 
   .progress {
     margin-bottom: 2.5rem;
+  }
+}
+
+// Stack the scale below 820px.
+//
+// Not the site's usual 600px break, and the reason is worth writing
+// down. The survey column is capped at 48rem, so six columns can never
+// be wider than about 123px however large the screen — that is the
+// best the horizontal layout ever looks. Below 820px the column is
+// narrower than its cap, so the boxes shrink with the viewport: 103px
+// at 708px, leaving 82px for labels that then wrap mid-phrase in every
+// box. A row of cramped two-line boxes is worse than a list, so
+// anything short of the full-width column gets the list — phones,
+// tablets, and a half-width desktop window alike.
+@media only screen and (max-width: 819px) {
+  .scale {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .scalePoint {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    padding: 0.7rem 0.9rem;
+    text-align: left;
+    font-size: var(--font-size-sm);
+  }
+}
+
+// Back beside the title, from 1024px — see .titleRow.
+//
+// At the END of the file on purpose: `.backLink` sets its own
+// `display` further up, and at equal specificity the later rule wins
+// whether or not the earlier one is inside a media query. Written
+// above its definition, this hid nothing.
+@media only screen and (min-width: 1024px) {
+  // Out of the flow entirely, so the title keeps the column's left
+  // edge and lines up with everything under it. `right: 100%` puts the
+  // button's right edge on the column's left edge; the margin is then
+  // the gap between them.
+  //
+  // 1024px is where the gutter first fits it. The column is capped at
+  // 48rem, so the space to its left is (viewport - 768) / 2: about
+  // 144px at this width against the ~124px the button and its gap
+  // need. Below that it would reach past the edge of the window, which
+  // is why the progress row keeps it until then.
+  .titleRow .titleBack {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    position: absolute;
+    right: 100%;
+    margin-right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+
+    // The global button lifts by 1px on hover, which is right for
+    // Continue — it reinforces moving forward — but wrong for a fixed
+    // landmark out in the margin that you are trying to aim at.
+    //
+    // Repeating the centring value rather than `transform: none`:
+    // `none` would also drop the translateY above and drop the button
+    // half its own height down the page the moment a pointer touched
+    // it.
+    &:hover:not(:disabled),
+    &:focus-visible {
+      transform: translateY(-50%);
+      // And no drop shadow. The element does not move a pixel with the
+      // transform pinned above, but the global hover shadow is offset
+      // 4px DOWNWARD, which reads as the button rising off the page —
+      // the lift it was meant to accompany. Removing the motion while
+      // keeping its shadow just leaves the illusion behind.
+      box-shadow: none;
+    }
+  }
+
+  // The progress row keeps the step count; its Back would be a second
+  // control doing the same job a few pixels below.
+  .backLink {
+    display: none;
+  }
+
+  // With Back gone the row has one child left, and `space-between`
+  // puts a lone child at the START — the step count slid to the left
+  // edge. Pin it to the right, where it was.
+  .progressRow {
+    justify-content: flex-end;
   }
 }

@@ -9,8 +9,11 @@ import type { SurveyDefinition } from './types';
 
 // Likert questions all share the same 0–5 shape, so the only thing that
 // varies is the wording at each end.
-function likert(id: string, text: string, lowLabel: string, highLabel: string) {
-  return { kind: 'likert' as const, id, text, lowLabel, highLabel };
+// `labels` runs low to high and must have LIKERT_POINTS entries — the
+// test asserts it, because a scale one label short silently renders a
+// point with no name.
+function likert(id: string, text: string, labels: readonly string[]) {
+  return { kind: 'likert' as const, id, text, labels };
 }
 
 export const SURVEY_2026: SurveyDefinition = {
@@ -46,6 +49,11 @@ export const SURVEY_2026: SurveyDefinition = {
     founder: 'startups',
     other: 'design'
   },
+  // Headings for the shared steps — see `group` on a question.
+  groups: {
+    'about-you': { title: 'About you and where you work' }
+  },
+
   // Subject position only — see roleSubjects on SurveyDefinition.
   roleSubjects: {
     founder: 'being a founder',
@@ -78,41 +86,57 @@ export const SURVEY_2026: SurveyDefinition = {
       ]
     },
 
-    likert(
-      'career-satisfaction',
-      'How satisfied are you in your career?',
+    likert('career-satisfaction', 'How satisfied are you in your career?', [
       'Not satisfied at all',
+      'Mostly dissatisfied',
+      'Slightly dissatisfied',
+      'Slightly satisfied',
+      'Mostly satisfied',
       'Extremely satisfied'
-    ),
-    likert(
-      'role-security',
-      'How secure do you feel in your current role?',
+    ]),
+    likert('role-security', 'How secure do you feel in your current role?', [
       'Very insecure',
+      'Fairly insecure',
+      'Slightly insecure',
+      'Slightly secure',
+      'Fairly secure',
       'Rock solid'
-    ),
-    likert(
-      'skill',
-      'Are you skilled at your chosen career?',
-      'Unskilled',
-      'Very highly skilled'
-    ),
-    likert(
-      'passion',
-      'Are you passionate about your chosen career?',
+    ]),
+    likert('skill', 'Are you skilled at your chosen career?', [
+      'Not skilled',
+      'Learning the basics',
+      'Competent',
+      'Skilled',
+      'Very skilled',
+      'Expert'
+    ]),
+    likert('passion', 'Are you passionate about your chosen career?', [
       'Not passionate',
+      'Barely interested',
+      'Mildly interested',
+      'Quite passionate',
+      'Very passionate',
       'Extremely passionate'
-    ),
-    likert(
-      'pay',
-      'Do people in your career make enough money?',
+    ]),
+    likert('pay', 'Do people in your career make enough money?', [
       'Underpaid',
+      'Not quite enough',
+      'Just about enough',
+      'Reasonably paid',
+      'Well paid',
       'Extremely well paid'
-    ),
+    ]),
     likert(
       'benefit-to-world',
       'Does your career feel like it benefits the world?',
-      'Not at all',
-      "Yes, it's very beneficial"
+      [
+        'Not at all',
+        'Hardly at all',
+        'A little',
+        'Somewhat',
+        'Quite a lot',
+        'Enormously'
+      ]
     ),
 
     {
@@ -173,8 +197,14 @@ export const SURVEY_2026: SurveyDefinition = {
     likert(
       'still-here-in-5',
       'How likely are you to still be working in {term} in five years?',
-      'Not working in this field',
-      'Definitely working in this field'
+      [
+        'Not working in this field',
+        'Probably not',
+        'Leaning towards leaving',
+        'Leaning towards staying',
+        'Probably',
+        'Definitely working in this field'
+      ]
     ),
 
     {
@@ -218,12 +248,14 @@ export const SURVEY_2026: SurveyDefinition = {
       ]
     },
 
-    likert(
-      'ai-usage',
-      'How much is AI being used in your day-to-day work?',
-      "I don't use AI",
+    likert('ai-usage', 'How much is AI being used in your day-to-day work?', [
+      'I never use AI',
+      'I rarely use AI',
+      'I use AI occasionally',
+      'I use AI regularly',
+      'I use AI daily',
       'I use AI most of the time'
-    ),
+    ]),
 
     {
       kind: 'multi',
@@ -245,9 +277,20 @@ export const SURVEY_2026: SurveyDefinition = {
       ]
     },
 
+    // ---- one step, five short questions ----------------------------
+    //
+    // The quick factual ones, asked together. Every other question in
+    // this survey asks someone to weigh something up and gets a page to
+    // itself; these five are recall, not judgement, and a page each
+    // would turn half a minute of answering into five page loads near
+    // the end of a long survey — which is where people give up.
+    //
+    // They stay five separate questions in the data. `group` only
+    // changes how many appear at once.
     {
       kind: 'single',
       id: 'manages-people',
+      group: 'about-you',
       text: 'Do you manage people?',
       options: [
         { id: 'yes', label: 'Yes' },
@@ -258,6 +301,11 @@ export const SURVEY_2026: SurveyDefinition = {
     {
       kind: 'single',
       id: 'experience',
+      group: 'about-you',
+      // A dropdown, like the two below: an ordered scale nobody needs
+      // to compare side by side, and six radios each would make this
+      // step a screenful on its own.
+      as: 'select',
       text: 'How long have you been working professionally?',
       options: [
         { id: 'student', label: 'Student' },
@@ -272,13 +320,46 @@ export const SURVEY_2026: SurveyDefinition = {
     {
       kind: 'country',
       id: 'country',
+      group: 'about-you',
       text: 'Where are you in the world?'
+    },
+
+    {
+      kind: 'single',
+      id: 'org-size',
+      group: 'about-you',
+      as: 'select',
+      text: 'How big is your company or organisation?',
+      options: [
+        { id: '1', label: 'Just me' },
+        { id: '2-10', label: '2–10' },
+        { id: '11-50', label: '11–50' },
+        { id: '50-250', label: '50–250' },
+        { id: '250-1000', label: '250–1,000' },
+        { id: '1000-plus', label: '1,000+' }
+      ]
+    },
+
+    {
+      kind: 'single',
+      id: 'designer-count',
+      group: 'about-you',
+      as: 'select',
+      text: 'How many designers work at your company or organisation?',
+      options: [
+        { id: '1-5', label: '1–5' },
+        { id: '5-10', label: '5–10' },
+        { id: '10-20', label: '10–20' },
+        { id: '20-50', label: '20–50' },
+        { id: '50-plus', label: '50+' }
+      ]
     },
 
     {
       kind: 'single',
       id: 'org-type',
       text: 'What type of organisation do you work at?',
+      hint: 'Choose the one that fits you best.',
       options: [
         { id: 'startup', label: 'Startup' },
         { id: 'scale-up', label: 'Scale-up' },
@@ -315,33 +396,6 @@ export const SURVEY_2026: SurveyDefinition = {
         { id: 'telecommunications', label: 'Telecommunications' },
         { id: 'consumer-tech', label: 'Consumer tech' },
         { id: 'automotive', label: 'Automotive' }
-      ]
-    },
-
-    {
-      kind: 'single',
-      id: 'org-size',
-      text: 'How big is your company or organisation?',
-      options: [
-        { id: '1', label: 'Just me' },
-        { id: '2-10', label: '2–10' },
-        { id: '11-50', label: '11–50' },
-        { id: '50-250', label: '50–250' },
-        { id: '250-1000', label: '250–1,000' },
-        { id: '1000-plus', label: '1,000+' }
-      ]
-    },
-
-    {
-      kind: 'single',
-      id: 'designer-count',
-      text: 'How many designers work at your company or organisation?',
-      options: [
-        { id: '1-5', label: '1–5' },
-        { id: '5-10', label: '5–10' },
-        { id: '10-20', label: '10–20' },
-        { id: '20-50', label: '20–50' },
-        { id: '50-plus', label: '50+' }
       ]
     },
 
