@@ -92,9 +92,6 @@ export function validateAnswer(
       if (!a.value.every((v) => typeof v === 'string' && known.has(v))) {
         return 'Please choose from the options listed.';
       }
-      if (question.max && a.value.length > question.max) {
-        return `Please choose no more than ${question.max}.`;
-      }
       const otherChosen = question.options.some(
         (o) => o.isOther && a.value.includes(o.id)
       );

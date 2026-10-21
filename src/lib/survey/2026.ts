@@ -143,8 +143,10 @@ export const SURVEY_2026: SurveyDefinition = {
       kind: 'multi',
       id: 'what-matters',
       text: 'What matters most to you?',
-      hint: 'Choose up to three.',
-      max: 3,
+      // A suggestion, not a rule — nothing enforces the number. The
+      // selection cap that used to back wording like this was removed
+      // from the schema entirely.
+      hint: 'Choose 2–3 criteria that matter to you most.',
       order: 'shuffle',
       options: [
         { id: 'craft', label: 'Craft' },

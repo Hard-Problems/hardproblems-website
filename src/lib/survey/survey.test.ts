@@ -260,10 +260,15 @@ check(
     a['pay'] = { value: '3; DROP TABLE' };
   }).some((e) => e.questionId === 'pay')
 );
+// `what-matters` used to cap selections at three. The cap is gone from
+// the schema entirely, so this asserts the question now takes whatever
+// anyone gives it.
 check(
-  'rejects over-max multi-select',
-  inject((a) => {
-    a['what-matters'] = { value: ['craft', 'purpose', 'autonomy', 'money'] };
+  'what-matters now accepts as many as you like',
+  !inject((a) => {
+    a['what-matters'] = {
+      value: ['craft', 'purpose', 'autonomy', 'money', 'recognition']
+    };
   }).some((e) => e.questionId === 'what-matters')
 );
 check(

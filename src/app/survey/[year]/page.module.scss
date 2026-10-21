@@ -266,23 +266,6 @@
 
 // ------------------------------------------------------------- options
 
-// Live count for "choose up to N" questions. Same role as the character
-// counter under the text questions, so the two read as one idea.
-.selectionCount {
-  margin: 0 0 0.75rem 0;
-  font-size: var(--font-size-xs);
-  color: #555;
-}
-
-// At the limit it stops being a running total and becomes an
-// instruction, so it takes the colour of one: the site's validation
-// red. Size stays as the running total's — only the colour and weight
-// change, so the line does not reflow when it crosses the limit.
-.selectionCountFull {
-  color: var(--color-error);
-  font-weight: 600;
-}
-
 .options {
   display: flex;
   flex-direction: column;
@@ -349,19 +332,6 @@
   &:has(input:checked) {
     border-color: var(--color-dark-green);
     background: #f2f8f4;
-  }
-}
-
-// At the limit, options that are not already chosen read as
-// unavailable — but they are NOT disabled: still focusable, still
-// announced, and a click simply does not take. Hover is suppressed so
-// the row does not promise something it will not do.
-.optionBlocked {
-  opacity: 0.55;
-
-  &:hover {
-    border-color: #e2e2e2;
-    background: transparent;
   }
 }
 
@@ -996,5 +966,29 @@
   // edge. Pin it to the right, where it was.
   .progressRow {
     justify-content: flex-end;
+  }
+}
+
+// Radios on one line across the whole scale, where it is a row.
+//
+// Centring the stack put each radio half a label's height from the
+// top, so a one-line point sat 7px lower than its two-line
+// neighbours — six controls on a wavy line, which undermines the one
+// thing a row of radios is for: being scanned straight across.
+//
+// So the radio is pinned to the top and the label takes the rest of
+// the box, centred inside whatever height it gets. That keeps the
+// radios aligned without bringing back the top-heaviness of simply
+// aligning everything to the top.
+@media only screen and (min-width: 820px) {
+  .scalePoint {
+    justify-content: flex-start;
+  }
+
+  .scalePoint > span {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }

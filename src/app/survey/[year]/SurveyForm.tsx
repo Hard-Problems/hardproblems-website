@@ -998,9 +998,6 @@ function QuestionBody({
         options.length === 2 &&
         options.every((o) => o.id === 'yes' || o.id === 'no');
 
-      const max = multi && question.kind === 'multi' ? question.max : undefined;
-      const atLimit = max !== undefined && selected.length >= max;
-
       return (
         <fieldset
           className={`${styles.fieldset} ${inGroup ? styles.groupFieldset : ''}`}
@@ -1008,20 +1005,6 @@ function QuestionBody({
         >
           <legend className={styles.legend}>{title}</legend>
           {hint}
-          {max !== undefined && (
-            <p
-              className={`${styles.selectionCount} ${
-                atLimit ? styles.selectionCountFull : ''
-              }`}
-              // polite, so it is announced after whatever the tick
-              // itself said rather than interrupting it.
-              aria-live="polite"
-            >
-              {atLimit
-                ? `You have chosen ${max}. Untick one to choose another.`
-                : `You can choose ${max - selected.length} more.`}
-            </p>
-          )}
           <div
             className={`${styles.options} ${yesNo ? styles.optionsInline : ''}`}
           >
@@ -1032,12 +1015,6 @@ function QuestionBody({
                 name={question.id}
                 multi={multi}
                 checked={selected.includes(option.id)}
-                // Ticking a NEW option once the limit is reached does
-                // nothing; unticking always works, so there is always a
-                // way out.
-                blocked={
-                  atLimit && !selected.includes(option.id) ? true : false
-                }
                 onChange={(checked) => {
                   const next = multi
                     ? checked
@@ -1204,34 +1181,22 @@ function OptionRow({
   name,
   multi,
   checked,
-  blocked = false,
   onChange
 }: {
   option: SurveyOption;
   name: string;
   multi: boolean;
   checked: boolean;
-  /**
-   * The selection limit is reached and this option is not one of the
-   * chosen ones, so ticking it should do nothing. NOT `disabled` — the
-   * control stays focusable and announced, it simply declines.
-   */
-  blocked?: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label
-      className={`${styles.option} ${blocked ? styles.optionBlocked : ''}`}
-    >
+    <label className={styles.option}>
       <input
         type={multi ? 'checkbox' : 'radio'}
         name={name}
         value={option.id}
         checked={checked}
-        onChange={(e) => {
-          if (blocked && e.target.checked) return;
-          onChange(e.target.checked);
-        }}
+        onChange={(e) => onChange(e.target.checked)}
       />
       <span>{option.label}</span>
     </label>

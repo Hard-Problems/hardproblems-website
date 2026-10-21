@@ -95,8 +95,6 @@ export type MultiQuestion = BaseQuestion & {
   kind: 'multi';
   options: SurveyOption[];
   order?: OptionOrder;
-  /** Cap on selections, where the question sets one ("select up to 3"). */
-  max?: number;
 };
 
 /**
