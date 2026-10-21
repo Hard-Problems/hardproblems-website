@@ -1,5 +1,5 @@
 import { validateAndNormalizeUrl } from '../../lib/validateUrl';
-import { readJobsSnapshot } from './jobsSnapshot';
+import { readJobsSnapshot, type SnapshotVariant } from './jobsSnapshot';
 import { buildJobSlugs, jobKey } from './jobSlug';
 import { fetchSheetRowsViaApi } from './sheetsClient';
 
@@ -84,13 +84,11 @@ let lastGoodRows: string[][] | null = null;
 // only matters as a tiebreaker for the sort order, so being consistent
 // matters more than the exact wall-clock interpretation.
 function parseDateTime(s: string): Date | null {
-  const m = s.trim().match(
-    /^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/
-  );
+  const m = s
+    .trim()
+    .match(/^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/);
   if (!m) return null;
-  const d = new Date(
-    Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6])
-  );
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]));
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
@@ -188,14 +186,19 @@ const REQUIRED_FIELDS: ColumnField[] = [
 // "Good for the world? " and 'Explain the "Good for the world" score'
 // both survive this intact and distinct.
 function normalizeHeader(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 }
 
 // Map each field to its column index in this particular CSV, or null if
 // a required column is absent. Optional columns resolve to -1, which
 // readCell() renders as an empty string — the same thing the old
 // positional code produced for a short row.
-function resolveColumns(headerRow: string[]): Record<ColumnField, number> | null {
+function resolveColumns(
+  headerRow: string[]
+): Record<ColumnField, number> | null {
   const byName = new Map<string, number>();
   headerRow.forEach((h, i) => {
     const key = normalizeHeader(h);
@@ -292,12 +295,8 @@ export function parseJobsRows(input: string[][]): SerializedJob[] {
     const at = a.date ? new Date(a.date).getTime() : -Infinity;
     const bt = b.date ? new Date(b.date).getTime() : -Infinity;
     if (bt !== at) return bt - at;
-    const ac = a.dateCreated
-      ? new Date(a.dateCreated).getTime()
-      : -Infinity;
-    const bc = b.dateCreated
-      ? new Date(b.dateCreated).getTime()
-      : -Infinity;
+    const ac = a.dateCreated ? new Date(a.dateCreated).getTime() : -Infinity;
+    const bc = b.dateCreated ? new Date(b.dateCreated).getTime() : -Infinity;
     return bc - ac;
   });
 
@@ -437,13 +436,15 @@ export function toListedJobs(jobs: SerializedJob[]): ListedJob[] {
 // Every job we hold, before the date window is applied. Split out from
 // fetchJobs() so the expensive part can be memoised while the window
 // stays per-call — see fetchJobs below.
-async function loadJobs(): Promise<SerializedJob[]> {
+async function loadJobs(
+  variant: SnapshotVariant = 'board'
+): Promise<SerializedJob[]> {
   // Primary path: the snapshot written by /api/cron/sync-jobs. This is
   // a single indexed row read, which keeps the 1.6MB Google fetch off
   // the request path — that fetch running inside a force-dynamic render
   // is what blew Vercel's 15s function limit and left the Data Cache
   // permanently stale.
-  const snapshot = await readJobsSnapshot();
+  const snapshot = await readJobsSnapshot(variant);
   if (snapshot) return snapshot.jobs;
 
   // Fallback: no usable snapshot (first deploy before the cron has run,
@@ -482,25 +483,54 @@ const JOBS_TTL_MS = 30_000;
 // The PROMISE is cached, not the resolved value — that is what makes
 // concurrent callers (exactly what a parallel build produces) share one
 // read instead of each starting their own.
-let jobsCache: { at: number; promise: Promise<SerializedJob[]> } | null = null;
+const jobsCache = new Map<
+  SnapshotVariant,
+  { at: number; promise: Promise<SerializedJob[]> }
+>();
 
+/**
+ * Every job, WITHOUT Column X.
+ *
+ * This is what anything rendering a list of jobs should call — the
+ * board, the location hubs, the homepage teaser, the feed, the sitemap.
+ * None of them show the long description, and it is two thirds of the
+ * payload.
+ */
 export async function fetchJobs(): Promise<SerializedJob[]> {
+  return fetchJobsVariant('board');
+}
+
+/**
+ * Every job WITH Column X, for a job's own page — the one surface that
+ * renders the long description, and the only caller that should pay for
+ * reading it.
+ */
+export async function fetchJobsWithFullText(): Promise<SerializedJob[]> {
+  return fetchJobsVariant('full');
+}
+
+async function fetchJobsVariant(
+  variant: SnapshotVariant
+): Promise<SerializedJob[]> {
   const now = Date.now();
-  if (!jobsCache || now - jobsCache.at >= JOBS_TTL_MS) {
-    const promise = loadJobs();
-    jobsCache = { at: now, promise };
+  const entry = jobsCache.get(variant);
+  if (!entry || now - entry.at >= JOBS_TTL_MS) {
+    const promise = loadJobs(variant);
+    jobsCache.set(variant, { at: now, promise });
     // Never let a failure — or an empty result, which means the snapshot
     // read and the sheet fallback both came back unusable — occupy the
     // cache for the full TTL. Those are exactly the cases where the next
     // caller should retry rather than inherit a blank board.
     promise.then(
       (jobs) => {
-        if (jobs.length === 0 && jobsCache?.promise === promise) {
-          jobsCache = null;
+        if (jobs.length === 0 && jobsCache.get(variant)?.promise === promise) {
+          jobsCache.delete(variant);
         }
       },
       () => {
-        if (jobsCache?.promise === promise) jobsCache = null;
+        if (jobsCache.get(variant)?.promise === promise) {
+          jobsCache.delete(variant);
+        }
       }
     );
   }
@@ -508,5 +538,5 @@ export async function fetchJobs(): Promise<SerializedJob[]> {
   // Applied per call, never cached. The window has to be evaluated
   // against the time of THIS read, so a job that expires between two
   // reads of the same cached snapshot still disappears on the second.
-  return applyDateWindow(await jobsCache.promise);
+  return applyDateWindow(await jobsCache.get(variant)!.promise);
 }

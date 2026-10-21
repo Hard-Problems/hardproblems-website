@@ -23,8 +23,28 @@ import type { SerializedJob } from './fetchJobs';
 
 const TABLE = 'jobs_snapshot';
 
-// The single pinned row. See the migration for why there's only one.
-const ROW_ID = 1;
+// Two pinned rows, not one.
+//
+// Row 1 is every field the sheet has. Row 2 is the same jobs with
+// `fullJobDescription` (Column X) blanked — and that one field is 67%
+// of the payload, so the board's read drops from ~2.8MB to ~0.9MB.
+//
+// Why this exists: Column X was added for the per-job pages, and only
+// those pages read it. The board, the location hubs, the homepage
+// teaser and the RSS feed never show it — but every one of them was
+// pulling it across the network and parsing it on each render, because
+// the snapshot is one blob. As Column X filled in, that read grew past
+// a second and `/jobs` started timing out under cold starts.
+const ROW_ID_FULL = 1;
+const ROW_ID_BOARD = 2;
+
+/**
+ * Which snapshot to read.
+ *
+ * 'board' for anything that renders a list of jobs; 'full' only for a
+ * job's own page, which is the one surface that shows Column X.
+ */
+export type SnapshotVariant = 'board' | 'full';
 
 // How long a snapshot stays usable. Postgres has no TTL, so staleness
 // is enforced here on read. Comfortably longer than the 15-minute sync
@@ -91,78 +111,202 @@ function getDb(): SupabaseClient | null {
 // (Supabase unconfigured, no row yet, row too old, or any query error).
 // Never throws — a database problem must degrade to the direct-fetch
 // fallback, not take the jobs board down.
-export async function readJobsSnapshot(): Promise<JobsSnapshot | null> {
+export async function readJobsSnapshot(
+  variant: SnapshotVariant = 'board'
+): Promise<JobsSnapshot | null> {
   const db = getDb();
   if (!db) return null;
   try {
     const { data, error } = await db
       .from(TABLE)
       .select('synced_at, jobs')
-      .eq('id', ROW_ID)
+      .eq('id', variant === 'full' ? ROW_ID_FULL : ROW_ID_BOARD)
       .maybeSingle();
     if (error) {
-      console.warn('[jobsSnapshot] read failed:', error.message);
+      await degraded('read failed', new Error(error.message));
       return null;
     }
     if (!data) {
-      console.warn('[jobsSnapshot] no snapshot row found');
+      // The board row does not exist until the first sync after this
+      // was deployed. Fall back to the full row rather than dropping to
+      // the Sheets API, so a deploy does not blank the board for up to
+      // fifteen minutes while waiting for the cron.
+      if (variant === 'board') {
+        console.warn('[jobsSnapshot] no board row yet, using the full one');
+        return readJobsSnapshot('full');
+      }
+      await degraded('no snapshot row found', new Error('no-snapshot-row'));
       return null;
     }
     if (!Array.isArray(data.jobs)) {
-      console.warn(`[jobsSnapshot] jobs column is ${typeof data.jobs}, not array`);
+      await degraded(
+        `jobs column is ${typeof data.jobs}, not array`,
+        new Error('jobs-column-not-array')
+      );
       return null;
     }
     // An empty array is a valid parse in principle but always means
     // something went wrong upstream, and serving it would blank the
     // board. Treat it as "no snapshot" so the caller falls back.
     if (data.jobs.length === 0) {
-      console.warn('[jobsSnapshot] snapshot row has zero jobs');
+      await degraded('snapshot row has zero jobs', new Error('snapshot-empty'));
       return null;
     }
 
     const syncedAt = data.synced_at as string;
     const age = Date.now() - new Date(syncedAt).getTime();
     if (!Number.isFinite(age) || age > MAX_SNAPSHOT_AGE_MS) {
-      console.warn(`[jobsSnapshot] snapshot too old (${syncedAt}), falling back`);
+      await degraded(
+        `snapshot too old (${syncedAt}), falling back`,
+        new Error('snapshot-stale'),
+        { syncedAt, ageHours: Math.round(age / 3_600_000) }
+      );
       return null;
     }
 
+    healthy();
     console.log(
       `[jobsSnapshot] read ok: ${data.jobs.length} jobs, synced ${syncedAt}`
     );
     return { syncedAt, jobs: data.jobs as SerializedJob[] };
   } catch (err) {
-    console.warn('[jobsSnapshot] read threw, falling back to sheet', err);
+    await degraded('read threw, falling back to sheet', err);
     return null;
   }
 }
 
-// Persist a freshly parsed set of jobs. Returns false when the write
-// didn't happen (Supabase unconfigured or erroring) so the caller can
-// report it rather than claiming a successful sync.
+/**
+ * Why this returns a REASON and not just false.
+ *
+ * It used to return a bare boolean, so the caller could say a sync had
+ * failed but never why — and the why lived only in a `console.warn`.
+ * On 2026-10-17 that line held
+ * `violates check constraint "jobs_snapshot_id_check"`, which named the
+ * unrun migration outright, and it sat unread for eight hours while the
+ * caller reported a featureless "snapshot-write-failed". The reason
+ * travels now so it can reach the alert instead of the log.
+ */
+export type SnapshotWriteResult = { ok: true } | { ok: false; reason: string };
+
+// Persist a freshly parsed set of jobs.
 export async function writeJobsSnapshot(
   jobs: SerializedJob[]
-): Promise<boolean> {
+): Promise<SnapshotWriteResult> {
   const db = getDb();
-  if (!db) return false;
+  if (!db) return { ok: false, reason: 'Supabase is not configured' };
   // Refuse to overwrite a good snapshot with an empty one — a sheet
   // fetch that returns a valid-but-empty CSV shouldn't be able to clear
   // the board.
-  if (jobs.length === 0) return false;
+  if (jobs.length === 0) {
+    return { ok: false, reason: 'refused to write an empty snapshot' };
+  }
   try {
-    const { error } = await db
-      .from(TABLE)
-      .upsert(
-        { id: ROW_ID, synced_at: new Date().toISOString(), jobs },
-        { onConflict: 'id' }
-      );
+    const syncedAt = new Date().toISOString();
+    // Blanked rather than deleted, so the shape stays identical to
+    // SerializedJob and nothing downstream has to special-case a
+    // missing key — `fullJobDescription || jobDescription` already
+    // falls through on an empty string.
+    const boardJobs = jobs.map((job) => ({ ...job, fullJobDescription: '' }));
+
+    // Both rows in one call, so the two can never be left describing
+    // different syncs.
+    const { error } = await db.from(TABLE).upsert(
+      [
+        { id: ROW_ID_FULL, synced_at: syncedAt, jobs },
+        { id: ROW_ID_BOARD, synced_at: syncedAt, jobs: boardJobs }
+      ],
+      { onConflict: 'id' }
+    );
     if (error) {
-      console.warn('[jobsSnapshot] write failed:', error.message);
-      return false;
+      await report('jobsSnapshot: write failed', new Error(error.message));
+      return { ok: false, reason: error.message };
     }
-    return true;
+    return { ok: true };
   } catch (err) {
-    console.warn('[jobsSnapshot] write threw', err);
-    return false;
+    await report('jobsSnapshot: write threw', err);
+    return {
+      ok: false,
+      reason: err instanceof Error ? err.message : String(err)
+    };
+  }
+}
+
+// ---- read-side degradation ------------------------------------------
+//
+// The write path above catches a broken sync. This catches everything
+// else that makes the snapshot unusable while the cron is perfectly
+// healthy — Supabase unreachable, the row deleted, a payload that is
+// not an array. Without it those states are invisible: fetchJobs()
+// falls back to the Sheets API, the board keeps rendering, and the only
+// evidence is a warning per request.
+//
+// "Per request" is exactly the problem, and why this is a flag rather
+// than a straight logError. A degradation is sustained — every render
+// of the board, every job page, the sitemap and the RSS feed take this
+// path for as long as it lasts. Reporting each one would bury PostHog
+// in thousands of identical events during the window when it most needs
+// to be readable. So: the first failure in a process reports, the rest
+// are logged and nothing more, and a successful read re-arms it.
+//
+// The unit is the process, not the incident. A serverless deployment
+// runs many instances, so a real outage produces one event per instance
+// rather than one event — which is the right trade: still a tiny
+// number, and the spread across instances tells you the problem is
+// systemic rather than one bad lambda.
+let degradationReported = false;
+
+/** A good read ends the current episode, so the next one reports. */
+function healthy(): void {
+  degradationReported = false;
+}
+
+/**
+ * Log a read failure, and report the first one of an episode.
+ *
+ * Awaited by its callers. Fire-and-forget would be cheaper, but a
+ * serverless function can freeze the moment it returns its response and
+ * take the unflushed event with it — and this fires once per process,
+ * on a request that is already falling back to a multi-second Sheets
+ * fetch, so the few hundred milliseconds buy delivery of the one event
+ * that says the board is degraded.
+ */
+async function degraded(
+  detail: string,
+  error: unknown,
+  extra?: Record<string, unknown>
+): Promise<void> {
+  console.warn(`[jobsSnapshot] ${detail}`);
+  if (degradationReported) return;
+  degradationReported = true;
+  await report('jobsSnapshot: read degraded', error, { detail, ...extra });
+}
+
+/**
+ * Report a snapshot WRITE failure to PostHog.
+ *
+ * Imported dynamically, and only on the failure path, because this
+ * module is pulled in by fetchJobs() and so by the board, every job
+ * page, the location hubs, the sitemap and the RSS feed. A top-level
+ * import would load posthog-node into all of them to serve an error
+ * case that should never run.
+ *
+ * Deliberately NOT used on the read path above. Those warnings fire
+ * once per render, so routing them here would emit an event per request
+ * for the whole duration of a degradation — the periods when traffic is
+ * least worth drowning. A failed write happens four times an hour at
+ * most, and it is the root cause anyway: the read-side warnings are
+ * symptoms of it.
+ */
+async function report(
+  tag: string,
+  error: unknown,
+  extra?: Record<string, unknown>
+): Promise<void> {
+  try {
+    const { logError } = await import('../../lib/posthog-server');
+    logError(tag, error, extra);
+  } catch {
+    // Reporting must never be the reason a sync fails.
+    console.warn(`[jobsSnapshot] could not report: ${tag}`, error);
   }
 }
