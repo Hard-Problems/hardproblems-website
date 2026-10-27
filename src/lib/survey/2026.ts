@@ -20,7 +20,7 @@ export const SURVEY_2026: SurveyDefinition = {
   year: 2026,
   title: 'The State of Design & Product in 2026',
   intro:
-    'A survey of how designers, researchers, writers and product people feel about their work. It takes about five minutes, and every answer is anonymous.',
+    'A survey of how designers, researchers, writers and product people feel about their work. It takes about seven minutes, and every answer is anonymous.',
   image: '/images/content/thumb-survey-2026.jpg',
   opensAt: '2026-10-16T00:00:00.000Z',
   // Exclusive: the form closes as 30 November ends.
@@ -138,6 +138,159 @@ export const SURVEY_2026: SurveyDefinition = {
         'Enormously'
       ]
     ),
+
+    // Choice-based conjoint — see ConjointQuestion in types.ts. Placed
+    // BEFORE "What matters most to you?" so the stated priorities
+    // cannot steer the choices; comparing the two afterwards (what
+    // people say matters vs. what their choices show) is part of the
+    // point.
+    //
+    // Attribute and level ids are what the analysis reports on, so keep
+    // them stable once responses exist; labels can be reworded.
+    {
+      kind: 'conjoint',
+      id: 'job-choice',
+      text: 'Which job would you take?',
+      hint: 'Imagine you are offered both jobs. Your pick stays, and a new job challenges it — 8 choices to find your winner.',
+      rounds: 8,
+      attributes: [
+        {
+          id: 'pay',
+          label: 'Pay',
+          levels: [
+            {
+              id: 'less-10',
+              label: '10% less than now',
+              short: '10% pay cut',
+              value: -10
+            },
+            {
+              id: 'same',
+              label: 'The same as now',
+              short: 'Same pay',
+              value: 0
+            },
+            {
+              id: 'more-15',
+              label: '15% more than now',
+              short: '15% pay rise',
+              value: 15
+            },
+            {
+              id: 'more-30',
+              label: '30% more than now',
+              short: '30% pay rise',
+              value: 30
+            }
+          ]
+        },
+        {
+          id: 'level',
+          label: 'Level',
+          levels: [
+            { id: 'same', label: 'Same level as now', short: 'Same level' },
+            { id: 'promotion', label: 'A promotion', short: 'Promotion' }
+          ]
+        },
+        {
+          id: 'mission',
+          label: 'Mission',
+          levels: [
+            { id: 'commercial', label: 'Helps businesses to grow' },
+            { id: 'some-good', label: 'Some benefit to society' },
+            { id: 'for-good', label: 'Directly does good in the world' }
+          ]
+        },
+        {
+          id: 'organisation',
+          label: 'Organisation',
+          levels: [
+            // `noun` fills `{organisation}` in the brand line below.
+            { id: 'startup', label: 'Early-stage startup', noun: 'startup' },
+            {
+              id: 'established',
+              label: 'Established company',
+              noun: 'company'
+            },
+            { id: 'public', label: 'Public sector', noun: 'department' },
+            {
+              id: 'nonprofit',
+              label: 'Non-profit or charity',
+              noun: 'charity'
+            }
+          ]
+        },
+        {
+          id: 'brand',
+          label: 'Brand',
+          levels: [
+            // On the card the brand names the kind of organisation —
+            // "Well-known charity", "Little known department" — so the
+            // line reads as a description of the place, not of a logo.
+            {
+              id: 'household',
+              label: 'A household name',
+              short: 'Well-known {organisation}'
+            },
+            {
+              id: 'industry',
+              label: 'Brand is well-known in its space',
+              short: '{Organisation} is well-known in its space'
+            },
+            {
+              id: 'unknown',
+              label: 'Little known brand',
+              short: 'Little known {organisation}'
+            }
+          ]
+        },
+        {
+          id: 'work',
+          label: 'The work',
+          levels: [
+            {
+              id: 'ai',
+              label: 'Cutting-edge AI products',
+              short: 'Building cutting-edge AI'
+            },
+            {
+              id: 'established',
+              label: 'An established product',
+              short: 'Improving an established product'
+            }
+          ]
+        }
+      ],
+      // Jobs that do not exist, so are never shown.
+      exclude: [
+        { organisation: 'nonprofit', mission: 'commercial' },
+        { organisation: 'startup', brand: 'household' }
+      ],
+      // Laid out like a job ad: the kind of job as the title, what the
+      // work is as its subtitle, the offer in bold, then the brand and
+      // why it matters.
+      //
+      // "Big company job" folds brand into the title — an established
+      // company that is a household name. The model still measures
+      // organisation and brand separately; only the wording combines
+      // them.
+      cardTitle: [
+        {
+          when: { organisation: 'established', brand: 'household' },
+          label: 'Big company job'
+        },
+        { when: { organisation: 'established' }, label: 'Corporate job' },
+        { when: { organisation: 'startup' }, label: 'Startup job' },
+        { when: { organisation: 'public' }, label: 'Government job' },
+        { when: { organisation: 'nonprofit' }, label: 'Charity job' }
+      ],
+      card: [
+        { attributes: ['work'], subtitle: true },
+        { attributes: ['pay', 'level'], icon: 'banknote', strong: true },
+        { attributes: ['brand'], icon: 'building' },
+        { attributes: ['mission'], icon: 'heart' }
+      ]
+    },
 
     {
       kind: 'multi',

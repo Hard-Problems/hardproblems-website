@@ -10,6 +10,18 @@ import {
   normalizeSource
 } from './index';
 import { validateSubmission, validateAnswer, type Answers } from './validate';
+import type { ConjointQuestion } from './types';
+import {
+  encodeRound,
+  isExcluded,
+  nextPair,
+  parseRounds,
+  sameCard,
+  winnerOf,
+  type Card,
+  type Round
+} from './conjoint';
+import { analyseConjoint, choicesFrom } from './conjoint-analysis';
 
 let pass = 0,
   fail = 0;
@@ -24,7 +36,7 @@ function check(name: string, cond: boolean, extra = '') {
 
 // ---- definition integrity -------------------------------------------
 const qs = SURVEY_2026.questions;
-check('25 questions', qs.length === 25, `got ${qs.length}`);
+check('26 questions', qs.length === 26, `got ${qs.length}`);
 check('question ids unique', new Set(qs.map((q) => q.id)).size === qs.length);
 for (const q of qs) {
   if ('options' in q) {
@@ -191,6 +203,22 @@ check(
 check('source capped', normalizeSource('a'.repeat(500)).length === 64);
 check('source empty', normalizeSource(null) === '');
 
+// ---- conjoint helpers -------------------------------------------------
+// Plays a whole "winner stays on" run the way the form does, with
+// `choose` standing in for the respondent.
+function playConjoint(
+  q: ConjointQuestion,
+  seed: string,
+  choose: (a: Card, b: Card) => 'a' | 'b'
+): string[] {
+  const rounds: Round[] = [];
+  while (rounds.length < q.rounds) {
+    const { a, b } = nextPair(q, seed, rounds);
+    rounds.push({ a, b, pick: choose(a, b) });
+  }
+  return rounds.map((r) => encodeRound(q, r));
+}
+
 // ---- validation: a good submission ----------------------------------
 const COUNTRIES = ['United Kingdom', 'Canada'];
 function goodAnswers(): Answers {
@@ -204,6 +232,8 @@ function goodAnswers(): Answers {
     else if (q.kind === 'multi') out[q.id] = { value: [q.options[0].id] };
     else if (q.kind === 'likert') out[q.id] = { value: '3' };
     else if (q.kind === 'country') out[q.id] = { value: 'United Kingdom' };
+    else if (q.kind === 'conjoint')
+      out[q.id] = { value: playConjoint(q, 'test-seed', () => 'a') };
     else out[q.id] = { value: 'something' };
   }
   return out;
@@ -336,6 +366,249 @@ check(
   'role ordering keeps every option',
   roleOrdered.length === ('options' in roleQ ? roleQ.options.length : 0)
 );
+
+// ---- conjoint: card generation --------------------------------------
+const jobQ = qs.find((q) => q.id === 'job-choice');
+if (!jobQ || jobQ.kind !== 'conjoint') throw new Error('job-choice missing');
+check(
+  'conjoint level ids unique per attribute',
+  jobQ.attributes.every(
+    (a) => new Set(a.levels.map((l) => l.id)).size === a.levels.length
+  )
+);
+{
+  const lines = (jobQ.card ?? []).flatMap((line) => line.attributes);
+  const inTitle = new Set(
+    (jobQ.cardTitle ?? []).flatMap((t) => Object.keys(t.when))
+  );
+  check(
+    'conjoint card lines repeat no attribute',
+    new Set(lines).size === lines.length,
+    lines.join(',')
+  );
+  check(
+    'conjoint card shows every attribute, in a line or the title',
+    jobQ.attributes.every((a) => lines.includes(a.id) || inTitle.has(a.id))
+  );
+  // Every card that can be drawn gets a title.
+  const titled = (card: Card) =>
+    (jobQ.cardTitle ?? []).some((t) =>
+      Object.entries(t.when).every(([k, v]) => card[k] === v)
+    );
+  let untitled = 0;
+  for (let i = 0; i < 200; i++) {
+    const { a, b } = nextPair(jobQ, `title-${i}`, []);
+    if (!titled(a) || !titled(b)) untitled++;
+  }
+  check('conjoint every card gets a title', untitled === 0, `${untitled}`);
+}
+// A `{attribute}` in card wording must name an attribute whose every
+// level has a noun, or some card shows a literal "{organisation}".
+check(
+  'conjoint card wording only borrows nouns that exist',
+  jobQ.attributes.every((attr) =>
+    attr.levels.every((l) =>
+      [...(l.short ?? '').matchAll(/\{(\w+)\}/g)].every(([, name]) => {
+        const id = name.charAt(0).toLowerCase() + name.slice(1);
+        const source = jobQ.attributes.find((a) => a.id === id);
+        return !!source && source.levels.every((x) => !!x.noun);
+      })
+    )
+  )
+);
+check(
+  'conjoint exclusions name real attributes and levels',
+  (jobQ.exclude ?? []).every((combo) =>
+    Object.entries(combo).every(([attr, level]) =>
+      jobQ.attributes.some(
+        (a) => a.id === attr && a.levels.some((l) => l.id === level)
+      )
+    )
+  )
+);
+{
+  let ok = true;
+  let overlapRows = 0;
+  let rows = 0;
+  for (let i = 0; i < 300; i++) {
+    const value = playConjoint(jobQ, `seed-${i}`, (_a, _b) =>
+      i % 2 ? 'a' : 'b'
+    );
+    const rounds = parseRounds(jobQ, value);
+    if (!rounds) {
+      ok = false;
+      break;
+    }
+    for (const r of rounds) {
+      if (sameCard(r.a, r.b) || isExcluded(jobQ, r.a) || isExcluded(jobQ, r.b))
+        ok = false;
+      for (const attr of jobQ.attributes) {
+        rows++;
+        if (r.a[attr.id] === r.b[attr.id]) overlapRows++;
+      }
+    }
+  }
+  check('conjoint cards valid, distinct and never excluded', ok);
+  // Minimal overlap: the two cards should differ on nearly every row.
+  check(
+    'conjoint cards differ on almost every attribute',
+    overlapRows / rows < 0.02,
+    `${((overlapRows / rows) * 100).toFixed(1)}% rows matched`
+  );
+}
+{
+  const r1 = nextPair(jobQ, 'stable', []);
+  const r2 = nextPair(jobQ, 'stable', []);
+  check(
+    'conjoint pair is stable for one seed',
+    sameCard(r1.a, r2.a) && sameCard(r1.b, r2.b)
+  );
+  const other = nextPair(jobQ, 'different', []);
+  check(
+    'conjoint pair differs across seeds',
+    !sameCard(r1.a, other.a) || !sameCard(r1.b, other.b)
+  );
+}
+
+{
+  // The pick stays on the side it was picked from.
+  const rounds = parseRounds(
+    jobQ,
+    playConjoint(jobQ, 'sides', (_a, _b) => 'b')
+  )!;
+  check(
+    'conjoint pick keeps its side',
+    rounds.slice(1).every((r, i) => sameCard(r.b, winnerOf(rounds[i])))
+  );
+}
+
+// ---- conjoint: validation ----------------------------------------------
+const goodRun = playConjoint(jobQ, 'v', () => 'b');
+check(
+  'conjoint full run passes',
+  validateAnswer(jobQ, { value: goodRun }) === null
+);
+check(
+  'conjoint rejects an unfinished run',
+  validateAnswer(jobQ, { value: goodRun.slice(0, 5) }) !== null
+);
+check(
+  'conjoint rejects extra rounds',
+  validateAnswer(jobQ, { value: [...goodRun, goodRun[0]] }) !== null
+);
+check(
+  'conjoint rejects an undeclared level',
+  validateAnswer(jobQ, {
+    value: [
+      goodRun[0].replace(/pay:[a-z0-9-]+/, 'pay:more-500'),
+      ...goodRun.slice(1)
+    ]
+  }) !== null
+);
+check(
+  'conjoint rejects a broken winner chain',
+  validateAnswer(jobQ, {
+    value: [goodRun[0], ...playConjoint(jobQ, 'other', () => 'a').slice(1)]
+  }) !== null
+);
+check(
+  'conjoint rejects a bad pick',
+  validateAnswer(jobQ, {
+    value: [goodRun[0].replace(/\|b$/, '|c'), ...goodRun.slice(1)]
+  }) !== null
+);
+check(
+  'conjoint rejects a string value',
+  validateAnswer(jobQ, { value: 'pay:same' }) !== null
+);
+
+// ---- conjoint: the analysis recovers known preferences -----------------
+// Simulated respondents who choose by a known utility plus logistic
+// noise. If the fit is right, it should hand those utilities back.
+{
+  const truth: Record<string, Record<string, number>> = {
+    pay: { 'less-10': -0.8, same: -0.2, 'more-15': 0.3, 'more-30': 0.7 },
+    level: { same: -0.25, promotion: 0.25 },
+    mission: { commercial: -0.5, 'some-good': 0, 'for-good': 0.5 },
+    organisation: {
+      startup: 0.1,
+      established: 0.2,
+      public: -0.2,
+      nonprofit: -0.1
+    },
+    brand: { household: 0.15, industry: 0.05, unknown: -0.2 },
+    work: { ai: 0, established: 0 }
+  };
+  const appeal = (c: Card) =>
+    Object.entries(c).reduce((s, [attr, level]) => s + truth[attr][level], 0);
+  // Deterministic pseudo-random noise so the test never flakes.
+  let state = 12345;
+  const rand = () => {
+    state = (state * 1103515245 + 12345) % 2147483648;
+    return state / 2147483648;
+  };
+  const responses = Array.from({ length: 800 }, (_, i) => ({
+    answers: {
+      'job-choice': {
+        value: playConjoint(jobQ, `sim-${i}`, (a, b) =>
+          rand() < 1 / (1 + Math.exp(-(appeal(a) - appeal(b)))) ? 'a' : 'b'
+        )
+      }
+    }
+  }));
+  const choices = choicesFrom(jobQ, responses);
+  check('analysis reads every simulated choice', choices.length === 800 * 8);
+  const result = analyseConjoint(jobQ, choices);
+  const byId = Object.fromEntries(result.attributes.map((a) => [a.id, a]));
+  check(
+    'analysis ranks pay, then mission, most important',
+    result.attributes[0].id === 'pay' && result.attributes[1].id === 'mission',
+    result.attributes.map((a) => a.id).join(',')
+  );
+  check(
+    'analysis importances sum to 100',
+    Math.abs(result.attributes.reduce((s, a) => s + a.importance, 0) - 100) <
+      1e-6
+  );
+  let worst = 0;
+  for (const attr of result.attributes) {
+    for (const l of attr.levels) {
+      worst = Math.max(worst, Math.abs(l.utility - truth[attr.id][l.id]));
+    }
+  }
+  check(
+    'analysis recovers part-worths within 0.15',
+    worst < 0.15,
+    `worst error ${worst.toFixed(3)}`
+  );
+  check('analysis finds no position bias', Math.abs(result.positionBias) < 0.1);
+  check(
+    'analysis treats the zero-effect attribute as unimportant',
+    byId['work'].importance < 3,
+    `${byId['work'].importance.toFixed(1)}%`
+  );
+  // Truth: promotion is +0.5 over same; pay is ~0.0375 per point over
+  // the 40-point range → roughly 13% of pay.
+  const promo = byId['level'].levels.find((l) => l.id === 'promotion');
+  check(
+    'analysis prices a promotion in pay',
+    promo?.moneyEquivalent !== undefined &&
+      promo.moneyEquivalent > 8 &&
+      promo.moneyEquivalent < 20,
+    `${promo?.moneyEquivalent?.toFixed(1)}%`
+  );
+  // Winner chain is respected by the simulation too.
+  const one = parseRounds(jobQ, responses[0].answers['job-choice'].value)!;
+  check(
+    'simulated run keeps the winner each round',
+    one.every(
+      (r, i) =>
+        i === 0 ||
+        sameCard(winnerOf(one[i - 1]), r.a) ||
+        sameCard(winnerOf(one[i - 1]), r.b)
+    )
+  );
+}
 
 console.log(`\n  ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

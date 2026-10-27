@@ -142,13 +142,114 @@ export type CountryQuestion = BaseQuestion & {
   kind: 'country';
 };
 
+/** One attribute of a conjoint job card, and the values it can take. */
+export type ConjointAttribute = {
+  /** Stable id, stored in every answer. Keep unchanged between years. */
+  id: string;
+  /** The row label on the card: "Pay", "Organisation". */
+  label: string;
+  /**
+   * The values, each with a stable id. Two to four is the useful range:
+   * more levels need more respondents to estimate, and a level that
+   * appears rarely is measured badly.
+   */
+  levels: {
+    id: string;
+    label: string;
+    /**
+     * Shorter wording for the job card — "15% pay rise" rather than
+     * "15% more than now". Falls back to `label`. The long label is
+     * still what the analysis reports.
+     *
+     * May name another attribute in braces — "Well-known
+     * {organisation}" — which becomes that attribute's `noun` on the
+     * same card: "Well-known charity". `{Organisation}` capitalises it.
+     */
+    short?: string;
+    /**
+     * This level as a plain noun, for other levels' `short` to borrow:
+     * "charity", "department".
+     */
+    noun?: string;
+    /**
+     * A number for the level, on the attribute that is money. Only the
+     * analysis reads it: with pay as a number it can price every other
+     * attribute in pay — "a promotion is worth 9% of salary".
+     */
+    value?: number;
+  }[];
+};
+
+/**
+ * Choice-based conjoint, run as "winner stays on".
+ *
+ * The respondent sees two job cards, built from `attributes` with
+ * values drawn at random, and picks the one they would take. The pick
+ * stays and a new card challenges it, `rounds` times; the last one
+ * standing is their winner.
+ *
+ * The cards are built rather than real jobs so the attributes vary
+ * independently of each other. A real job is a bundle (big brand AND
+ * high pay AND AI), and choices between bundles cannot say which part
+ * of the bundle did the work. Varying each attribute on its own is what
+ * lets the analysis (conjoint-analysis.ts) put a weight on each one.
+ *
+ * Cards come from the per-response seed, so they stay put across back
+ * and forward navigation. The answer stores the cards as shown — see
+ * conjoint.ts for the format — so the server can check every value is
+ * one declared here without needing the seed.
+ */
+export type ConjointQuestion = BaseQuestion & {
+  kind: 'conjoint';
+  attributes: ConjointAttribute[];
+  /** Number of choices, so `rounds + 1` cards are seen in all. */
+  rounds: number;
+  /**
+   * Combinations that never appear on one card, because no real job
+   * looks like that — a non-profit whose mission is to grow a business,
+   * a startup with 100 designers. Each entry maps attribute id → level
+   * id, and a card matching every pair in an entry is redrawn.
+   *
+   * Use sparingly. Each one makes some attributes move together a
+   * little, which is the thing the design exists to avoid.
+   */
+  exclude?: Record<string, string>[];
+  /**
+   * The card's title, like a job ad's: "Charity job", "Big company job".
+   * Derived from the card's levels — the first entry whose `when`
+   * matches wins, so put the most specific first. Presentation only,
+   * like `card`; an attribute used here can be left off the lines.
+   */
+  cardTitle?: { when: Record<string, string>; label: string }[];
+  /**
+   * How a card is laid out, as lines of a job ad under the title. Each
+   * line joins its attributes' values with " · " and carries an icon;
+   * `strong` sets it in bold, `subtitle` tucks it under the title. Every attribute should appear once,
+   * here or in `cardTitle` (the test checks). Presentation only —
+   * answers are stored in `attributes` order whatever this says.
+   * Without it, one plain line per attribute.
+   */
+  card?: {
+    attributes: string[];
+    icon?: ConjointIcon;
+    strong?: boolean;
+    /** Set directly under the title as plain text: no icon, no bold. */
+    subtitle?: boolean;
+  }[];
+};
+
+/** Icons a conjoint card line can carry; the form maps them to lucide. */
+export type ConjointIcon =
+  'briefcase' | 'building' | 'sparkles' | 'heart' | 'users' | 'banknote';
+
 export type SurveyQuestion =
   | SingleQuestion
   | MultiQuestion
   | LikertQuestion
   | TextQuestion
   | TextareaQuestion
-  | CountryQuestion;
+  | CountryQuestion
+  | ConjointQuestion;
 
 export const LIKERT_MIN = 0;
 export const LIKERT_MAX = 5;

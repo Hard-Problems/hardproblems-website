@@ -16,13 +16,15 @@
 
 import type { SurveyDefinition, SurveyQuestion } from './types';
 import { LIKERT_MIN, LIKERT_MAX, OTHER_MAX_LENGTH } from './types';
+import { validateConjoint } from './conjoint';
 
 /**
  * One question's answer.
  *
  * `value` is the option id, the Likert number as a string, the country
- * name, or the free text. `otherText` carries the write-in when an
- * `isOther` option is chosen.
+ * name, the free text, or — for a conjoint question — one encoded
+ * string per choice (see conjoint.ts). `otherText` carries the
+ * write-in when an `isOther` option is chosen.
  */
 export type Answer = {
   value: string | string[];
@@ -107,6 +109,13 @@ export function validateAnswer(
       const n = Number(a.value);
       if (n < LIKERT_MIN || n > LIKERT_MAX) return 'Please choose a rating.';
       return null;
+    }
+
+    case 'conjoint': {
+      if (!Array.isArray(a.value)) {
+        return `Please make all ${question.rounds} choices.`;
+      }
+      return validateConjoint(question, a.value);
     }
 
     case 'country': {

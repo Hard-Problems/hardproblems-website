@@ -30,7 +30,18 @@ import {
   type ReactNode
 } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, Copy, DoorOpen } from 'lucide-react';
+import {
+  Banknote,
+  Briefcase,
+  Building2,
+  Check,
+  Copy,
+  DoorOpen,
+  Heart,
+  Sparkles,
+  Users,
+  type LucideIcon
+} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -41,10 +52,21 @@ import {
   termFor
 } from '../../../lib/survey';
 import type {
+  ConjointIcon,
+  ConjointQuestion,
   SurveyDefinition,
   SurveyOption,
   SurveyQuestion
 } from '../../../lib/survey/types';
+import {
+  encodeRound,
+  nextPair,
+  parseRounds,
+  sameCard,
+  winnerOf,
+  type Card,
+  type Side
+} from '../../../lib/survey/conjoint';
 import {
   LIKERT_MAX,
   LIKERT_MIN,
@@ -1153,6 +1175,19 @@ function QuestionBody({
         </>
       );
 
+    case 'conjoint':
+      return (
+        <ConjointChoice
+          question={question}
+          title={title}
+          hint={hint}
+          describedBy={describedBy}
+          answer={answer}
+          seed={seed}
+          onAnswer={onAnswer}
+        />
+      );
+
     case 'textarea':
       return (
         <>
@@ -1174,6 +1209,395 @@ function QuestionBody({
         </>
       );
   }
+}
+
+/**
+ * "Which job would you take?" — two built job cards, side by side, and
+ * the pick stays on to meet the next challenger. See ConjointQuestion
+ * in types.ts for why the cards are built rather than real jobs, and
+ * conjoint.ts for how they are drawn and stored.
+ *
+ * All the rounds live inside this one survey step. Each pick is saved
+ * to the answer straight away, like every other question, so a refresh
+ * or a trip back through the survey picks up at the same choice with
+ * the same cards.
+ */
+function ConjointChoice({
+  question,
+  title,
+  hint,
+  describedBy,
+  answer,
+  seed,
+  onAnswer
+}: {
+  question: ConjointQuestion;
+  title: ReactNode;
+  hint: ReactNode;
+  describedBy?: string;
+  answer: Answer | undefined;
+  seed: string;
+  onAnswer: (a: Answer) => void;
+}) {
+  const stored = useMemo(
+    () => (Array.isArray(answer?.value) ? answer.value : []),
+    [answer]
+  );
+  // Saved progress that no longer parses — made before the question's
+  // attributes last changed — is dropped, so the respondent starts the
+  // choices afresh instead of appending to a run that can never pass
+  // validation.
+  const parsed = useMemo(
+    () => parseRounds(question, stored),
+    [question, stored]
+  );
+  const rounds = useMemo(() => parsed ?? [], [parsed]);
+  const kept = parsed ? stored : [];
+  const done = rounds.length >= question.rounds;
+  const pair = useMemo(
+    () => (done ? null : nextPair(question, seed, rounds)),
+    [done, question, seed, rounds]
+  );
+
+  // The choose buttons vanish when the last pick is made, which would
+  // drop keyboard focus onto the page body. Move it to the result.
+  const winnerRef = useRef<HTMLHeadingElement>(null);
+  const wasDone = useRef(done);
+  useEffect(() => {
+    if (done && !wasDone.current) winnerRef.current?.focus();
+    wasDone.current = done;
+  }, [done]);
+
+  const lines = cardLines(question);
+  const jobs = jobNumbers(rounds, pair);
+  const palette = (n: number) => styles[`jobPalette${n % JOB_PALETTES}`];
+
+  function choose(pick: Side) {
+    if (!pair) return;
+    onAnswer({
+      value: [...kept, encodeRound(question, { ...pair, pick })]
+    });
+  }
+
+  return (
+    <fieldset className={styles.fieldset} aria-describedby={describedBy}>
+      <legend className={styles.legend}>{title}</legend>
+      {hint}
+
+      {pair ? (
+        <>
+          {/* The count and the two cards sit on a tinted panel on wide
+              screens, so the choice reads as one object on the page. */}
+          <div className={styles.conjointStage}>
+            {/* Polite live region: a screen reader hears the count move
+              on after each pick, since the table itself only swaps its
+              cell text. */}
+            <p className={styles.conjointCount} aria-live="polite">
+              Choice {rounds.length + 1} of {question.rounds}
+            </p>
+            {/* Wraps the table so the "Vs." badge can be centred on
+                the gap between the two cards. */}
+            <div className={styles.conjointPair}>
+              {/* A table, so the lines of the two job ads sit level with
+              each other and the eye can run across a row to compare —
+              and a screen reader can do the same. There is no visible
+              left column of names (two columns fit a phone, three do
+              not), so each row's names are a header for screen readers
+              only; sighted readers get the icon and the wording. */}
+              <table className={styles.conjointTable}>
+                <caption className="sr-only">
+                  Two jobs. Choose the one you would take.
+                </caption>
+                {/* The first column holds only the screen-reader row
+                headers, so it takes no width. */}
+                <colgroup>
+                  <col className={styles.conjointHeadCol} />
+                  <col />
+                  <col />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <td className="sr-only" />
+                    {/* Cells are keyed by job number: the job that stays is
+                      the same element round to round, so only the
+                      challenger's cells are new — and only they animate
+                      in. `--row` staggers them top to bottom. */}
+                    <th
+                      key={`a-${jobs.a}`}
+                      scope="col"
+                      className={`${palette(jobs.a)} ${styles.conjointFresh}`}
+                      style={rowStyle(0)}
+                    >
+                      Job A
+                    </th>
+                    <th
+                      key={`b-${jobs.b}`}
+                      scope="col"
+                      className={`${palette(jobs.b)} ${styles.conjointFresh}`}
+                      style={rowStyle(0)}
+                    >
+                      Job B
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lines.map((line, n) => (
+                    <tr key={line.key} className={cardRowClass(line, n)}>
+                      <th scope="row" className="sr-only">
+                        {line.name}
+                      </th>
+                      {[pair.a, pair.b].map((card, i) => {
+                        const job = i ? jobs.b : jobs.a;
+                        return (
+                          <td
+                            key={`${i}-${job}`}
+                            className={`${palette(job)} ${styles.conjointFresh}`}
+                            style={rowStyle(n + 1)}
+                          >
+                            <CardLine
+                              line={line}
+                              card={card}
+                              all={question.attributes}
+                            />
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td className="sr-only" />
+                    {(['a', 'b'] as const).map((side) => (
+                      // Keyed by job too, so the new job's button arrives
+                      // with its card. The clicked button belongs to the
+                      // job that stays, so it keeps its element — and
+                      // keyboard focus.
+                      <td
+                        key={`${side}-${jobs[side]}`}
+                        className={`${palette(jobs[side])} ${styles.conjointFresh}`}
+                        style={rowStyle(lines.length + 1)}
+                      >
+                        <button
+                          type="button"
+                          className={`black-button ${styles.conjointChoose}`}
+                          onClick={() => choose(side)}
+                          aria-label={`Choose job ${side.toUpperCase()}`}
+                        >
+                          Choose {side.toUpperCase()}
+                        </button>
+                      </td>
+                    ))}
+                  </tr>
+                </tfoot>
+              </table>
+              <span className={styles.conjointVs} aria-hidden="true">
+                Vs.
+              </span>
+            </div>
+          </div>
+          {rounds.length > 0 && (
+            <button
+              type="button"
+              className={styles.conjointLink}
+              onClick={() => onAnswer({ value: kept.slice(0, -1) })}
+            >
+              Undo last choice
+            </button>
+          )}
+        </>
+      ) : (
+        <div className={`${styles.conjointWinner} ${palette(jobs.winner)}`}>
+          <h3
+            className={styles.conjointWinnerHeading}
+            tabIndex={-1}
+            ref={winnerRef}
+          >
+            Your winner
+          </h3>
+          {/* The same job ad as the cards, so the winner is recognisably
+              the one they kept choosing. */}
+          <ul className={styles.conjointWinnerList}>
+            {lines.map((line, n) => (
+              <li key={line.key} className={cardRowClass(line, n)}>
+                <CardLine
+                  line={line}
+                  card={winnerOf(rounds[rounds.length - 1])}
+                  all={question.attributes}
+                />
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            className={styles.conjointLink}
+            onClick={() => onAnswer({ value: [] })}
+          >
+            Make these choices again
+          </button>
+        </div>
+      )}
+    </fieldset>
+  );
+}
+
+/** A card cell's place top to bottom, for the staggered arrival. */
+function rowStyle(row: number): CSSProperties {
+  return { '--row': row } as CSSProperties;
+}
+
+/** How many palettes page.module.scss defines (.jobPalette0…). */
+const JOB_PALETTES = 9;
+
+/**
+ * Which job each card is, numbered in order of first appearance, so
+ * each job keeps its own colours for as long as it stays in play: the
+ * first two cards are jobs 0 and 1, and every challenger after that is
+ * a new number. A full run of 8 choices meets 9 jobs.
+ */
+function jobNumbers(
+  rounds: readonly { a: Card; b: Card; pick: Side }[],
+  pair: { a: Card; b: Card } | null
+): { a: number; b: number; winner: number } {
+  let champion = 0;
+  const numbered = (round: number, a: Card, b: Card, held: Card | null) => {
+    if (round === 0 || !held) return { a: 0, b: 1 };
+    return sameCard(a, held)
+      ? { a: champion, b: round + 1 }
+      : { a: round + 1, b: champion };
+  };
+  let held: Card | null = null;
+  rounds.forEach((r, i) => {
+    const n = numbered(i, r.a, r.b, held);
+    champion = r.pick === 'a' ? n.a : n.b;
+    held = winnerOf(r);
+  });
+  const now = pair
+    ? numbered(rounds.length, pair.a, pair.b, held)
+    : { a: champion, b: champion };
+  return { ...now, winner: champion };
+}
+
+const CARD_ICONS: Record<ConjointIcon, LucideIcon> = {
+  banknote: Banknote,
+  briefcase: Briefcase,
+  building: Building2,
+  heart: Heart,
+  sparkles: Sparkles,
+  users: Users
+};
+
+type CardLineSpec = {
+  key: string;
+  /** Attribute names, for the screen-reader row header. */
+  name: string;
+  attributes: ConjointQuestion['attributes'];
+  icon?: ConjointIcon;
+  strong?: boolean;
+  subtitle?: boolean;
+  /** Set on the title line: its wording comes from these, not levels. */
+  titles?: ConjointQuestion['cardTitle'];
+};
+
+/**
+ * The card's lines, from the definition: the title first when there is
+ * one, then the `card` layout.
+ */
+function cardLines(q: ConjointQuestion): CardLineSpec[] {
+  const spec: NonNullable<ConjointQuestion['card']> =
+    q.card ?? q.attributes.map((a) => ({ attributes: [a.id] }));
+  const title: CardLineSpec[] = q.cardTitle
+    ? [
+        {
+          key: 'title',
+          name: 'Type of job',
+          attributes: [],
+          titles: q.cardTitle
+        }
+      ]
+    : [];
+  return [
+    ...title,
+    ...spec.map((line) => {
+      const attributes = line.attributes
+        .map((id) => q.attributes.find((a) => a.id === id))
+        .filter((a): a is ConjointQuestion['attributes'][number] => !!a);
+      return {
+        key: line.attributes.join('+'),
+        name: attributes.map((a) => a.label).join(' and '),
+        attributes,
+        icon: line.icon,
+        strong: line.strong,
+        subtitle: line.subtitle
+      };
+    })
+  ];
+}
+
+/**
+ * `{organisation}` in a card's wording → that attribute's `noun` on
+ * this card ("charity"); `{Organisation}` capitalises it.
+ */
+function fillNouns(
+  text: string,
+  card: Card,
+  all: ConjointQuestion['attributes']
+): string {
+  return text.replace(/\{(\w+)\}/g, (match, name: string) => {
+    const id = name.charAt(0).toLowerCase() + name.slice(1);
+    const attr = all.find((a) => a.id === id);
+    const noun = attr?.levels.find((l) => l.id === card[id])?.noun;
+    if (!noun) return match;
+    return name === id ? noun : noun.charAt(0).toUpperCase() + noun.slice(1);
+  });
+}
+
+/** The first line is the headline; a subtitle line sits tight under it. */
+function cardRowClass(line: CardLineSpec, n: number): string | undefined {
+  if (n === 0) return styles.conjointHeadline;
+  if (line.subtitle) return styles.conjointSubtitle;
+  return undefined;
+}
+
+/** One line of a job card: its icon, then its values joined by "·". */
+function CardLine({
+  line,
+  card,
+  all
+}: {
+  line: CardLineSpec;
+  card: Card;
+  /** Every attribute, so a line can borrow another's `noun`. */
+  all: ConjointQuestion['attributes'];
+}) {
+  const Icon = line.icon ? CARD_ICONS[line.icon] : null;
+  const words = line.titles
+    ? [
+        line.titles.find((t) =>
+          Object.entries(t.when).every(([k, v]) => card[k] === v)
+        )?.label ?? ''
+      ]
+    : line.attributes.map((attr) => {
+        const level = attr.levels.find((l) => l.id === card[attr.id]);
+        return fillNouns(level?.short ?? level?.label ?? '', card, all);
+      });
+  return (
+    <span
+      className={`${styles.conjointLine} ${
+        line.strong ? styles.conjointStrong : ''
+      }`}
+    >
+      {Icon && (
+        <Icon
+          className={styles.conjointIcon}
+          size={16}
+          strokeWidth={1.75}
+          aria-hidden="true"
+        />
+      )}
+      <span>{words.join(' · ')}</span>
+    </span>
+  );
 }
 
 function OptionRow({

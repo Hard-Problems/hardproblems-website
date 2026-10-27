@@ -553,6 +553,364 @@
   margin-top: 2.25rem;
 }
 
+// ------------------------------------------------------------ conjoint
+
+// One palette per job. Each job keeps its colours for as long as it
+// stays in play — so the one someone keeps choosing is recognisable
+// round to round — and every challenger arrives in a new one. A run of
+// 8 choices meets 9 jobs, hence 9 palettes (JOB_PALETTES in the form).
+// `ink` is dark enough for white button text; `accent` is the band
+// and the icons. Everything coloured on a card reads these variables.
+$job-palettes: (
+  #235337 #2f8b53,
+  // green
+  #1f3f73 #2f62b0,
+  // blue
+  #5b2a6e #8a46a3,
+  // plum
+  #7a3418 #c2562a,
+  // rust
+  #0f5257 #1f8a8f,
+  // teal
+  #6b4a07 #b07d10,
+  // ochre
+  #7a1f45 #c23a6f,
+  // rose
+  #33307a #5a55c4,
+  // indigo
+  #34424f #5d7183 // slate
+);
+
+@each $palette in $job-palettes {
+  $i: index($job-palettes, $palette) - 1;
+  .jobPalette#{$i} {
+    --job-ink: #{nth($palette, 1)};
+    --job-accent: #{nth($palette, 2)};
+    --job-glow: #{rgba(nth($palette, 2), 0.25)};
+  }
+}
+
+// The count and the two cards. On wide screens a light green panel,
+// the same tint as the share and winner boxes, so the choice reads as
+// one object; on a phone the cards need every pixel, so no panel.
+.conjointStage {
+  margin-top: 1.25rem;
+}
+
+@media only screen and (min-width: 601px) {
+  .conjointStage {
+    padding: 1.1rem 1.5rem 1.5rem;
+    background: #f2f8f4;
+    border-radius: 12px;
+  }
+}
+
+// The two cards, and the "Vs." between them. The table's negative
+// margins line the cards up with this box's edges, so the gap between
+// them is at its horizontal centre.
+.conjointPair {
+  position: relative;
+}
+
+// "Vs." in the gap between the cards, centred on it. The desktop gap
+// is widened to hold it, so it touches neither card. Decoration only —
+// aria-hidden in the markup — and hidden on a phone, where the gap is
+// too narrow for it.
+.conjointVs {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: #666;
+  pointer-events: none;
+}
+
+@media only screen and (max-width: 600px) {
+  .conjointVs {
+    display: none;
+  }
+}
+
+// "Choice 3 of 8", above the cards.
+.conjointCount {
+  margin: 0 0 0.6rem 0;
+  font-size: var(--font-size-xs);
+  color: #555;
+}
+
+// Two job cards side by side. It is a table so the rows line up across
+// the cards and a screen reader can compare them row by row; each
+// column is drawn as a card by giving its cells a shared border, with
+// border-spacing for the gap between them.
+.conjointTable {
+  // The gap between the two cards. Wide on desktop, where it holds the
+  // "Vs."; narrow on a phone.
+  --gap: 0.75rem;
+
+  @media only screen and (min-width: 601px) {
+    --gap: 2.5rem;
+  }
+
+  // The spacing also falls either side of the zero-width header
+  // column, so the left edge needs pulling back by two gaps, the right
+  // by one, for the cards to line up with the text above.
+  width: calc(100% + 3 * var(--gap));
+  margin: 0 calc(-1 * var(--gap)) 0 calc(-2 * var(--gap));
+  border-collapse: separate;
+  border-spacing: var(--gap) 0;
+  table-layout: fixed;
+
+  th,
+  td {
+    text-align: left;
+    vertical-align: top;
+    background: #fff;
+    border-left: 1px solid #e2e2e2;
+    border-right: 1px solid #e2e2e2;
+  }
+
+  // The visually hidden row headers and spacers take no column.
+  :global(.sr-only) {
+    border: 0;
+  }
+
+  // "Job A" — a small label, so the headline under it is what reads.
+  // The coloured band is an inset shadow rather than a thick top
+  // border, so it follows the rounded corners instead of meeting the
+  // grey side borders at an angle.
+  thead th {
+    padding: 1.05rem 1rem 0.15rem;
+    border-top: 1px solid #e2e2e2;
+    border-radius: 10px 10px 0 0;
+    box-shadow: inset 0 4px 0 var(--job-accent);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--job-ink);
+  }
+
+  tbody td {
+    padding: 0.3rem 1rem;
+    font-size: var(--font-size-sm);
+    line-height: 1.35;
+  }
+
+  // The job's title — "Charity job" — as the ad's headline, readable
+  // at a glance across both cards.
+  .conjointHeadline td {
+    padding-top: 0.2rem;
+    padding-bottom: 0.65rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  // The work, as the title's subtitle: plain text pulled up under it,
+  // with the gap the title would otherwise have moved below it instead.
+  .conjointHeadline:has(+ .conjointSubtitle) td {
+    padding-bottom: 0;
+  }
+
+  .conjointSubtitle td {
+    padding-top: 0.1rem;
+    padding-bottom: 0.65rem;
+    color: #444;
+  }
+
+  tfoot td {
+    padding: 0.75rem 1rem 1rem;
+    border-bottom: 1px solid #e2e2e2;
+    border-radius: 0 0 10px 10px;
+  }
+}
+
+.conjointHeadCol {
+  width: 0;
+}
+
+// Narrow cards on a phone: give the words the room the padding took.
+@media only screen and (max-width: 600px) {
+  .conjointTable {
+    --gap: 0.5rem;
+
+    thead th,
+    tbody td,
+    tfoot td {
+      padding-left: 0.7rem;
+      padding-right: 0.7rem;
+    }
+
+    // Smaller type, so a line fits the half-width card in one or two
+    // lines rather than three or four.
+    tbody td {
+      font-size: var(--font-size-xs);
+      line-height: 1.3;
+    }
+
+    .conjointHeadline td {
+      font-size: 0.9375rem;
+    }
+  }
+
+  .conjointTable .conjointChoose {
+    padding: 7px 10px;
+    font-size: 0.8125rem;
+  }
+
+  .conjointLine {
+    gap: 0.35rem;
+  }
+
+  .conjointIcon {
+    width: 13px;
+    height: 13px;
+  }
+}
+
+// A new job arrives obviously: the whole card flashes in its own
+// colour and settles to white, while its lines slide up into place one
+// after another, top to bottom (`--row`, set per cell by the form).
+// Only a new job's cells are new elements — the form keys them by job —
+// so the job that stays put does not move at all, which is what makes
+// it clear which one is new.
+.conjointFresh {
+  animation:
+    conjointFlash 0.9s ease-out both,
+    conjointIn 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: 0s, calc(var(--row, 0) * 45ms);
+}
+
+@keyframes conjointFlash {
+  from {
+    background: color-mix(in srgb, var(--job-accent) 22%, #fff);
+  }
+}
+
+@keyframes conjointIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+// No movement for people who have asked for none; the colour flash
+// stays, since it does not move and still marks the new card.
+@media (prefers-reduced-motion: reduce) {
+  .conjointFresh {
+    animation: conjointFlash 0.9s ease-out both;
+  }
+}
+
+// The offer line: bold, the second thing read after the title.
+.conjointStrong {
+  font-weight: 600;
+}
+
+// One line of a card: icon, then the words. The icon names the row
+// so the words do not have to.
+.conjointLine {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.conjointIcon {
+  flex-shrink: 0;
+  // Optically centred on the first line of text.
+  margin-top: 0.1rem;
+  // The job's colour on a card; the winner card has none, so green.
+  color: var(--job-accent, var(--color-mid-green));
+}
+
+// In the job's colours rather than the site's green. Scoped under the
+// table so it outranks the global .black-button rules, hover included.
+.conjointTable .conjointChoose {
+  width: 100%;
+  justify-content: center;
+  background: var(--job-ink);
+  border-color: var(--job-ink);
+  // No colour fade: when the next pair arrives the button would
+  // otherwise slide from the old job's colours into the new one's.
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+
+  &:hover:not(:disabled),
+  &:focus-visible {
+    background: var(--job-accent);
+    border-color: var(--job-accent);
+    box-shadow: 0 4px 16px var(--job-glow);
+  }
+}
+
+// Undo and start-again: quiet text buttons, like Skip.
+.conjointLink {
+  margin-top: 0.9rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  color: var(--color-link);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+// In the winning job's colours, the ones it carried through the rounds.
+.conjointWinner {
+  margin-top: 1.25rem;
+  padding: 1.25rem;
+  border: 1px solid var(--job-accent, var(--color-dark-green));
+  border-radius: 10px;
+  background: color-mix(
+    in srgb,
+    var(--job-accent, var(--color-mid-green)) 7%,
+    #fff
+  );
+}
+
+.conjointWinnerHeading {
+  margin: 0 0 0.75rem 0;
+  font-family: var(--font-sans);
+  font-size: 1.1rem;
+  font-weight: 600;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.conjointWinnerList {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--font-size-sm);
+
+  // The site gives list items their own spacing; the grid gap is the
+  // spacing here.
+  li {
+    margin: 0;
+  }
+
+  .conjointHeadline {
+    font-size: 1.15rem;
+    font-weight: 600;
+  }
+
+  .conjointSubtitle {
+    margin-top: -0.25rem;
+    margin-bottom: 0.3rem;
+    color: #444;
+  }
+}
+
 .skipLink {
   padding: 0;
   border: 0;
