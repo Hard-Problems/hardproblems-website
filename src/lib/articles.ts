@@ -267,8 +267,12 @@ function wrapImagesInLinks(html: string): string {
     } else {
       const isFloatRight =
         /class\s*=\s*["'][^"']*\bfloat-right\b[^"']*["']/i.test(attrs);
+      // Decorative squiggle between sections — nothing to enlarge, and
+      // a link round it would be a tab-stop to nowhere.
+      const isDivider =
+        /class\s*=\s*["'][^"']*\barticle-divider\b[^"']*["']/i.test(attrs);
       const srcMatch = attrs.match(/\bsrc\s*=\s*["']([^"']+)["']/i);
-      if (anchorDepth > 0 || isFloatRight || !srcMatch) {
+      if (anchorDepth > 0 || isFloatRight || isDivider || !srcMatch) {
         result += full;
       } else {
         result += `<a href="${srcMatch[1]}" target="_blank" rel="noopener noreferrer" class="article-image-link">${full}</a>`;
@@ -479,7 +483,9 @@ const TOPIC_SUBTITLES: Record<string, string> = {
     'Approaches for making big career decisions with more clarity.',
   frameworks:
     'Tools and rubrics for approaching hard problems.',
-  'tech-for-good': 'Using technology to make a positive difference.'
+  'tech-for-good': 'Using technology to make a positive difference.',
+  leadership:
+    'Running and governing organisations that keep their mission.'
 };
 
 export function topicSubtitle(topic: string): string | undefined {
