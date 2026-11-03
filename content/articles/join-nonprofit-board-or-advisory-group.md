@@ -17,6 +17,7 @@ articleType: 'Advice' # Article | Book Review | Podcast | Opinion | Advice
 topics:
   - careers
   - job-search
+  - leadership
 
 organizations:
   - Hard Problems
