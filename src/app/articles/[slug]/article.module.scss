@@ -954,6 +954,22 @@
     white-space: nowrap;
   }
 
+  // Section break inside an article body — e.g. before a closing video
+  // or postscript that isn't part of the preceding argument. Add
+  // `![](/images/squiggle.png){.article-divider}` in the markdown.
+  // The squiggle is the same mark the Hard Problems dashboard uses as
+  // its divider and footer sign-off, shown here at ~52% of its natural
+  // 420x61 to match. The :not()s repeat the base image rule's so this
+  // wins the cascade over the article-wide image sizing and padding.
+  :global(.article-divider):not(:global(.float-right)):not(.authorAvatar) {
+    width: 153px;
+    max-width: 100%;
+    height: auto;
+    margin: 3.5rem auto;
+    padding: 0;
+    transform: none;
+  }
+
   img {
     display: block;
     max-width: 100%;
