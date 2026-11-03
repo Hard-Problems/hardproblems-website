@@ -86,9 +86,17 @@ Even well-intentioned companies often go bad. Corporate boards often overrule fo
 
 As a typical company succeeds (in terms of profit), it will inevitably drift toward short-term financial extraction. That is, unless you don't operate like a typical company.
 
-Eric tells the stories of many companies that go wrong, and their lessons are instructive. For instance, Sol Price started a chain of discount department stores called [FedMart](https://en.wikipedia.org/wiki/FedMart) that not only sold well-priced goods to customers, but paid twice the going rate to its employees. Despite massive growth and over 40 successful stores, investors pushed Price out of the company he founded because he wasn't willing to compromise on employee wages to squeeze out higher margins. Price knew that his employees were the special advantage of FedMart, but his investors took the typical corporate playbook to grow profits. This short-term thinking ended up killing FedMart, which was out of business less than eight years later.
+> "The more golden the goose, the greater the temptation to butcher it."
+>
+> — Eric Ries
+
+Eric tells the stories of many companies that go wrong, and their lessons are instructive. For instance, [Sol Price](https://en.wikipedia.org/wiki/Sol_Price) started a chain of discount department stores called [FedMart](https://en.wikipedia.org/wiki/FedMart) that not only sold well-priced goods to customers, but paid twice the going rate to its employees. Despite massive growth and over 40 successful stores, investors pushed Price out of the company he founded because he wasn't willing to compromise on employee wages to squeeze out higher margins. Price knew that his employees were the special advantage of FedMart, but his investors took the typical corporate playbook to grow profits. This short-term thinking ended up killing FedMart, which was out of business less than eight years later.
 
 Importantly, Sol Price learned from his mistakes at FedMart and then went on to found Price Club, which merged with Costco, co-founded by his protégé Jim Sinegal. Obviously, there are things we can criticize about Costco, but the way that the company kept prices low while paying employees a strong wage is incredible for a massive American corporation.
+
+> "Success alone will not protect what matters most. Only incorruptible design can."
+>
+> — Eric Ries, _Incorruptible_
 
 The most interesting part of _Incorruptible_ is Eric's ideas for creating governance structures that avoid the type of corporate fate that befell FedMart. He leans on examples like Novo Nordisk and Patagonia to suggest structures like the "spiritual holding company" that separates two things a normal company combines: the profit-making business and the mission. Each goes into its own entity, and the mission entity controls the business.
 
@@ -98,11 +106,15 @@ Eric also tells the stories of companies like Grundfos, IKEA, Bosch, Zeiss, Role
 
 ## Conclusion {#conclusion}
 
-As I get older, I'm increasingly proud that our design agency, silverorange, is still in business and has done great work for 26 years. It's an employee-owned company, it operates ethically, it has adapted well through 3 CEOs. This isn't just through good intentions. It's because we made governance decisions that have stood the test of time.
+As I get older, I'm increasingly proud that our design agency, silverorange, is still in business and has done great work for 26 years. It's an employee-owned company, it operates ethically, and it has adapted well through 3 CEOs. This isn't just through good intentions. It's because we made governance decisions that have stood the test of time.
 
 In _Incorruptible_ it's really helpful to read stories from large companies that buck the corporate trend to do more than squeeze out profit. It was exciting to see examples of companies much larger and under much more pressure than silverorange, that succeed with a mission.
 
 It's rare for me to recommend a business book, but this is a strong exception. _Incorruptible_ is a thoughtful book that should inspire founders to want more from their companies than making millions.
+
+![](/images/squiggle.png){.article-divider aria-hidden="true"}
+
+PS: If you like _Incorruptible_, also check out one of the only other business books that I recommend — Yvon Chouinard's book _[Let My People Go Surfing](https://www.goodreads.com/en/book/show/22155.Let_My_People_Go_Surfing)_ about the foundations of Patagonia and how CEOs can lead their companies differently.
 
 ![](/images/squiggle.png){.article-divider aria-hidden="true"}
 
@@ -111,5 +123,3 @@ Watch an interview with Eric Ries speaking about _Incorruptible_ on Lenny's Podc
 <div class="video-embed">
 <iframe src="https://www.youtube-nocookie.com/embed/PoJ1vTdHpks" title="How Anthropic, Costco, and Patagonia all build incorruptible companies | Eric Ries" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 </div>
-
-PS: If you like _Incorruptible_, also check out one of the only other business books that I recommend — Yvon Chouinard's book _[Let My People Go Surfing](https://www.goodreads.com/en/book/show/22155.Let_My_People_Go_Surfing)_ about the foundations of Patagonia and how CEOs can lead their companies differently.
