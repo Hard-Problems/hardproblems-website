@@ -624,6 +624,21 @@ export default function SurveyForm({
   // Only a single-question step can be optional — a group has no one
   // thing to skip, and none of the grouped questions are optional.
   const skippable = current.length === 1 && current[0].optional;
+  // A conjoint run answers itself: each pick is a click, and the step is
+  // finished when the last one lands. Until then Continue cannot do
+  // anything except fail validation ("Please make all N choices."), so
+  // it is held back rather than shown as a button that only errors.
+  // Once the winner is revealed it returns, as the way onward.
+  const pending = current.find(
+    (q) =>
+      q.kind === 'conjoint' &&
+      !(
+        Array.isArray(answers[q.id]?.value) &&
+        (answers[q.id]!.value as unknown[]).length >= q.rounds
+      )
+  );
+  const hideContinue = Boolean(pending);
+  const showSkip = skippable && step < total - 1;
 
   return (
     <>
@@ -778,32 +793,39 @@ export default function SurveyForm({
           </p>
         )}
 
-        <div className={styles.actions}>
-          <button
-            type="button"
-            className="black-button"
-            onClick={onContinue}
-            disabled={sending}
-          >
-            {sending ? (
-              'Sending…'
-            ) : (
-              <>
-                {step === total - 1 ? 'Finish and send' : 'Continue'}{' '}
-                <span aria-hidden="true">→</span>
-              </>
+        {/* Not rendered at all when it would be empty: it carries a
+            2.25rem top margin, which would otherwise show as a gap
+            below an unfinished conjoint run. */}
+        {(!hideContinue || showSkip) && (
+          <div className={styles.actions}>
+            {!hideContinue && (
+              <button
+                type="button"
+                className="black-button"
+                onClick={onContinue}
+                disabled={sending}
+              >
+                {sending ? (
+                  'Sending…'
+                ) : (
+                  <>
+                    {step === total - 1 ? 'Finish and send' : 'Continue'}{' '}
+                    <span aria-hidden="true">→</span>
+                  </>
+                )}
+              </button>
             )}
-          </button>
-          {skippable && step < total - 1 && (
-            <button
-              type="button"
-              className={styles.skipLink}
-              onClick={() => goTo(step + 1)}
-            >
-              Skip this question
-            </button>
-          )}
-        </div>
+            {showSkip && (
+              <button
+                type="button"
+                className={styles.skipLink}
+                onClick={() => goTo(step + 1)}
+              >
+                Skip this question
+              </button>
+            )}
+          </div>
+        )}
 
         {devReset}
       </div>
@@ -1020,6 +1042,21 @@ function QuestionBody({
         options.length === 2 &&
         options.every((o) => o.id === 'yes' || o.id === 'no');
 
+      // A short ordered scale on a grouped step flows across the column
+      // instead of stacking — see .optionsWrap. Grouped steps only,
+      // because that is where the row count actually hurts; a question
+      // that owns its own step has the room to stack.
+      //
+      // "Other…" is excluded: it owns a text field that appears beneath
+      // it when chosen, which needs the full width of the column.
+      const compactScale =
+        !yesNo &&
+        inGroup &&
+        question.kind === 'single' &&
+        options.length <= 8 &&
+        !options.some((o) => o.isOther) &&
+        options.every((o) => o.label.length <= 16);
+
       return (
         <fieldset
           className={`${styles.fieldset} ${inGroup ? styles.groupFieldset : ''}`}
@@ -1028,7 +1065,9 @@ function QuestionBody({
           <legend className={styles.legend}>{title}</legend>
           {hint}
           <div
-            className={`${styles.options} ${yesNo ? styles.optionsInline : ''}`}
+            className={`${styles.options} ${yesNo ? styles.optionsInline : ''} ${
+              compactScale ? styles.optionsWrap : ''
+            }`}
           >
             {options.map((option) => (
               <OptionRow
@@ -1295,7 +1334,7 @@ function ConjointChoice({
             <p className={styles.conjointCount} aria-live="polite">
               Choice {rounds.length + 1} of {question.rounds}
             </p>
-            {/* Wraps the table so the "Vs." badge can be centred on
+            {/* Wraps the table so the "vs." badge can be centred on
                 the gap between the two cards. */}
             <div className={styles.conjointPair}>
               {/* A table, so the lines of the two job ads sit level with
@@ -1392,7 +1431,7 @@ function ConjointChoice({
                 </tfoot>
               </table>
               <span className={styles.conjointVs} aria-hidden="true">
-                Vs.
+                vs.
               </span>
             </div>
           </div>
@@ -1794,8 +1833,11 @@ function PrizeDraw({
 
 function ThankYou({ survey }: { survey: SurveyDefinition }) {
   const shareUrl = `https://www.hardproblems.com/survey/${survey.year}?source=share`;
-  // The title already starts with "The", so drop it to avoid "the The".
-  const shareText = `I took the ${survey.title.replace(/^The /, '')} survey and you should too! ${shareUrl} Please re-share.`;
+  // Quoted, because the title is a question: unquoted it would read
+  // "I took the Is Design a Good Career? survey". The leading "The" of
+  // a statement-style title is dropped so a future year does not read
+  // "the “The …” survey".
+  const shareText = `I took the “${survey.title.replace(/^The /, '')}” survey and you should too! ${shareUrl} Please re-share.`;
   const [copied, setCopied] = useState(false);
 
   return (

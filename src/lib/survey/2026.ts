@@ -1,4 +1,4 @@
-// The 2026 State of Design & Product survey.
+// The 2026 "Is Design a Good Career? And Product?" survey.
 //
 // Pure data — see types.ts for why. To run this again next year, copy
 // this file to 2027.ts, change the dates, adjust the questions, and
@@ -18,11 +18,11 @@ function likert(id: string, text: string, labels: readonly string[]) {
 
 export const SURVEY_2026: SurveyDefinition = {
   year: 2026,
-  title: 'The State of Design & Product in 2026',
+  title: 'Is Design a Good Career? And Product?',
   intro:
-    'A survey of how designers, researchers, writers and product people feel about their work. It takes about seven minutes, and every answer is anonymous.',
+    'We are asking designers, researchers, writers and product people whether design and product are still good careers. Seven minutes, and every answer is anonymous.',
   image: '/images/content/thumb-survey-2026.jpg',
-  opensAt: '2026-10-16T00:00:00.000Z',
+  opensAt: '2026-11-04T00:00:00.000Z',
   // Exclusive: the form closes as 30 November ends.
   closesAt: '2026-12-01T00:00:00.000Z',
 
@@ -41,7 +41,7 @@ export const SURVEY_2026: SurveyDefinition = {
     'motion-designer': 'motion design',
     'service-designer': 'service design',
     'industrial-designer': 'design',
-    'design-researcher': 'design research',
+    'design-researcher': 'user research',
     'ux-designer': 'design',
     'ui-designer': 'design',
     'design-writer': 'writing',
@@ -76,7 +76,7 @@ export const SURVEY_2026: SurveyDefinition = {
         { id: 'motion-designer', label: 'Motion Designer' },
         { id: 'service-designer', label: 'Service Designer' },
         { id: 'industrial-designer', label: 'Industrial Designer' },
-        { id: 'design-researcher', label: 'Design Researcher' },
+        { id: 'design-researcher', label: 'User Researcher' },
         { id: 'ux-designer', label: 'UX Designer' },
         { id: 'ui-designer', label: 'UI Designer' },
         { id: 'design-writer', label: 'Writer' },
@@ -457,10 +457,6 @@ export const SURVEY_2026: SurveyDefinition = {
       kind: 'single',
       id: 'experience',
       group: 'about-you',
-      // A dropdown, like the two below: an ordered scale nobody needs
-      // to compare side by side, and six radios each would make this
-      // step a screenful on its own.
-      as: 'select',
       text: 'How long have you been working professionally?',
       options: [
         { id: 'student', label: 'Student' },
@@ -483,7 +479,6 @@ export const SURVEY_2026: SurveyDefinition = {
       kind: 'single',
       id: 'org-size',
       group: 'about-you',
-      as: 'select',
       text: 'How big is your company or organisation?',
       options: [
         { id: '1', label: 'Just me' },
@@ -499,7 +494,6 @@ export const SURVEY_2026: SurveyDefinition = {
       kind: 'single',
       id: 'designer-count',
       group: 'about-you',
-      as: 'select',
       text: 'How many designers work at your company or organisation?',
       options: [
         { id: '1-5', label: '1–5' },

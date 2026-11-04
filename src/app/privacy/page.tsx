@@ -348,8 +348,10 @@ export default function Page() {
           The annual survey
         </h3>
         <p>
-          Once a year we run a survey about working in design (for example, the{' '}
-          <Link href="/survey/2026">State of Design &amp; Product in 2026</Link>
+          Once a year we run a survey about working in design (for example,{' '}
+          <Link href="/survey/2026">
+            “Is Design a Good Career? And Product?”
+          </Link>
           ). Your answers are <strong>anonymous</strong>. We do not ask who you
           are, we do not record your IP address with your answers, and nothing
           in the questionnaire is used to identify you.

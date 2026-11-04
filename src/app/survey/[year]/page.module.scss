@@ -269,7 +269,13 @@
 .options {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  // A hairline between rows — enough to stop two tinted rows merging
+  // into one block when neighbours are hovered or checked, without
+  // reading as a gap. Nothing between items across a line: Yes/No and
+  // the wrapped scales are separated by their own side padding, and a
+  // column gap there would nudge the grid's alignment.
+  row-gap: 1px;
+  column-gap: 0;
   margin-top: 1.25rem;
 }
 
@@ -290,27 +296,59 @@
   }
 }
 
+// Short ordered scales — "1–5", "Just me", "20+ years" — flowing across
+// the column and wrapping, rather than one per row.
+//
+// Stacked, the three scales on the "About you" step came to 17 rows and
+// pushed that one step to two and a half screens. They are read as a
+// scale, not compared one against the next, so a row of them loses
+// nothing and the whole step fits in view.
+//
+// A grid, not content-sized chips: equal columns are what line the
+// radios up vertically down the step. Sized to content they landed
+// wherever each label ended, so the three scales read as three ragged
+// rows rather than one set of columns.
+//
+// `auto-fit` keeps that true at any width — the column count falls as
+// the viewport narrows, and every question on the step picks the same
+// count, because they share the column. 10.5rem is set by the longest
+// label, "Recent graduate", which has to fit one line beside its
+// radio.
+//
+// Yes/No is deliberately not this: it has its own .optionsInline, and
+// two opposed answers want to sit together rather than take a quarter
+// of the row each.
+.optionsWrap {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  row-gap: 1px;
+  column-gap: 0;
+}
+
 // A whole-row target rather than just the control: GDS sizes these for
 // a thumb, and a label that only responds on the 20px circle is the
 // single most common complaint about radio groups on a phone.
+//
+// Tight vertically, now that there is no border to hold the row open —
+// the side padding is what separates them across a line, and the
+// radio's own 20px sets the height. On a phone it opens back up: see
+// the media query below, where the thumb target matters and the extra
+// rows cost nothing because they are stacked anyway.
 .option {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.8rem 1rem;
-  // 1px rather than the GDS 2px, by choice. The checked state leans on
-  // the background tint more than the border as a result, which is why
-  // that stays.
-  border: 1px solid #e2e2e2;
+  padding: 0.5rem 1rem;
+  // No border. Hover and the checked state are carried by the
+  // background tint alone, which they already leaned on more than the
+  // outline; the radio's own dot is what marks the choice.
+  border: 0;
   border-radius: 8px;
   font-size: var(--font-size-sm);
   cursor: pointer;
-  transition:
-    border-color 0.12s ease,
-    background 0.12s ease;
+  transition: background 0.12s ease;
 
   &:hover {
-    border-color: var(--color-mid-green);
     background: #f7fbf8;
   }
 
@@ -330,8 +368,15 @@
   }
 
   &:has(input:checked) {
-    border-color: var(--color-dark-green);
     background: #f2f8f4;
+  }
+
+  // Back to a thumb-sized row on a phone. 44px is the floor every
+  // touch-target guideline agrees on, and 0.5rem of padding around a
+  // 20px control leaves 36px.
+  @media only screen and (max-width: 600px) {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
   }
 }
 
@@ -459,6 +504,36 @@
 .textarea {
   resize: vertical;
   line-height: 1.5;
+}
+
+// The country picker — the one dropdown left in the survey.
+//
+// `appearance: none` and our own chevron. Left native, the control
+// keeps the browser's hairline arrow jammed against the border, at a
+// weight that matches nothing else on the page, and the box reverts to
+// the platform's own idea of a select rather than the field styling
+// above. Drawn here it is the same arrow in every browser.
+//
+// The extra right padding is what keeps a long country name off the
+// arrow; without it the two overlap.
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' stroke='%23444' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  background-size: 12px 8px;
+  cursor: pointer;
+  // Lighter than the shared field border, to sit with the borderless
+  // radios around it rather than against them. Hover takes it back to
+  // the darker grey, so the control still answers the pointer, and
+  // focus is the green outline as everywhere else.
+  border-color: #c9c9c9;
+
+  &:hover {
+    border-color: #8f8f8f;
+  }
 }
 
 .charCount {
@@ -605,14 +680,14 @@ $job-palettes: (
   }
 }
 
-// The two cards, and the "Vs." between them. The table's negative
+// The two cards, and the "vs." between them. The table's negative
 // margins line the cards up with this box's edges, so the gap between
 // them is at its horizontal centre.
 .conjointPair {
   position: relative;
 }
 
-// "Vs." in the gap between the cards, centred on it. The desktop gap
+// "vs." in the gap between the cards, centred on it. The desktop gap
 // is widened to hold it, so it touches neither card. Decoration only —
 // aria-hidden in the markup — and hidden on a phone, where the gap is
 // too narrow for it.
@@ -646,7 +721,7 @@ $job-palettes: (
 // border-spacing for the gap between them.
 .conjointTable {
   // The gap between the two cards. Wide on desktop, where it holds the
-  // "Vs."; narrow on a phone.
+  // "vs."; narrow on a phone.
   --gap: 0.75rem;
 
   @media only screen and (min-width: 601px) {

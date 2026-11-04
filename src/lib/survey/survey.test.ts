@@ -93,7 +93,10 @@ check(
   'getSurvey(bad) is null',
   getSurvey('2026abc') === null && getSurvey(1999) === null
 );
-check('open on 1 Nov', isOpen(SURVEY_2026, new Date('2026-11-01T12:00:00Z')));
+check(
+  'open on opening day',
+  isOpen(SURVEY_2026, new Date('2026-11-04T12:00:00Z'))
+);
 check(
   'open late on 30 Nov',
   isOpen(SURVEY_2026, new Date('2026-11-30T23:59:00Z'))
