@@ -168,7 +168,10 @@ export const EUROPEAN_COUNTRIES = [
   'Ukraine',
   'Moldova',
   'Malta',
-  'Cyprus'
+  'Cyprus',
+  // Transcontinental, like Cyprus above it: filed under Europe because
+  // that is where the board counts it, not as a geographic claim.
+  'Armenia'
 ];
 
 const SOUTH_AMERICAN_COUNTRIES = [
@@ -333,12 +336,40 @@ const NORTH_AMERICAN_COUNTRIES = [
   'Trinidad and Tobago'
 ];
 
+// Yes, New Zealand — Oceania is the region that carries both it and
+// Australia, which is why neither had one before.
+//
+// "Australasia" earns its place as a tag the sheet may use for the
+// pair. "Pacific" deliberately does not: matching is by whole word, so
+// it would pull in every "Asia Pacific" and "APAC" listing and file
+// Asian jobs under Oceania.
+const OCEANIA_COUNTRIES = [
+  'Oceania',
+  'Australasia',
+  'Australia',
+  'Fiji',
+  'Kiribati',
+  'Marshall Islands',
+  'Micronesia',
+  'Nauru',
+  'New Caledonia',
+  'New Zealand',
+  'Palau',
+  'Papua New Guinea',
+  'Samoa',
+  'Solomon Islands',
+  'Tonga',
+  'Tuvalu',
+  'Vanuatu'
+];
+
 export const META_REGIONS: MetaRegion[] = [
   { name: 'Africa', countries: AFRICAN_COUNTRIES },
   { name: 'Asia', countries: ASIAN_COUNTRIES },
   { name: 'Europe', countries: EUROPEAN_COUNTRIES },
   { name: 'Middle East', countries: MIDDLE_EAST_COUNTRIES },
   { name: 'North America', countries: NORTH_AMERICAN_COUNTRIES },
+  { name: 'Oceania', countries: OCEANIA_COUNTRIES },
   { name: 'South America', countries: SOUTH_AMERICAN_COUNTRIES }
 ];
 
