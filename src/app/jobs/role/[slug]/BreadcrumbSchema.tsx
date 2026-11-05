@@ -3,13 +3,13 @@
 // Mirrors the visible trail at the top of the page exactly — Google
 // requires the markup to match what the reader sees, so the first item
 // is labelled "All jobs" because that is the link text, not "Job board".
-// The country step is present only when the sheet gives us a country,
-// again matching the visible breadcrumb.
+// The region and country steps are each present only when the visible
+// breadcrumb shows them, again to keep the two identical.
 //
 // Worth having because these pages sit three levels deep. Without it a
 // result for one role shows a bare URL; with it, Google can render
-// "hardproblems.com › All jobs › USA" and attribute the page to the
-// board above it.
+// "hardproblems.com › All jobs › North America › USA" and attribute the
+// page to the board above it.
 //
 // Docs: https://developers.google.com/search/docs/appearance/structured-data/breadcrumb
 
@@ -24,23 +24,35 @@ function toJsonLd(value: unknown): string {
   return JSON.stringify(value).replace(/</g, '\\u003c');
 }
 
-// `country` is the country step of the visible breadcrumb, already
-// resolved by the page to one that has a location page — or null when
-// none does, in which case the trail skips straight to the job. Passing
-// it in rather than deriving it here is what keeps the markup and the
-// rendered trail identical, which is what Google asks for.
+// `region` and `country` are the middle steps of the visible
+// breadcrumb, already resolved by the page — the country to one that
+// has a location page, the region to the one that country sits in.
+// Either can be null: a job tagged region-wide has a region and no
+// country, and a Global one has neither, in which case the trail skips
+// straight to the job. Passing them in rather than deriving them here
+// is what keeps the markup and the rendered trail identical, which is
+// what Google asks for.
 export default function BreadcrumbSchema({
   job,
   slug,
+  region,
   country
 }: {
   job: SerializedJob;
   slug: string;
+  region: string | null;
   country: string | null;
 }) {
   const trail: { name: string; url: string }[] = [
     { name: 'All jobs', url: `${SITE_URL}/jobs` }
   ];
+
+  if (region) {
+    trail.push({
+      name: region,
+      url: `${SITE_URL}/jobs/${locationSlug(region)}`
+    });
+  }
 
   if (country) {
     trail.push({
