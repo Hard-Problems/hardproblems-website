@@ -74,7 +74,7 @@ export const SURVEY_2026: SurveyDefinition = {
       kind: 'single',
       id: 'role',
       text: 'What type of role do you have?',
-      hint: 'Please choose the one that fits you best.',
+      hint: 'Choose the one that fits you best.',
       // Alphabetical so a long list is scannable; "Other…" stays last.
       order: 'alphaExceptLast',
       options: [
@@ -237,7 +237,7 @@ export const SURVEY_2026: SurveyDefinition = {
             {
               id: 'same',
               label: 'Same level as now',
-              short: 'Same level',
+              short: 'Same career level',
               icon: 'arrow-right'
             },
             {

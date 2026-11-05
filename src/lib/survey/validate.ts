@@ -40,10 +40,13 @@ export type FieldError = { questionId: string; message: string };
 // Newlines are allowed only in textarea answers, handled below.
 const CONTROL_CHARS = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/;
 
-// A cell starting with "=" is run as a formula when an export is opened
-// in a spreadsheet, so no free-text answer may begin with one.
-const FORMULA_START = /^=/;
-const FORMULA_MESSAGE = 'Please don’t start your answer with “=”.';
+// A cell starting with any of these is run as a formula when an export
+// is opened in a spreadsheet (CSV injection), so no free-text answer may
+// begin with one. Checked after trimming, so a leading space does not
+// get round it; tab and carriage return, the other two triggers, are
+// already refused as control characters.
+const FORMULA_START = /^[=+\-@]/;
+const FORMULA_MESSAGE = 'Please don’t start your answer with =, +, - or @.';
 
 function cleanLine(value: string): string {
   return value.replace(/\s+/g, ' ').trim();

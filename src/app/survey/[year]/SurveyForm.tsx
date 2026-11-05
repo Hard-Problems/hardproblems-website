@@ -86,6 +86,18 @@ type Phase = 'start' | 'questions' | 'sending' | 'done';
 
 type Saved = { seed: string; answers: Answers; step: number };
 
+// Keeps password managers off the survey's text fields. 1Password,
+// LastPass and Bitwarden all ignore autocomplete="off" and decide for
+// themselves, so each needs its own opt-out. It matters most on the
+// honeypot: a manager that filled it in would get the whole response
+// silently discarded as spam.
+const NO_AUTOFILL = {
+  autoComplete: 'off',
+  'data-1p-ignore': true,
+  'data-lpignore': 'true',
+  'data-bwignore': true
+} as const;
+
 function storageKey(year: number) {
   return `hp-survey-${year}`;
 }
@@ -405,6 +417,16 @@ export default function SurveyForm({
     pushHistory({ phase: 'start', step: 0 });
   }, [step, goTo, pushHistory]);
 
+  // Exit to the start screen as a history entry of its own, so the
+  // browser's Back returns to the question you left rather than the one
+  // before it. The step is kept in the entry: the start screen's button
+  // resumes from it.
+  const exit = useCallback(() => {
+    setErrors({});
+    setPhase('start');
+    pushHistory({ phase: 'start', step });
+  }, [step, pushHistory]);
+
   // Keyed by question id, because a grouped step can fail in more than
   // one place at once and "fix one, discover the next" is a miserable
   // way through a form. Every question on the step is checked on each
@@ -557,10 +579,10 @@ export default function SurveyForm({
             it is decoration — naming it would make a screen reader
             announce an illustration that adds nothing to the words. */}
           <Image
-            src="/images/content/image-explore.svg"
+            src="/images/content/image-survey.svg"
             alt=""
-            width={288}
-            height={318}
+            width={246}
+            height={382}
             className={styles.startImage}
             priority
           />
@@ -573,7 +595,7 @@ export default function SurveyForm({
             <li>Answers are anonymous</li>
             <li>You could win a free book (see below)</li>
             <li>
-              Progress saves in this browser, so you can stop &amp; come back
+              Your progress saves in this browser, so you can stop and come back
             </li>
           </ul>
           <button
@@ -698,7 +720,7 @@ export default function SurveyForm({
             title={shortTitle}
             step={step}
             total={total}
-            onExit={() => setPhase('start')}
+            onExit={exit}
             onBack={goBack}
           />,
           headerEl
@@ -790,7 +812,7 @@ export default function SurveyForm({
             type="text"
             name="hp"
             tabIndex={-1}
-            autoComplete="off"
+            {...NO_AUTOFILL}
             value={honeypot}
             onChange={(e) => setHoneypot(e.target.value)}
           />
@@ -1062,6 +1084,7 @@ function QuestionBody({
                   id={`${question.id}-other`}
                   className={styles.input}
                   type="text"
+                  {...NO_AUTOFILL}
                   maxLength={OTHER_MAX_LENGTH}
                   value={answer?.otherText ?? ''}
                   onChange={(e) =>
@@ -1210,6 +1233,7 @@ function QuestionBody({
                 id={`${question.id}-other`}
                 className={styles.input}
                 type="text"
+                {...NO_AUTOFILL}
                 maxLength={OTHER_MAX_LENGTH}
                 value={answer?.otherText ?? ''}
                 onChange={(e) =>
@@ -1320,6 +1344,7 @@ function QuestionBody({
             id={question.id}
             className={styles.input}
             type="text"
+            {...NO_AUTOFILL}
             maxLength={question.maxLength}
             aria-describedby={describedBy}
             value={typeof answer?.value === 'string' ? answer.value : ''}
@@ -1352,6 +1377,7 @@ function QuestionBody({
           {hint}
           <textarea
             id={question.id}
+            {...NO_AUTOFILL}
             className={styles.textarea}
             rows={6}
             maxLength={question.maxLength}
@@ -1930,9 +1956,6 @@ function ThankYou({ survey }: { survey: SurveyDefinition }) {
 
   return (
     <div className={styles.thankYou}>
-      <p>Your answers are in.</p>
-      <p>We aim to publish the report in Dec 2026.</p>
-
       {/* There is deliberately no email field here any more. Asking for
           an address at the end meant a second list, a second consent
           record and a second route into the newsletter with its own
@@ -1940,7 +1963,7 @@ function ThankYou({ survey }: { survey: SurveyDefinition }) {
           double opt-in that goes with it, so this points at that
           instead — which also means nothing on this page can be joined
           back to the answers just submitted. */}
-      <h2 className={styles.thankYouHeading}>Get the results</h2>
+      <h2 className={styles.thankYouHeading}>Get the results in December</h2>
       <p>
         We did not ask for your email, so your answers stay anonymous. To hear
         when the report is published, join our{' '}

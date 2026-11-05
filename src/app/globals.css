@@ -132,7 +132,7 @@ button.black-button {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 8px 14px;
+  padding: 8px 20px;
   font-size: var(--font-size-base);
   font-weight: 500;
   line-height: 1;
@@ -155,7 +155,7 @@ button.black-button {
 a.black-button.black-button--large,
 a.black-button.black-button--large:visited,
 button.black-button.black-button--large {
-  padding: 14px 28px;
+  padding: 14px 36px;
   font-size: var(--font-size-md);
   gap: 0.5rem;
 }

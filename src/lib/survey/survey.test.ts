@@ -333,7 +333,16 @@ for (const [name, bad] of [
   );
 }
 
-// "=" at the start of a cell runs as a formula in a spreadsheet export.
+// "=", "+", "-" and "@" at the start of a cell run as a formula in a
+// spreadsheet export.
+for (const start of ['+', '-', '@']) {
+  check(
+    `rejects free text starting with ${start}`,
+    inject((a) => {
+      a['metaphor'] = { value: `${start}SUM(1)` };
+    }).some((e) => e.questionId === 'metaphor')
+  );
+}
 check(
   'rejects free text starting with =',
   inject((a) => {
@@ -346,7 +355,7 @@ check(
 check(
   'allows = later in free text',
   !inject((a) => {
-    a['metaphor'] = { value: 'a = b' };
+    a['metaphor'] = { value: 'a = b, +1, -2 @home' };
   }).some((e) => e.questionId === 'metaphor')
 );
 

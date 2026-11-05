@@ -79,18 +79,20 @@
 // "Before you start" list wrapping around it.
 .startImage {
   float: right;
-  width: 288px;
+  // Portrait (119 × 185), so narrower than the column's usual 288px
+  // illustrations: at that width it would stand about 450px tall.
+  width: 246px;
   height: auto;
   margin: 0 0 1.5rem 2rem;
 }
 
-// NOT the full 288px here. On a ~360px column that would leave about
-// 50px for the text to wrap into — a one-word-per-line ribbon. 128px is
-// as large as this can go while the words beside it stay readable, and
-// the brief asks for it beside the content rather than above it.
+// NOT the full 246px here. On a ~360px column that would leave too
+// little for the text to wrap into — a one-word-per-line ribbon. 120px
+// keeps the words beside it readable, and the brief asks for it beside
+// the content rather than above it.
 @media only screen and (max-width: 600px) {
   .startImage {
-    width: 128px;
+    width: 120px;
     margin-left: 1.25rem;
   }
 }
@@ -906,6 +908,12 @@ $job-palettes: (
   font-weight: 600;
   letter-spacing: 0;
   margin: 2.25rem 0 0.5rem 0;
+}
+
+// The first heading opens the screen, straight under "Thank you!", where
+// `.thankYou`'s own top margin already supplies the gap.
+.thankYou > .thankYouHeading:first-child {
+  margin-top: 0;
 }
 
 .shareBox {
