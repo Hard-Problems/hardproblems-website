@@ -364,6 +364,13 @@ export default function Page() {
           your own browser, so you can leave at any point and nothing is sent.
         </p>
         <p>
+          Separately, our analytics record how far through the survey visitors
+          get — which step is reached, and whether the survey is finished — so
+          we can see where people stop. These records never include your
+          answers. They use the same cookieless{' '}
+          <Link href="#cookies">analytics</Link> as the rest of the site.
+        </p>
+        <p>
           We do not collect your email address with the survey. If you join our
           newsletter at the end, that is an ordinary newsletter signup, handled
           like any other and kept entirely separate from your answers. We cannot

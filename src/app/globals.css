@@ -2073,6 +2073,12 @@ body.survey-focus .survey-header-name {
   font-weight: 700;
 }
 
+/* The joining words between the two names, set back so the names lead. */
+body.survey-focus .survey-header-muted {
+  color: #888;
+  font-weight: 300;
+}
+
 /* Inline, at the title's size — the global .site-logo is a block at
    the page logo's size. Colour, weight and the green full stop (and
    its nudge on hover) come from .site-logo. */
@@ -2156,7 +2162,7 @@ body.survey-focus .survey-step-count {
 }
 
 /* Below desktop the three top-row items would squeeze the title, so
-   "by Hard Problems." drops to a second line under the survey's name. */
+   "survey by Hard Problems." drops to a second line under the name. */
 @media only screen and (max-width: 999px) {
   body.survey-focus .survey-header-by {
     display: block;
@@ -2164,9 +2170,8 @@ body.survey-focus .survey-step-count {
   }
 }
 
-/* On a phone: smaller type, and the title loses its "Survey:" prefix
-   (it is a .survey-word-long, hidden below). The step count moves to
-   the right, clear of Back, rather than squeezing in beside it. */
+/* On a phone: smaller type. The step count moves to the right, clear
+   of Back, rather than squeezing in beside it. */
 @media only screen and (max-width: 600px) {
   body.survey-focus .survey-header-title {
     font-size: 0.9rem;

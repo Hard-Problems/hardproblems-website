@@ -119,7 +119,11 @@ check(
 );
 check(
   'open on opening day',
-  isOpen(SURVEY_2026, new Date('2026-11-04T12:00:00Z'))
+  isOpen(SURVEY_2026, new Date('2026-11-11T00:00:01Z'))
+);
+check(
+  'closed the day before opening',
+  !isOpen(SURVEY_2026, new Date('2026-11-10T23:59:00Z'))
 );
 check(
   'open late on 30 Nov',

@@ -29,7 +29,8 @@ export const SURVEY_2026: SurveyDefinition = {
   intro:
     'A survey for designers, researchers, writers and product people about how they feel about their careers.',
   image: '/images/content/thumb-survey-2026.jpg',
-  opensAt: '2026-11-04T00:00:00.000Z',
+  // Midnight UTC, which is midnight in London in November.
+  opensAt: '2026-11-11T00:00:00.000Z',
   // Exclusive: the form closes as 30 November ends.
   closesAt: '2026-12-01T00:00:00.000Z',
 

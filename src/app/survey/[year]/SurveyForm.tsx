@@ -30,6 +30,7 @@ import {
   type ReactNode
 } from 'react';
 import { createPortal } from 'react-dom';
+import { usePostHog } from 'posthog-js/react';
 import {
   ArrowDown,
   ArrowRight,
@@ -153,6 +154,7 @@ export default function SurveyForm({
 }) {
   const [phase, setPhase] = useState<Phase>('start');
   const [step, setStep] = useState(0);
+  const posthog = usePostHog();
   const [answers, setAnswers] = useState<Answers>({});
   const [seed, setSeed] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -220,6 +222,21 @@ export default function SurveyForm({
     const params = new URLSearchParams(window.location.search);
     if (params.get('preview') === 'thanks') setPhase('done');
   }, []);
+
+  // Funnel analytics: one event per step shown, so PostHog can show how
+  // far people get and where they stop. Progress only — never an
+  // answer. The step's question ids say which question it is; nothing
+  // here says what anyone chose. (Autocapture is off for the whole
+  // survey: see `ph-no-capture` on its <main> in page.tsx.)
+  useEffect(() => {
+    if (phase !== 'questions') return;
+    posthog?.capture('survey_step_viewed', {
+      survey_year: survey.year,
+      step: step + 1,
+      total_steps: total,
+      question_ids: steps[step]?.map((q) => q.id).join(',')
+    });
+  }, [phase, step, total, steps, survey.year, posthog]);
 
   // The entry for however this page first appeared. replaceState, not
   // push: it describes the load itself rather than a move away from it.
@@ -516,6 +533,7 @@ export default function SurveyForm({
       } catch {
         // Nothing to do; the answers are already safely stored.
       }
+      posthog?.capture('survey_completed', { survey_year: survey.year });
       setPhase('done');
     } catch {
       setPhase('questions');
@@ -605,6 +623,12 @@ export default function SurveyForm({
               // Only on a genuinely fresh start. Re-entering after Exit
               // keeps the existing seed, so the shuffled questions come
               // back in the order that respondent already saw.
+              posthog?.capture('survey_started', {
+                survey_year: survey.year,
+                // A seed means they have been in before (Exit, or a
+                // return visit with saved progress).
+                resumed: Boolean(seed)
+              });
               if (!seed) setSeed(newSeed());
               setPhase('questions');
               // An entry for the questions, so Back from step 1 comes
@@ -925,12 +949,9 @@ function SurveyHeader({
           site logo is hidden in focus mode, so this carries it — still
           linking home, still the logo's type and green full stop. */}
       <p className="survey-header-title">
-        <span className="survey-header-name">
-          <span className="survey-word-long">Survey: </span>
-          {title}
-        </span>{' '}
+        <span className="survey-header-name">{title}</span>{' '}
         <span className="survey-header-by">
-          by{' '}
+          <span className="survey-header-muted">survey by</span>{' '}
           <Link href="/" className="site-logo survey-header-logo">
             Hard Problems<span className="hp-period">.</span>
           </Link>

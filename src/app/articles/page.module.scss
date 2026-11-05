@@ -125,7 +125,9 @@
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 12px 28px;
+  // 5rem wider than the site's normal button sides (28px each), so
+  // the one call to action on the homepage reads as the main one.
+  padding: 12px calc(28px + 2.5rem);
   border-radius: 100px;
   background: var(--color-dark-green);
   color: #fff;

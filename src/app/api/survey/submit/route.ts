@@ -7,6 +7,7 @@ import {
   rateLimit
 } from '../../../../lib/alerts/http';
 import {
+  SURVEY_RATE_LIMIT_PER_MINUTE,
   SURVEY_RATE_LIMIT_PREFIX,
   isAllowedByRateLimit
 } from '../../../../lib/alerts/rate-limit';
@@ -66,8 +67,12 @@ export async function POST(request: Request) {
   // Both limiters are namespaced to the survey: the Upstash one by
   // prefix, the in-memory one by key, so neither shares a budget with
   // the newsletter and job-alert forms.
-  const upstashOk = await isAllowedByRateLimit(ip, SURVEY_RATE_LIMIT_PREFIX);
-  if (!upstashOk || !rateLimit(`survey:${ip}`)) {
+  const upstashOk = await isAllowedByRateLimit(
+    ip,
+    SURVEY_RATE_LIMIT_PREFIX,
+    SURVEY_RATE_LIMIT_PER_MINUTE
+  );
+  if (!upstashOk || !rateLimit(`survey:${ip}`, SURVEY_RATE_LIMIT_PER_MINUTE)) {
     return NextResponse.json(
       { ok: false, error: 'Too many submissions. Please try again shortly.' },
       { status: 429 }

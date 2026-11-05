@@ -76,7 +76,11 @@ export default async function SurveyPage({ params, searchParams }: Props) {
   const open = isOpen(survey);
 
   return (
-    <main className={styles.survey}>
+    // `ph-no-capture` turns PostHog's autocapture off for everything in
+    // here. Autocapture records the text of what is clicked, which on
+    // this page is someone's answers. Progress is sent instead as
+    // explicit events (see SurveyForm), carrying no answers.
+    <main className={`${styles.survey} ph-no-capture`}>
       {/* No class: the column width and padding come from `.survey` on
           the <main>, and this element only groups the content. It used
           to reference a `styles.intro` rule that was never written. */}

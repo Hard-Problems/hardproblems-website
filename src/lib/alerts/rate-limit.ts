@@ -23,7 +23,10 @@ import { Redis } from '@upstash/redis';
 // endpoint weakened the protection on all of them.
 const limiters = new Map<string, Ratelimit | null>();
 
-function getLimiter(prefix: string): Ratelimit | null {
+// Requests per minute per key, unless a caller asks for its own.
+const DEFAULT_PER_MINUTE = 5;
+
+function getLimiter(prefix: string, perMinute: number): Ratelimit | null {
   const existing = limiters.get(prefix);
   if (existing !== undefined) return existing;
 
@@ -36,9 +39,9 @@ function getLimiter(prefix: string): Ratelimit | null {
   const limiter = new Ratelimit({
     redis: new Redis({ url, token }),
     // Sliding window feels smoother than a fixed-bucket for bursty
-    // human traffic. 5 requests per minute per key is generous for
+    // human traffic. The default 5 per minute per key is generous for
     // real signups and tight for bots.
-    limiter: Ratelimit.slidingWindow(5, '60 s'),
+    limiter: Ratelimit.slidingWindow(perMinute, '60 s'),
     prefix,
     analytics: false
   });
@@ -51,10 +54,12 @@ function getLimiter(prefix: string): Ratelimit | null {
 // take down signups.
 export async function isAllowedByRateLimit(
   key: string,
-  prefix = 'hp:signup'
+  prefix = 'hp:signup',
+  perMinute = DEFAULT_PER_MINUTE
 ): Promise<boolean> {
   if (!key) return true;
-  const rl = getLimiter(prefix);
+  // Cached by prefix, so one prefix must always be used with one limit.
+  const rl = getLimiter(prefix, perMinute);
   if (!rl) return true;
   try {
     const { success } = await rl.limit(key);
@@ -69,9 +74,17 @@ export async function isAllowedByRateLimit(
  * The survey's own bucket.
  *
  * Separate from the signup forms because the two have nothing to do
- * with each other: a respondent makes at most two calls (the answers,
- * then optionally an email address) and should not arrive to find their
- * budget spent by an unrelated newsletter signup from the same IP —
- * nor should survey traffic erode the protection on those forms.
+ * with each other: a respondent makes one call (the answers) and should
+ * not arrive to find their budget spent by an unrelated newsletter
+ * signup from the same IP — nor should survey traffic erode the
+ * protection on those forms.
  */
 export const SURVEY_RATE_LIMIT_PREFIX = 'hp:survey';
+
+/**
+ * Survey submissions per minute per IP — far above the signup forms'
+ * 5. Everyone on one office, university or conference network shares
+ * an IP, and a link shared in a room produces a burst of finishes
+ * within a minute or two. 30 still stops bulk scripted submission.
+ */
+export const SURVEY_RATE_LIMIT_PER_MINUTE = 30;
