@@ -40,6 +40,11 @@ export type FieldError = { questionId: string; message: string };
 // Newlines are allowed only in textarea answers, handled below.
 const CONTROL_CHARS = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/;
 
+// A cell starting with "=" is run as a formula when an export is opened
+// in a spreadsheet, so no free-text answer may begin with one.
+const FORMULA_START = /^=/;
+const FORMULA_MESSAGE = 'Please don’t start your answer with “=”.';
+
 function cleanLine(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
@@ -47,7 +52,23 @@ function cleanLine(value: string): string {
 function isBlank(a: Answer | undefined): boolean {
   if (!a) return true;
   if (Array.isArray(a.value)) return a.value.length === 0;
-  return a.value.trim().length === 0;
+  return typeof a.value === 'string' && a.value.trim().length === 0;
+}
+
+/**
+ * Whether an answer has the shape our form sends: an object whose
+ * `value` is a string or an array of strings, and whose `otherText`, if
+ * present, is a string. Checked before anything else touches it — the
+ * payload is attacker-controlled JSON, and a number where a string
+ * belongs would otherwise throw deep inside validation as a 500.
+ */
+function isWellFormed(a: unknown): a is Answer {
+  if (typeof a !== 'object' || a === null || Array.isArray(a)) return false;
+  const { value, otherText } = a as Record<string, unknown>;
+  const valueOk =
+    typeof value === 'string' ||
+    (Array.isArray(value) && value.every((v) => typeof v === 'string'));
+  return valueOk && (otherText === undefined || typeof otherText === 'string');
 }
 
 /**
@@ -62,6 +83,9 @@ export function validateAnswer(
   countryNames: readonly string[] = [],
   label?: string
 ): string | null {
+  if (answer !== undefined && answer !== null && !isWellFormed(answer)) {
+    return 'Please answer this question again.';
+  }
   if (isBlank(answer)) {
     if (question.optional) return null;
     // Named when the caller can supply the wording. A step holding
@@ -131,6 +155,7 @@ export function validateAnswer(
       const v = cleanLine(a.value);
       if (!v) return question.optional ? null : 'Please write an answer.';
       if (CONTROL_CHARS.test(v)) return 'Please remove any special characters.';
+      if (FORMULA_START.test(v)) return FORMULA_MESSAGE;
       if (v.length > question.maxLength) {
         return `Please keep this under ${question.maxLength} characters.`;
       }
@@ -143,6 +168,7 @@ export function validateAnswer(
       const v = a.value.trim();
       if (!v) return question.optional ? null : 'Please write an answer.';
       if (CONTROL_CHARS.test(v)) return 'Please remove any special characters.';
+      if (FORMULA_START.test(v)) return FORMULA_MESSAGE;
       if (v.length > question.maxLength) {
         return `Please keep this under ${question.maxLength} characters.`;
       }
@@ -155,6 +181,7 @@ function validateOtherText(text: string | undefined): string | null {
   const v = cleanLine(text ?? '');
   if (!v) return 'Please say what you mean by “Other”.';
   if (CONTROL_CHARS.test(v)) return 'Please remove any special characters.';
+  if (FORMULA_START.test(v)) return FORMULA_MESSAGE;
   if (v.length > OTHER_MAX_LENGTH) {
     return `Please keep this under ${OTHER_MAX_LENGTH} characters.`;
   }
@@ -214,7 +241,20 @@ export function normalizeAnswers(
       : question.kind === 'textarea'
         ? a.value.trim()
         : cleanLine(a.value);
-    const otherText = a.otherText ? cleanLine(a.otherText) : undefined;
+    // The write-in is kept only when an "Other…" option is actually
+    // chosen — the only case validation checks it. Anything else is
+    // dropped: the form can legitimately send a stale one (typed, then
+    // a different option picked), and a crafted payload could otherwise
+    // store unchecked text of any length against any question.
+    const otherChosen =
+      (question.kind === 'single' || question.kind === 'multi') &&
+      question.options.some(
+        (o) =>
+          o.isOther &&
+          (Array.isArray(value) ? value.includes(o.id) : value === o.id)
+      );
+    const otherText =
+      otherChosen && a.otherText ? cleanLine(a.otherText) : undefined;
     out[question.id] = otherText ? { value, otherText } : { value };
   }
   return out;

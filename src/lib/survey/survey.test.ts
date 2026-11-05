@@ -9,7 +9,12 @@ import {
   orderedOptions,
   normalizeSource
 } from './index';
-import { validateSubmission, validateAnswer, type Answers } from './validate';
+import {
+  normalizeAnswers,
+  validateSubmission,
+  validateAnswer,
+  type Answers
+} from './validate';
 import type { ConjointQuestion } from './types';
 import {
   encodeRound,
@@ -59,6 +64,26 @@ check(
 );
 // A scale one label short renders a point with no name, which is the
 // kind of thing nobody notices until the results are in.
+// A `scale` single choice is coloured by position in the given order,
+// so shuffling it would scramble the colours; and it renders no
+// "Please say more" box, so an "Other…" option on one could never be
+// completed.
+check(
+  'scale questions keep their given order and have no Other',
+  qs.every(
+    (q) =>
+      q.kind !== 'single' ||
+      !q.scale ||
+      ((q.order === undefined || q.order === 'given') &&
+        q.options.every((o) => !o.isOther))
+  )
+);
+check(
+  'offScale is only used on scale questions',
+  qs.every(
+    (q) => q.kind !== 'single' || q.scale || q.options.every((o) => !o.offScale)
+  )
+);
 check(
   'every likert scale labels every point',
   qs
@@ -187,10 +212,12 @@ check('Other stays last', orderedOptions(ai, 'x').slice(-1)[0].id === 'other');
 const sectors = qs.find((q) => q.id === 'sectors');
 if (!sectors || sectors.kind !== 'multi') throw new Error('sectors missing');
 const alpha = orderedOptions(sectors, 'x').map((o) => o.label);
+const alphaHead = alpha.slice(0, -1);
 check(
-  'sectors alphabetical',
-  JSON.stringify(alpha) ===
-    JSON.stringify([...alpha].sort((x, y) => x.localeCompare(y)))
+  'sectors alphabetical, Other last',
+  JSON.stringify(alphaHead) ===
+    JSON.stringify([...alphaHead].sort((x, y) => x.localeCompare(y))) &&
+    alpha[alpha.length - 1] === 'Other…'
 );
 
 // ---- ?source= --------------------------------------------------------
@@ -262,6 +289,67 @@ const inject = (mutate: (a: Answers) => void) => {
   mutate(a);
   return validateSubmission(SURVEY_2026, a, COUNTRIES);
 };
+// A payload is attacker-controlled JSON: the wrong types must be
+// rejected as answers, not crash validation into a 500.
+for (const [name, bad] of [
+  ['a number', { value: 5 }],
+  ['a bare string', 'product-designer'],
+  ['an array of numbers', { value: [1] }],
+  ['a non-string otherText', { value: 'other', otherText: 7 }]
+] as const) {
+  let threw = false;
+  let errs: ReturnType<typeof inject> = [];
+  try {
+    errs = inject((a) => {
+      (a as Record<string, unknown>)['role'] = bad;
+    });
+  } catch {
+    threw = true;
+  }
+  check(
+    `rejects ${name} as an answer without throwing`,
+    !threw && errs.some((e) => e.questionId === 'role')
+  );
+}
+
+// The write-in is stored only alongside an "Other…" choice, the one case
+// validation length-checks it. Otherwise it is dropped, so it cannot be
+// used to store unchecked text against any question.
+{
+  const a = goodAnswers();
+  a['role'] = { value: 'product-designer', otherText: 'x'.repeat(100_000) };
+  a['role-security'] = { value: '3', otherText: 'y' };
+  const stored = normalizeAnswers(SURVEY_2026, a);
+  check(
+    'otherText dropped unless Other is chosen',
+    stored['role'].otherText === undefined &&
+      stored['role-security'].otherText === undefined
+  );
+  const b = goodAnswers();
+  b['role'] = { value: 'other', otherText: '  Design engineer ' };
+  check(
+    'otherText kept when Other is chosen',
+    normalizeAnswers(SURVEY_2026, b)['role'].otherText === 'Design engineer'
+  );
+}
+
+// "=" at the start of a cell runs as a formula in a spreadsheet export.
+check(
+  'rejects free text starting with =',
+  inject((a) => {
+    a['metaphor'] = { value: ' =HYPERLINK("http://x")' };
+    a['one-change'] = { value: '=1+1' };
+    a['role'] = { value: 'other', otherText: '=cmd' };
+  }).filter((e) => ['metaphor', 'one-change', 'role'].includes(e.questionId))
+    .length === 3
+);
+check(
+  'allows = later in free text',
+  !inject((a) => {
+    a['metaphor'] = { value: 'a = b' };
+  }).some((e) => e.questionId === 'metaphor')
+);
+
 check(
   'rejects an option id that does not exist',
   inject((a) => {
@@ -283,14 +371,14 @@ check(
 check(
   'rejects likert out of range',
   inject((a) => {
-    a['pay'] = { value: '9' };
-  }).some((e) => e.questionId === 'pay')
+    a['role-security'] = { value: '9' };
+  }).some((e) => e.questionId === 'role-security')
 );
 check(
   'rejects non-numeric likert',
   inject((a) => {
-    a['pay'] = { value: '3; DROP TABLE' };
-  }).some((e) => e.questionId === 'pay')
+    a['role-security'] = { value: '3; DROP TABLE' };
+  }).some((e) => e.questionId === 'role-security')
 );
 // `what-matters` used to cap selections at three. The cap is gone from
 // the schema entirely, so this asserts the question now takes whatever

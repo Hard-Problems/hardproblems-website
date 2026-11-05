@@ -23,9 +23,8 @@ import {
 // POST /api/survey/submit
 // Body: { year, answers, source?, hp? }
 //
-// Stores one anonymous response in `survey_responses` and returns a
-// token the respondent can use to attach an email address afterwards
-// (see ../email) or to ask us to delete their response.
+// Stores one anonymous response in `survey_responses` and returns its
+// token, the row's random key.
 //
 // Security, in order of what each step stops:
 //
@@ -44,10 +43,8 @@ import {
 //   - no IP address is stored. The client IP is used for rate limiting
 //     and then discarded; Upstash holds only a counter against it.
 //   - the response is anonymous. Nothing here identifies a person, and
-//     the email address (if given at all) is written to a different
-//     table keyed by the token, so the two are not joined by default.
-//   - the token is returned to the respondent and to nobody else, which
-//     is what makes erasure possible without us knowing who they are.
+//     no email address is collected with it: the newsletter signup on
+//     the thank-you screen is the ordinary one, kept separate.
 
 export const dynamic = 'force-dynamic';
 

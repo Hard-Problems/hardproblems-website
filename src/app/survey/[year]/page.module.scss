@@ -267,23 +267,14 @@
 
 // --------------------------------------------------------------- scale
 
-// Both anchor labels sit UNDER the scale, at the end each one
-// describes.
-//
-// A grid rather than flex ordering: the markup is low-label, options,
-// high-label — the reading order a screen reader should get, since the
-// labels explain the scale before you meet it. Grid areas place them
-// visually without touching that order, so no CSS reordering trap.
-//
-// No media query: this works the same at every width, which the
-// side-by-side version could not — six options plus two labels in one
-// row left the options too narrow to tap on a phone.
-// A Likert scale: six named points in a row, low to high, so the shape
-// of the scale is visible at a glance and its order is obvious without
-// reading every label.
+// A scale — a likert, or a single choice with `scale` — as named,
+// coloured points in a row, low (red) to high (green), so the shape of
+// the scale is visible at a glance. `.scaleListed` stacks it instead,
+// and below 820px every scale stacks, green at the top.
 .scale {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  // Six for a likert; a `scale` single choice sets its own count.
+  grid-template-columns: repeat(var(--scale-points, 6), 1fr);
   gap: 0.4rem;
   margin-top: 1.5rem;
 }
@@ -812,6 +803,15 @@ $job-palettes: (
   text-underline-offset: 0.15em;
 }
 
+// Inline-block so the link's underline does not run under the icon.
+.conjointLinkIcon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.35em;
+  vertical-align: -0.15em;
+}
+
 // Shown once all the choices are made, in the site's green.
 .conjointDone {
   margin-top: 1.25rem;
@@ -834,11 +834,6 @@ $job-palettes: (
   &:focus {
     outline: none;
   }
-}
-
-.conjointLinkGap {
-  margin: 0 0.5rem;
-  color: #888;
 }
 
 .skipLink {
@@ -1179,6 +1174,10 @@ $job-palettes: (
     gap: 0.5rem;
   }
 
+  // Green goes at the top here: the markup is reordered for narrow
+  // screens in SurveyForm (useNarrow), not flipped with CSS, so the
+  // keyboard order matches what is on screen.
+
   .scalePoint {
     flex-direction: row;
     justify-content: flex-start;
@@ -1210,5 +1209,48 @@ $job-palettes: (
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+}
+
+// A stacked scale — `scale: 'list'` on a single choice, or `list` on a
+// likert — for labels too long to sit side by side. Doubled class so it
+// beats the desktop row rules above.
+.scale.scaleListed {
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+
+  .scalePoint {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    padding: 0.7rem 0.9rem;
+    text-align: left;
+    font-size: var(--font-size-sm);
+  }
+
+  .scalePoint > span {
+    flex: initial;
+    display: inline;
+  }
+}
+
+// "Can't choose": not a point on the scale, so no colour.
+.scale .scalePoint.scalePointOff {
+  border-color: #c9c9c9;
+  background: #fff;
+  color: #000;
+
+  &:hover {
+    border-color: #8f8f8f;
+    background: #f5f5f5;
+  }
+
+  input {
+    accent-color: #000;
+  }
+
+  &:has(input:checked) {
+    border-color: #000;
+    background: #ececec;
   }
 }

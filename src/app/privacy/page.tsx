@@ -357,31 +357,30 @@ export default function Page() {
           in the questionnaire is used to identify you.
         </p>
         <p>
-          When you submit the survey we store your answers along with a random
-          token, and a short label indicating where you found the link (for
-          example <em>smashing-magazine</em>, taken from the shared URL). The
-          token is shown only to you.
+          When you submit the survey we store your answers, the time you sent
+          them, and a short label indicating where you found the link (for
+          example <em>smashing-magazine</em>, taken from the shared URL). Until
+          you press &ldquo;Finish and send&rdquo;, your answers are kept only in
+          your own browser, so you can leave at any point and nothing is sent.
         </p>
         <p>
-          At the end you may optionally give us an email address to receive the
-          results, and separately choose whether to join our newsletter. That
-          address is stored in a different table from your answers, linked only
-          by the token, so the two are not joined together in normal use. Giving
-          an address is entirely optional — your answers are recorded either
-          way.
+          We do not collect your email address with the survey. If you join our
+          newsletter at the end, that is an ordinary newsletter signup, handled
+          like any other and kept entirely separate from your answers. We cannot
+          tell which response, if any, belongs to a subscriber.
         </p>
         <p>
           Our lawful basis for the anonymous answers is legitimate interest
           (understanding the design profession in order to publish research).
-          Our lawful basis for emailing you the results, and for the newsletter,
-          is your consent, which you can withdraw at any time.
+          Our lawful basis for the newsletter is your consent, which you can
+          withdraw at any time.
         </p>
         <p>
-          <strong>To have your survey response deleted</strong>, email us at{' '}
-          <em>contact@hardproblems.com</em> with the token shown to you when you
-          finished, or with the email address you gave us. Because the answers
-          themselves are anonymous, the token or that address is the only way we
-          can find your response.
+          <strong>Deleting a response.</strong> Because the answers are
+          anonymous, once they are sent we have no way to tell which response is
+          yours, so we cannot find or delete an individual response. Please do
+          not include personal details, such as your name or employer, in the
+          written answers.
         </p>
 
         <h3 className="space-top-large" id="keep">
@@ -408,14 +407,11 @@ export default function Page() {
         </p>
         <p>
           Anonymous survey answers are kept indefinitely so that each year can
-          be compared with the last. Email addresses given to receive the survey
-          results are deleted once that year&rsquo;s report has been sent,
-          unless you also asked to join the newsletter — in which case the
-          newsletter rules above apply.
+          be compared with the last.
         </p>
 
         <h3 className="space-top-large">Last updated</h3>
-        <p>16 October 2026</p>
+        <p>5 November 2026</p>
       </section>
       <section className="right">
         <h3 id="complain">How to complain</h3>

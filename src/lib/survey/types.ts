@@ -27,6 +27,12 @@ export type SurveyOption = {
    * alongside the option id, capped at OTHER_MAX_LENGTH.
    */
   isOther?: boolean;
+  /**
+   * On a `scale` question, an answer that is not a point on the scale
+   * ("Can't choose"). Shown in black rather than coloured, so it does
+   * not read as the far end of the scale.
+   */
+  offScale?: boolean;
 };
 
 /**
@@ -74,7 +80,7 @@ type BaseQuestion = {
   group?: string;
 };
 
-/** One choice from a list. Radio buttons; selecting one advances the step. */
+/** One choice from a list. Radio buttons, then Continue. */
 export type SingleQuestion = BaseQuestion & {
   kind: 'single';
   options: SurveyOption[];
@@ -88,6 +94,17 @@ export type SingleQuestion = BaseQuestion & {
    * exactly the same rule.
    */
   as?: 'radio' | 'select';
+  /**
+   * The options are a scale, best first: coloured green through to
+   * red, in the given order, like a likert. For a scale the 0–5 likert
+   * cannot hold — more points, or an off-scale answer. Options marked
+   * `offScale` are left out of the colour run.
+   *
+   * `'list'` stacks the options in the given order; `'row'` sets them
+   * side by side like a likert, reversed so red is on the left (a list
+   * again on narrow screens). Either way, list them best first here.
+   */
+  scale?: 'list' | 'row';
 };
 
 /** Several choices from a list. Checkboxes; needs an explicit Continue. */
@@ -119,6 +136,11 @@ export type LikertQuestion = BaseQuestion & {
    * get a scale nobody reads.
    */
   labels: readonly string[];
+  /**
+   * Stack the points, highest first (green at the top), instead of a
+   * row. Display only: the stored 0–5 values are unchanged.
+   */
+  list?: boolean;
 };
 
 /** Single-line free text. */
@@ -211,7 +233,7 @@ export type ConjointQuestion = BaseQuestion & {
   rounds: number;
   /**
    * Combinations that never appear on one card, because no real job
-   * looks like that — a non-profit whose mission is to grow a business,
+   * looks like that — a nonprofit whose mission is to grow a business,
    * a startup with 100 designers. Each entry maps attribute id → level
    * id, and a card matching every pair in an entry is redrawn.
    *

@@ -41,6 +41,7 @@ import {
   Copy,
   DoorOpen,
   Heart,
+  RotateCcw,
   Sparkles,
   Users,
   type LucideIcon
@@ -95,6 +96,32 @@ function storageKey(year: number) {
 function scaleHue(n: number): number {
   const t = (n - LIKERT_MIN) / (LIKERT_MAX - LIKERT_MIN);
   return Math.round(4 + t * (140 - 4));
+}
+
+// Below this width every scale is stacked, green at the top. Must match
+// the 819px breakpoint in page.module.scss.
+const NARROW_QUERY = '(max-width: 819px)';
+
+/**
+ * Whether scales are stacked because the screen is narrow.
+ *
+ * A row runs red to green, left to right; stacked, green belongs at
+ * the top. Flipping that with CSS alone would leave the DOM — and so
+ * Tab and the arrow keys — running from the bottom up, so the order is
+ * chosen here instead and the markup always matches what is on screen.
+ * False until mounted, so the server render and the first client
+ * render agree.
+ */
+function useNarrow(): boolean {
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(NARROW_QUERY);
+    const update = () => setNarrow(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+  return narrow;
 }
 
 function newSeed(): string {
@@ -428,9 +455,35 @@ export default function SurveyForm({
       const body = (await res.json()) as {
         ok: boolean;
         error?: string;
+        fields?: { questionId: string; message: string }[];
       };
       if (!res.ok || !body.ok) {
         setPhase('questions');
+        // The server names the questions it rejected. Take the
+        // respondent to the first one, with the message on it, rather
+        // than leaving them on the last step with no idea which earlier
+        // answer is wrong — e.g. one saved before its options changed.
+        const fields = body.fields ?? [];
+        const at = steps.findIndex((s) =>
+          s.some((q) => fields.some((f) => f.questionId === q.id))
+        );
+        if (at !== -1) {
+          goTo(at);
+          // The server's messages are generic ("Please choose one of the
+          // options."), so each is prefixed with the question it is
+          // about — a grouped step has several.
+          const found: Record<string, string> = {};
+          for (const q of steps[at]) {
+            const f = fields.find((x) => x.questionId === q.id);
+            if (f) {
+              found[q.id] =
+                `“${applyTerm(q.text, term, subject)}”: ${f.message}`;
+            }
+          }
+          setErrors(found);
+          setSubmitError(null);
+          return;
+        }
         setSubmitError(
           body.error ?? 'Something went wrong. Please try again in a moment.'
         );
@@ -516,11 +569,11 @@ export default function SurveyForm({
             reachable without reading a privacy notice first. */}
           <h2 className="section-label">Before you start</h2>
           <ul className={styles.startFacts}>
-            <li>~{survey.minutes} minutes to complete.</li>
-            <li>Answers are anonymous.</li>
-            <li>You could win a free book (see below).</li>
+            <li>~{survey.minutes} minutes to complete</li>
+            <li>Answers are anonymous</li>
+            <li>You could win a free book (see below)</li>
             <li>
-              Progress is saved in this browser, so you can stop and come back.
+              Progress saves in this browser, so you can stop &amp; come back
             </li>
           </ul>
           <button
@@ -576,8 +629,8 @@ export default function SurveyForm({
             </li>
           </ul>
           <p className={styles.privacyLine}>
-            See our <Link href="/privacy">privacy notice</Link> for how we
-            handle this data and how to ask us to delete it.
+            See our <Link href="/privacy#survey">privacy notice</Link> for how
+            we handle this data.
           </p>
         </div>
       </>
@@ -922,6 +975,7 @@ function QuestionBody({
   countries: readonly string[];
   onAnswer: (a: Answer) => void;
 }) {
+  const narrow = useNarrow();
   const hint = question.hint ? (
     <p className={styles.hint} id={hintId}>
       {question.hint}
@@ -1057,6 +1111,65 @@ function QuestionBody({
         options.length === 2 &&
         options.every((o) => o.id === 'yes' || o.id === 'no');
 
+      // A single choice that is a scale: the likert's coloured boxes,
+      // green for the first option through to red for the last one on
+      // the scale, stacked (`'list'`) or side by side (`'row'`). Off-
+      // scale answers ("Can't choose") are black, so they do not read
+      // as its far end.
+      if (question.kind === 'single' && question.scale) {
+        const points = options.filter((o) => !o.offScale);
+        const last = Math.max(points.length - 1, 1);
+        // A row runs worst to best, red on the left, the same way as a
+        // likert row; a list keeps the given order, best (green) first.
+        // Off-scale answers stay at the end either way.
+        // Stacked (a list, or any scale on a narrow screen), it keeps
+        // the given order, green at the top.
+        const shown =
+          question.scale === 'row' && !narrow
+            ? [...points].reverse().concat(options.filter((o) => o.offScale))
+            : options;
+        return (
+          <fieldset className={styles.fieldset} aria-describedby={describedBy}>
+            <legend className={styles.legend}>{title}</legend>
+            {hint}
+            <div
+              className={`${styles.scale} ${
+                question.scale === 'list' ? styles.scaleListed : ''
+              }`}
+              style={{ '--scale-points': options.length } as CSSProperties}
+            >
+              {shown.map((option) => {
+                const i = points.indexOf(option);
+                return (
+                  <label
+                    key={option.id}
+                    className={`${styles.scalePoint} ${
+                      option.offScale ? styles.scalePointOff : ''
+                    }`}
+                    style={
+                      option.offScale
+                        ? undefined
+                        : ({
+                            '--scale-hue': Math.round(140 - (i / last) * 136)
+                          } as CSSProperties)
+                    }
+                  >
+                    <input
+                      type="radio"
+                      name={question.id}
+                      value={option.id}
+                      checked={answer?.value === option.id}
+                      onChange={() => onAnswer({ value: option.id })}
+                    />
+                    <span>{option.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+        );
+      }
+
       return (
         <fieldset
           className={`${styles.fieldset} ${inGroup ? styles.groupFieldset : ''}`}
@@ -1119,15 +1232,22 @@ function QuestionBody({
       // choosing a description, not translating their feeling into a
       // digit and hoping we read it the same way.
       //
-      // Vertical, for the same reason: six labels will not fit across
-      // a reading column, and the row of numbered circles only worked
-      // because "3" is one character wide.
+      // A row by default, red on the left; `list` stacks it with green
+      // at the top, for labels too long to sit side by side. Phones
+      // always get a stack, green at the top — see the stylesheet.
       return (
         <fieldset className={styles.fieldset} aria-describedby={describedBy}>
           <legend className={styles.legend}>{title}</legend>
           {hint}
-          <div className={styles.scale}>
-            {question.labels.map((label, i) => {
+          <div
+            className={`${styles.scale} ${
+              question.list ? styles.scaleListed : ''
+            }`}
+          >
+            {(question.list || narrow
+              ? question.labels.map((label, i) => ({ label, i })).reverse()
+              : question.labels.map((label, i) => ({ label, i }))
+            ).map(({ label, i }) => {
               const n = String(LIKERT_MIN + i);
               return (
                 <label
@@ -1455,18 +1575,9 @@ function ConjointChoice({
           <button
             type="button"
             className={styles.conjointLink}
-            onClick={() => onAnswer({ value: kept.slice(0, -1) })}
-          >
-            Undo last choice
-          </button>
-          <span className={styles.conjointLinkGap} aria-hidden="true">
-            ·
-          </span>
-          <button
-            type="button"
-            className={styles.conjointLink}
             onClick={() => onAnswer({ value: [] })}
           >
+            <RotateCcw className={styles.conjointLinkIcon} aria-hidden="true" />
             Go back and choose jobs again
           </button>
         </div>

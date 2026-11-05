@@ -12,8 +12,13 @@ import type { SurveyDefinition } from './types';
 // `labels` runs low to high and must have LIKERT_POINTS entries — the
 // test asserts it, because a scale one label short silently renders a
 // point with no name.
-function likert(id: string, text: string, labels: readonly string[]) {
-  return { kind: 'likert' as const, id, text, labels };
+function likert(
+  id: string,
+  text: string,
+  labels: readonly string[],
+  display: { list?: boolean } = {}
+) {
+  return { kind: 'likert' as const, id, text, labels, ...display };
 }
 
 export const SURVEY_2026: SurveyDefinition = {
@@ -22,7 +27,7 @@ export const SURVEY_2026: SurveyDefinition = {
   minutes: 7,
   shortTitle: 'What we want from work',
   intro:
-    'We want to hear from designers, researchers, writers and product people about how they feel about their careers.',
+    'A survey for designers, researchers, writers and product people about how they feel about their careers.',
   image: '/images/content/thumb-survey-2026.jpg',
   opensAt: '2026-11-04T00:00:00.000Z',
   // Exclusive: the form closes as 30 November ends.
@@ -90,14 +95,29 @@ export const SURVEY_2026: SurveyDefinition = {
       ]
     },
 
-    likert('career-satisfaction', 'How satisfied are you in your career?', [
-      'Not satisfied at all',
-      'Mostly dissatisfied',
-      'Slightly dissatisfied',
-      'Slightly satisfied',
-      'Mostly satisfied',
-      'Extremely satisfied'
-    ]),
+    {
+      // A single choice rather than a likert: seven points plus "Can't
+      // choose", which the 0–5 likert shape cannot hold. `scale` gives
+      // it the likert's colours anyway, best (green) to worst (red), in
+      // the order given here.
+      kind: 'single',
+      id: 'career-satisfaction',
+      text: 'How satisfied are you in your (main) job?',
+      scale: 'list',
+      options: [
+        { id: 'completely-satisfied', label: 'Completely satisfied' },
+        { id: 'very-satisfied', label: 'Very satisfied' },
+        { id: 'fairly-satisfied', label: 'Fairly satisfied' },
+        {
+          id: 'neither',
+          label: 'Neither satisfied nor dissatisfied'
+        },
+        { id: 'fairly-dissatisfied', label: 'Fairly dissatisfied' },
+        { id: 'very-dissatisfied', label: 'Very dissatisfied' },
+        { id: 'completely-dissatisfied', label: 'Completely dissatisfied' },
+        { id: 'cant-choose', label: 'Can’t choose', offScale: true }
+      ]
+    },
     likert('role-security', 'How secure do you feel in your current role?', [
       'Very insecure',
       'Fairly insecure',
@@ -106,42 +126,64 @@ export const SURVEY_2026: SurveyDefinition = {
       'Fairly secure',
       'Rock solid'
     ]),
-    likert('skill', 'Are you skilled at your chosen career?', [
-      'Not skilled',
-      'Learning the basics',
-      'Competent',
-      'Skilled',
-      'Very skilled',
-      'Expert'
-    ]),
-    likert('passion', 'Are you passionate about your chosen career?', [
-      'Not passionate',
-      'Barely interested',
-      'Mildly interested',
-      'Quite passionate',
-      'Very passionate',
-      'Extremely passionate'
-    ]),
-    likert('pay', 'Do people in your career make enough money?', [
-      'Underpaid',
-      'Not quite enough',
-      'Just about enough',
-      'Reasonably paid',
-      'Well paid',
-      'Extremely well paid'
-    ]),
-    likert(
-      'benefit-to-world',
-      'Does your career feel like it benefits the world?',
-      [
-        'Not at all',
-        'Hardly at all',
-        'A little',
-        'Somewhat',
-        'Quite a lot',
-        'Enormously'
+    {
+      // Five points, so a coloured single choice rather than the 0–5
+      // likert.
+      kind: 'single',
+      id: 'skill',
+      text: 'In my opinion, I am good at my job',
+      scale: 'row',
+      options: [
+        { id: 'always', label: 'Always' },
+        { id: 'most-of-the-time', label: 'Most of the time' },
+        { id: 'sometimes', label: 'Sometimes' },
+        { id: 'rarely', label: 'Rarely' },
+        { id: 'never', label: 'Never' }
       ]
-    ),
+    },
+    {
+      // Same shape as 'skill' above.
+      kind: 'single',
+      id: 'passion',
+      text: 'You are enthusiastic about your job',
+      scale: 'row',
+      options: [
+        { id: 'always', label: 'Always' },
+        { id: 'most-of-the-time', label: 'Most of the time' },
+        { id: 'sometimes', label: 'Sometimes' },
+        { id: 'rarely', label: 'Rarely' },
+        { id: 'never', label: 'Never' }
+      ]
+    },
+    {
+      // Five points, so a coloured single choice like 'skill'.
+      kind: 'single',
+      id: 'pay',
+      text: 'Considering all my efforts and achievements in my job, I feel I get paid appropriately',
+      scale: 'row',
+      options: [
+        { id: 'strongly-agree', label: 'Strongly agree' },
+        { id: 'tend-to-agree', label: 'Tend to agree' },
+        { id: 'neither', label: 'Neither' },
+        { id: 'tend-to-disagree', label: 'Tend to disagree' },
+        { id: 'strongly-disagree', label: 'Strongly disagree' }
+      ]
+    },
+    {
+      // Five points plus "Can't choose", like 'career-satisfaction'.
+      kind: 'single',
+      id: 'benefit-to-world',
+      text: 'My job is useful to society',
+      scale: 'row',
+      options: [
+        { id: 'strongly-agree', label: 'Strongly agree' },
+        { id: 'agree', label: 'Agree' },
+        { id: 'neither', label: 'Neither agree nor disagree' },
+        { id: 'disagree', label: 'Disagree' },
+        { id: 'strongly-disagree', label: 'Strongly disagree' },
+        { id: 'cant-choose', label: 'Can’t choose', offScale: true }
+      ]
+    },
 
     // Choice-based conjoint — see ConjointQuestion in types.ts. Placed
     // BEFORE "What matters most to you?" so the stated priorities
@@ -229,7 +271,7 @@ export const SURVEY_2026: SurveyDefinition = {
             { id: 'public', label: 'Public sector', noun: 'department' },
             {
               id: 'nonprofit',
-              label: 'Non-profit or charity',
+              label: 'Nonprofit or charity',
               noun: 'charity'
             }
           ]
@@ -375,7 +417,9 @@ export const SURVEY_2026: SurveyDefinition = {
         'Leaning towards staying',
         'Probably',
         'Definitely working in this field'
-      ]
+      ],
+      // Stacked: the labels are long for a row.
+      { list: true }
     ),
 
     {
@@ -419,14 +463,19 @@ export const SURVEY_2026: SurveyDefinition = {
       ]
     },
 
-    likert('ai-usage', 'How much is AI being used in your day-to-day work?', [
-      'I never use AI',
-      'I rarely use AI',
-      'I use AI occasionally',
-      'I use AI regularly',
-      'I use AI daily',
-      'I use AI most of the time'
-    ]),
+    likert(
+      'ai-usage',
+      'How much is AI being used in your day-to-day work?',
+      [
+        'I never use AI',
+        'I rarely use AI',
+        'I use AI occasionally',
+        'I use AI regularly',
+        'I use AI daily',
+        'I use AI most of the time'
+      ],
+      { list: true }
+    ),
 
     {
       kind: 'multi',
@@ -477,9 +526,9 @@ export const SURVEY_2026: SurveyDefinition = {
       options: [
         { id: 'student', label: 'Student' },
         { id: 'recent-graduate', label: 'Recent graduate' },
-        { id: '1-5', label: '1–5 years' },
-        { id: '5-10', label: '5–10 years' },
-        { id: '10-20', label: '10–20 years' },
+        { id: '1-4', label: '1–4 years' },
+        { id: '5-9', label: '5–9 years' },
+        { id: '10-19', label: '10–19 years' },
         { id: '20-plus', label: '20+ years' }
       ]
     },
@@ -498,10 +547,10 @@ export const SURVEY_2026: SurveyDefinition = {
       text: 'How big is your company or organisation?',
       options: [
         { id: '1', label: 'Just me' },
-        { id: '2-10', label: '2–10' },
-        { id: '11-50', label: '11–50' },
-        { id: '50-250', label: '50–250' },
-        { id: '250-1000', label: '250–1,000' },
+        { id: '2-9', label: '2–9' },
+        { id: '10-49', label: '10–49' },
+        { id: '50-249', label: '50–249' },
+        { id: '250-999', label: '250–999' },
         { id: '1000-plus', label: '1,000+' }
       ]
     },
@@ -512,10 +561,10 @@ export const SURVEY_2026: SurveyDefinition = {
       group: 'about-you',
       text: 'How many designers work at your company or organisation?',
       options: [
-        { id: '1-5', label: '1–5' },
-        { id: '5-10', label: '5–10' },
-        { id: '10-20', label: '10–20' },
-        { id: '20-50', label: '20–50' },
+        { id: '1-4', label: '1–4' },
+        { id: '5-9', label: '5–9' },
+        { id: '10-19', label: '10–19' },
+        { id: '20-49', label: '20–49' },
         { id: '50-plus', label: '50+' }
       ]
     },
@@ -535,7 +584,7 @@ export const SURVEY_2026: SurveyDefinition = {
         { id: 'agency', label: 'Agency' },
         { id: 'in-house', label: 'In-house at a non-tech company' },
         { id: 'public-sector', label: 'Public sector' },
-        { id: 'nonprofit', label: 'Non-profit' },
+        { id: 'nonprofit', label: 'Nonprofit' },
         { id: 'self-employed', label: 'Self-employed' },
         { id: 'other', label: 'Other…', isOther: true }
       ]
@@ -546,7 +595,8 @@ export const SURVEY_2026: SurveyDefinition = {
       id: 'sectors',
       text: 'What are the main sectors you work in?',
       hint: 'Choose as many as you like.',
-      order: 'alpha',
+      // Alphabetical, with "Other…" kept last.
+      order: 'alphaExceptLast',
       options: [
         { id: 'government', label: 'Government' },
         { id: 'enterprise-software', label: 'Enterprise software' },
@@ -562,14 +612,17 @@ export const SURVEY_2026: SurveyDefinition = {
         { id: 'nonprofit', label: 'Nonprofit or charity' },
         { id: 'telecommunications', label: 'Telecommunications' },
         { id: 'consumer-tech', label: 'Consumer tech' },
-        { id: 'automotive', label: 'Automotive' }
+        { id: 'automotive', label: 'Automotive' },
+        { id: 'other', label: 'Other…', isOther: true }
       ]
     },
 
     {
       kind: 'textarea',
       id: 'one-change',
-      text: 'If you could change one thing about the design industry, what would it be?',
+      // "working in {term}" rather than "the {term} industry": the
+      // latter breaks for most terms ("the startups industry").
+      text: 'If you could change one thing about working in {term}, what would it be?',
       hint: 'Optional — you can skip this and finish.',
       optional: true,
       maxLength: 2000
