@@ -523,7 +523,8 @@ export default function SurveyForm({
             {/* Questions, not steps. `total` is the step count now that
               some steps hold several questions, and "21 questions"
               would be a straightforwardly wrong promise. */}
-            <li>{survey.questions.length} questions.</li>
+            <li>{survey.questions.length} questions, about 7 minutes.</li>
+            <li>Every answer is anonymous.</li>
             <li>
               Your progress is saved in this browser, so you can stop and come
               back.
@@ -1769,6 +1770,9 @@ function PrizeDraw({
           We will draw {PRIZE.copies} newsletter subscribers randomly after the
           survey closes on {closesShort}.
         </p>
+        <p className={styles.prizeNote}>
+          Thank you to Scott and Bryan for gifting us the books to give out.
+        </p>
         {/* A disclosure rather than a separate page: the terms are
             short, and a prize draw's terms should be readable where
             the prize is offered rather than one click away. */}
@@ -1817,8 +1821,9 @@ function PrizeDraw({
               our <Link href="/privacy">privacy notice</Link>.
             </li>
             <li>
-              The draw is not sponsored, endorsed or administered by{' '}
-              {PRIZE.authors} or their publisher.
+              {PRIZE.authors} kindly donated the books. The draw is run entirely
+              by Hard Problems; neither they nor their publisher administer it
+              or choose the winners.
             </li>
             <li>
               Entering means accepting these terms. The draw is governed by the
@@ -1834,9 +1839,9 @@ function PrizeDraw({
 function ThankYou({ survey }: { survey: SurveyDefinition }) {
   const shareUrl = `https://www.hardproblems.com/survey/${survey.year}?source=share`;
   // Quoted, because the title is a question: unquoted it would read
-  // "I took the Is Design a Good Career? survey". The leading "The" of
-  // a statement-style title is dropped so a future year does not read
-  // "the “The …” survey".
+  // "I took the Are design and product good careers? survey". The
+  // leading "The" of a statement-style title is dropped so a future
+  // year does not read "the “The …” survey".
   const shareText = `I took the “${survey.title.replace(/^The /, '')}” survey and you should too! ${shareUrl} Please re-share.`;
   const [copied, setCopied] = useState(false);
 

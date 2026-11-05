@@ -157,6 +157,19 @@ export default function Page() {
             <b className="grid-link">Aarron Walter</b>
             <p className="grid-detail">For a free subscription to Curious.</p>
           </a>
+
+          <a className="grid-cell" href="/articles/why-design-is-hard">
+            <Image
+              src="/images/illustration-thanks.svg"
+              width="120"
+              height="120"
+              alt="Illustration of hands in a heart shape."
+            />
+            <b className="grid-link">Scott Berkun &amp; Bryan Zug</b>
+            <p className="grid-detail">
+              For gifting us copies of their book <i>Why Design Is Hard</i>.
+            </p>
+          </a>
         </div>
       </section>
     </>

@@ -350,7 +350,7 @@ export default function Page() {
         <p>
           Once a year we run a survey about working in design (for example,{' '}
           <Link href="/survey/2026">
-            “Is Design a Good Career? And Product?”
+            “Are design and product good careers?”
           </Link>
           ). Your answers are <strong>anonymous</strong>. We do not ask who you
           are, we do not record your IP address with your answers, and nothing

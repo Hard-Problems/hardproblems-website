@@ -1,4 +1,4 @@
-// The 2026 "Is Design a Good Career? And Product?" survey.
+// The 2026 "Are design and product good careers?" survey.
 //
 // Pure data — see types.ts for why. To run this again next year, copy
 // this file to 2027.ts, change the dates, adjust the questions, and
@@ -18,9 +18,9 @@ function likert(id: string, text: string, labels: readonly string[]) {
 
 export const SURVEY_2026: SurveyDefinition = {
   year: 2026,
-  title: 'Is Design a Good Career? And Product?',
+  title: 'Are design and product good careers?',
   intro:
-    'We are asking designers, researchers, writers and product people whether design and product are still good careers. Seven minutes, and every answer is anonymous.',
+    'We want to hear from designers, researchers, writers and product people about how they feel about their career paths.',
   image: '/images/content/thumb-survey-2026.jpg',
   opensAt: '2026-11-04T00:00:00.000Z',
   // Exclusive: the form closes as 30 November ends.
@@ -37,6 +37,7 @@ export const SURVEY_2026: SurveyDefinition = {
   roleTerms: {
     'product-designer': 'design',
     'graphic-designer': 'design',
+    'brand-designer': 'design',
     illustrator: 'illustration',
     'motion-designer': 'motion design',
     'service-designer': 'service design',
@@ -71,7 +72,8 @@ export const SURVEY_2026: SurveyDefinition = {
       order: 'alphaExceptLast',
       options: [
         { id: 'product-designer', label: 'Digital Product Designer' },
-        { id: 'graphic-designer', label: 'Graphic/Brand Designer' },
+        { id: 'graphic-designer', label: 'Graphic Designer' },
+        { id: 'brand-designer', label: 'Brand Designer' },
         { id: 'illustrator', label: 'Illustrator' },
         { id: 'motion-designer', label: 'Motion Designer' },
         { id: 'service-designer', label: 'Service Designer' },
@@ -81,7 +83,7 @@ export const SURVEY_2026: SurveyDefinition = {
         { id: 'ui-designer', label: 'UI Designer' },
         { id: 'design-writer', label: 'Writer' },
         { id: 'product-manager', label: 'Product Manager' },
-        { id: 'founder', label: 'Founder' },
+        { id: 'founder', label: 'Founder/business' },
         { id: 'other', label: 'Other…', isOther: true }
       ]
     },
