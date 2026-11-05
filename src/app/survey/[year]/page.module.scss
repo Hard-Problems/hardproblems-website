@@ -53,45 +53,6 @@
   padding-bottom: 0.2rem;
 }
 
-// The title line, with a Back button out in the left gutter on wide
-// screens.
-//
-// Back lives in the progress row by default, next to "Step 4 of 21",
-// which is where it belongs when the column is the whole screen. Once
-// the window is wide enough to leave a margin beside the column, it
-// moves out into that margin level with the title and the progress-row
-// copy is hidden. Only one is ever rendered to assistive tech — the
-// other is display: none.
-.titleRow {
-  position: relative;
-}
-
-// `.titleRow .titleBack`, not `.titleBack` alone: this button also
-// carries the global `black-button` classes, and globals.css styles
-// those as `button.black-button` — specificity (0,1,1), which beats a
-// lone class. Written as one class this rule lost every time and the
-// button showed at every width.
-.titleRow .titleBack {
-  display: none;
-  flex-shrink: 0;
-}
-
-// Overriding two things the global button does on hover.
-//
-// `button.titleBack` rather than `.titleBack`: globals.css writes its
-// hover as `button.black-button:hover:not(:disabled)`, and an element
-// in the selector outranks a plain class at the same count. These have
-// to carry one more class and the element to win — see the same
-// problem solved on the display rule above.
-.titleRow button.titleBack {
-  // The arrow points back, so it should travel back. Sliding right on
-  // a ← is the animation contradicting the glyph.
-  &:hover:not(:disabled) > span,
-  &:focus-visible > span {
-    transform: translateX(-3px);
-  }
-}
-
 .kicker {
   font-family: var(--font-mono);
   font-size: var(--font-size-mono);
@@ -103,8 +64,15 @@
 
 // ---------------------------------------------------------------- start
 
+// The intro sits close under the title on the start screen. The gap is
+// the intro's own 16px top margin: the title's bottom margin and this
+// panel's top margin would otherwise collapse with it into 40px.
 .startPanel {
-  margin-top: 2.5rem;
+  margin-top: 0;
+}
+
+.survey h1:global(.page-title):has(+ .startPanel) {
+  margin-bottom: 0;
 }
 
 // Illustration on the landing screen, with the intro and the
@@ -158,70 +126,10 @@
   margin-bottom: 0;
 }
 
-// ------------------------------------------------------------- progress
-
-.progress {
-  margin-bottom: 2rem;
-}
-
-// Back on the left, the count on the right, both under the bar and on
-// one baseline.
-.progressRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-top: 0.6rem;
-}
-
-.progressLabel {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: var(--font-size-mono);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #555;
-}
-
-.progressTrack {
-  height: 6px;
-  border-radius: 100px;
-  background: #e8e8e8;
-  overflow: hidden;
-}
-
-.progressBar {
-  height: 100%;
-  background: var(--color-dark-green);
-  // Eases as the respondent moves between steps; a bar that jumps is
-  // harder to read as progress.
-  transition: width 0.25s ease;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .progressBar {
-    transition: none;
-  }
-}
-
 // ------------------------------------------------------------- the step
 
 .step {
   margin-top: 2rem;
-}
-
-.backLink {
-  display: inline-block;
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  font: inherit;
-  font-size: var(--font-size-sm);
-  color: var(--color-link);
-  // No underline, matching Exit survey in the header: the arrow beside
-  // it already marks it as a control.
-  text-decoration: none;
 }
 
 .questionHeading {
@@ -280,8 +188,8 @@
 }
 
 // Yes and No share a line: two short, opposed answers read faster
-// beside each other than stacked, and stacking them wasted a whole row
-// of a grouped step.
+// beside each other than stacked. Only on a step of its own — grouped
+// steps stack them like every other option (see the form).
 //
 // Sized rather than split across the column. Two words do not need
 // 280px each, and a pair of boxes that wide reads as two separate
@@ -294,35 +202,6 @@
   > * {
     flex: 0 1 9rem;
   }
-}
-
-// Short ordered scales — "1–5", "Just me", "20+ years" — flowing across
-// the column and wrapping, rather than one per row.
-//
-// Stacked, the three scales on the "About you" step came to 17 rows and
-// pushed that one step to two and a half screens. They are read as a
-// scale, not compared one against the next, so a row of them loses
-// nothing and the whole step fits in view.
-//
-// A grid, not content-sized chips: equal columns are what line the
-// radios up vertically down the step. Sized to content they landed
-// wherever each label ended, so the three scales read as three ragged
-// rows rather than one set of columns.
-//
-// `auto-fit` keeps that true at any width — the column count falls as
-// the viewport narrows, and every question on the step picks the same
-// count, because they share the column. 10.5rem is set by the longest
-// label, "Recent graduate", which has to fit one line beside its
-// radio.
-//
-// Yes/No is deliberately not this: it has its own .optionsInline, and
-// two opposed answers want to sit together rather than take a quarter
-// of the row each.
-.optionsWrap {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
-  row-gap: 1px;
-  column-gap: 0;
 }
 
 // A whole-row target rather than just the control: GDS sizes these for
@@ -630,10 +509,10 @@
 
 // ------------------------------------------------------------ conjoint
 
-// One palette per job. Each job keeps its colours for as long as it
-// stays in play — so the one someone keeps choosing is recognisable
-// round to round — and every challenger arrives in a new one. A run of
-// 8 choices meets 9 jobs, hence 9 palettes (JOB_PALETTES in the form).
+// One palette per job. Every pick brings two new jobs in two new
+// palettes, so the change of colour says "new pair". 9 palettes (an
+// odd number, JOB_PALETTES in the form) means the two cards on screen
+// never share one, and nor does a pair with the one before it.
 // `ink` is dark enough for white button text; `accent` is the band
 // and the icons. Everything coloured on a card reads these variables.
 $job-palettes: (
@@ -846,12 +725,10 @@ $job-palettes: (
   }
 }
 
-// A new job arrives obviously: the whole card flashes in its own
-// colour and settles to white, while its lines slide up into place one
-// after another, top to bottom (`--row`, set per cell by the form).
-// Only a new job's cells are new elements — the form keys them by job —
-// so the job that stays put does not move at all, which is what makes
-// it clear which one is new.
+// A new pair arrives obviously: each card flashes in its own colour
+// and settles to white, while its lines slide up into place one after
+// another, top to bottom (`--row`, set per cell by the form). The form
+// keys cells by job, so every pick brings new elements and a replay.
 .conjointFresh {
   animation:
     conjointFlash 0.9s ease-out both,
@@ -897,7 +774,6 @@ $job-palettes: (
   flex-shrink: 0;
   // Optically centred on the first line of text.
   margin-top: 0.1rem;
-  // The job's colour on a card; the winner card has none, so green.
   color: var(--job-accent, var(--color-mid-green));
 }
 
@@ -936,21 +812,21 @@ $job-palettes: (
   text-underline-offset: 0.15em;
 }
 
-// In the winning job's colours, the ones it carried through the rounds.
-.conjointWinner {
+// Shown once all the choices are made, in the site's green.
+.conjointDone {
   margin-top: 1.25rem;
   padding: 1.25rem;
-  border: 1px solid var(--job-accent, var(--color-dark-green));
+  border: 1px solid var(--color-dark-green);
   border-radius: 10px;
-  background: color-mix(
-    in srgb,
-    var(--job-accent, var(--color-mid-green)) 7%,
-    #fff
-  );
+  background: color-mix(in srgb, var(--color-mid-green) 7%, #fff);
+
+  .conjointLink {
+    margin-top: 0;
+  }
 }
 
-.conjointWinnerHeading {
-  margin: 0 0 0.75rem 0;
+.conjointDoneHeading {
+  margin: 0 0 0.5rem 0;
   font-family: var(--font-sans);
   font-size: 1.1rem;
   font-weight: 600;
@@ -960,30 +836,9 @@ $job-palettes: (
   }
 }
 
-.conjointWinnerList {
-  display: grid;
-  gap: 0.35rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: var(--font-size-sm);
-
-  // The site gives list items their own spacing; the grid gap is the
-  // spacing here.
-  li {
-    margin: 0;
-  }
-
-  .conjointHeadline {
-    font-size: 1.15rem;
-    font-weight: 600;
-  }
-
-  .conjointSubtitle {
-    margin-top: -0.25rem;
-    margin-bottom: 0.3rem;
-    color: #444;
-  }
+.conjointLinkGap {
+  margin: 0 0.5rem;
+  color: #888;
 }
 
 .skipLink {
@@ -1105,6 +960,15 @@ $job-palettes: (
   border-radius: 10px;
 }
 
+// On the start screen the card sits in the page's own flow, with no
+// box: it is part of the introduction there, not a panel beside it.
+// Unpadded so the cover and words line up with the text above.
+.prize.prizeOpen {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+}
+
 // No border, radius or shadow: the cover is already a photograph of a
 // book sitting on white, and it reads as an object on its own. An edge
 // would only draw a box around the photo's own white margin.
@@ -1137,6 +1001,15 @@ $job-palettes: (
   font-weight: 600;
   letter-spacing: 0;
   margin: 1rem 0 0.5rem 0;
+}
+
+// On the start screen, the same size as the page's other section
+// titles ("Before you start", "Your privacy" — `.section-label` in
+// globals.css).
+.prizeOpen .prizeHeading {
+  font-size: 1.3rem;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
 }
 
 .prizeNote {
@@ -1276,41 +1149,16 @@ $job-palettes: (
   }
 }
 
-// Compact chrome while answering.
-// ====================================================================
-// Between the top of the page and the first question sat the site
-// header, 48px of page padding, the kicker, a 48px title, and the
-// progress block's margins — pushing the question to y=305 on a laptop.
-// None of that is what someone is here to read on question 14.
-//
-// So in focus mode every band above the question gives up space: the
-// title drops to a size that still identifies the survey without
-// competing with the question below it, and the gaps close. The markup
-// is unchanged — this is only about how much room it takes.
+// While answering, the title, progress bar and Back sit in the header
+// bar (SurveyHeader, laid out in globals.css), so the question opens
+// the page.
 :global(body.survey-focus) {
   .survey {
-    padding-top: 1rem;
-  }
-
-  .kicker {
-    margin-bottom: 0.25rem;
-  }
-
-  .survey h1:global(.page-title) {
-    font-size: 1.5rem;
-    line-height: 1.15;
-    margin-bottom: 0.35rem;
-    // The landing page's extra 0.2rem does not belong here — this
-    // band is deliberately compact so the question sits high.
-    padding-bottom: 0;
+    padding-top: 2.5rem;
   }
 
   .step {
-    margin-top: 0.75rem;
-  }
-
-  .progress {
-    margin-bottom: 2.5rem;
+    margin-top: 0;
   }
 }
 
@@ -1338,67 +1186,6 @@ $job-palettes: (
     padding: 0.7rem 0.9rem;
     text-align: left;
     font-size: var(--font-size-sm);
-  }
-}
-
-// Back beside the title, from 1024px — see .titleRow.
-//
-// At the END of the file on purpose: `.backLink` sets its own
-// `display` further up, and at equal specificity the later rule wins
-// whether or not the earlier one is inside a media query. Written
-// above its definition, this hid nothing.
-@media only screen and (min-width: 1024px) {
-  // Out of the flow entirely, so the title keeps the column's left
-  // edge and lines up with everything under it. `right: 100%` puts the
-  // button's right edge on the column's left edge; the margin is then
-  // the gap between them.
-  //
-  // 1024px is where the gutter first fits it. The column is capped at
-  // 48rem, so the space to its left is (viewport - 768) / 2: about
-  // 144px at this width against the ~124px the button and its gap
-  // need. Below that it would reach past the edge of the window, which
-  // is why the progress row keeps it until then.
-  .titleRow .titleBack {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4em;
-    position: absolute;
-    right: 100%;
-    margin-right: 1.5rem;
-    top: 50%;
-    transform: translateY(-50%);
-
-    // The global button lifts by 1px on hover, which is right for
-    // Continue — it reinforces moving forward — but wrong for a fixed
-    // landmark out in the margin that you are trying to aim at.
-    //
-    // Repeating the centring value rather than `transform: none`:
-    // `none` would also drop the translateY above and drop the button
-    // half its own height down the page the moment a pointer touched
-    // it.
-    &:hover:not(:disabled),
-    &:focus-visible {
-      transform: translateY(-50%);
-      // And no drop shadow. The element does not move a pixel with the
-      // transform pinned above, but the global hover shadow is offset
-      // 4px DOWNWARD, which reads as the button rising off the page —
-      // the lift it was meant to accompany. Removing the motion while
-      // keeping its shadow just leaves the illusion behind.
-      box-shadow: none;
-    }
-  }
-
-  // The progress row keeps the step count; its Back would be a second
-  // control doing the same job a few pixels below.
-  .backLink {
-    display: none;
-  }
-
-  // With Back gone the row has one child left, and `space-between`
-  // puts a lone child at the START — the step count slid to the left
-  // edge. Pin it to the right, where it was.
-  .progressRow {
-    justify-content: flex-end;
   }
 }
 

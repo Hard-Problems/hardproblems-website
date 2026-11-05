@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { SquarePlay, Headphones, Sparkle } from 'lucide-react';
+import { ArrowRight, SquarePlay, Headphones, Sparkle } from 'lucide-react';
 import {
   type Article,
   articleTypeSlug,
@@ -26,7 +26,8 @@ export default function ArticleCard({
   hero = false,
   hideDate = false,
   href,
-  kickerLabel
+  imageCta,
+  durationLabel
 }: {
   article: Article;
   compact?: boolean;
@@ -42,11 +43,17 @@ export default function ArticleCard({
    */
   href?: string;
   /**
-   * A kicker that is a plain label rather than a link to
-   * /articles/type/<type>. The survey needs one — it is not an article
-   * type, and linking it would point at a page that 404s.
+   * A call to action set over the image, styled as a button: "Take the
+   * survey". Not a separate control — the whole card is already the
+   * link, and a link inside a link is invalid HTML — so it is a span
+   * that looks like a button and responds to hovering the card.
    */
-  kickerLabel?: string;
+  imageCta?: string;
+  /**
+   * The words after "N min" on the meta line, in place of read / watch
+   * / podcast: the survey's "7 min survey".
+   */
+  durationLabel?: string;
 }) {
   const articleTypeLower = article.articleType?.toLowerCase();
   const isVideo = articleTypeLower === 'video';
@@ -71,19 +78,15 @@ export default function ArticleCard({
         compact ? styles.articleCardCompact : ''
       } ${hero ? styles.articleCardHero : ''}`}
     >
-      {(isNew || article.articleType || kickerLabel) && (
+      {(isNew || article.articleType) && (
         <div className={styles.articleCardKicker}>
-          {kickerLabel ? (
-            <span className={styles.articleType}>{kickerLabel}</span>
-          ) : (
-            article.articleType && (
-              <Link
-                href={`/articles/type/${articleTypeSlug(article.articleType)}`}
-                className={styles.articleType}
-              >
-                {article.articleType}
-              </Link>
-            )
+          {article.articleType && (
+            <Link
+              href={`/articles/type/${articleTypeSlug(article.articleType)}`}
+              className={styles.articleType}
+            >
+              {article.articleType}
+            </Link>
           )}
           {isNew && (
             <span className={styles.articleCardNew}>
@@ -138,6 +141,15 @@ export default function ArticleCard({
                 Watch
               </span>
             )}
+            {imageCta && (
+              <span className={styles.articleCardCta}>
+                {imageCta}
+                <ArrowRight
+                  className={styles.articleCardCtaIcon}
+                  aria-hidden="true"
+                />
+              </span>
+            )}
             {isPodcast && (
               <span className={styles.articleCardBadge}>
                 <Headphones
@@ -155,7 +167,8 @@ export default function ArticleCard({
               {article.readingTime ? (
                 <>
                   {article.readingTime} min{' '}
-                  {isVideo ? 'watch' : isPodcast ? 'podcast' : 'read'}
+                  {durationLabel ??
+                    (isVideo ? 'watch' : isPodcast ? 'podcast' : 'read')}
                 </>
               ) : null}
               {article.readingTime && showDate && (

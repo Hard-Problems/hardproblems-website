@@ -1,5 +1,5 @@
-// Choice-based conjoint: building the job cards, pairing them "winner
-// stays on", and the stored form of an answer.
+// Choice-based conjoint: building the job cards, pairing them (two
+// fresh cards every round), and the stored form of an answer.
 //
 // Pure and server/client safe, like the rest of this folder. The form
 // uses it to decide what to show next; validate.ts uses it to check a
@@ -73,10 +73,6 @@ export function sameCard(x: Card, y: Card): boolean {
   );
 }
 
-export function winnerOf(round: Round): Card {
-  return round.pick === 'a' ? round.a : round.b;
-}
-
 export function isExcluded(q: ConjointQuestion, card: Card): boolean {
   return (q.exclude ?? []).some((combo) =>
     Object.entries(combo).every(([attr, level]) => card[attr] === level)
@@ -119,20 +115,20 @@ function drawCard(q: ConjointQuestion, rand: () => number, rival?: Card): Card {
 }
 
 /**
- * The two cards for the next choice, given the choices made so far.
+ * The two cards for the next choice.
  *
- * Deterministic from the seed, the round number and the picks, so
- * going back and forward through the survey shows the same cards. The
- * first round is two fresh cards; after that the last pick stays and
- * meets a new challenger.
+ * Deterministic from the seed and the round number, so going back and
+ * forward through the survey shows the same cards. Every round is two
+ * fresh cards, independent of earlier picks.
  *
- * The pick stays on the side it was picked from, and the challenger
- * takes the other. This used to be random, on the theory that a card
- * that sits still invites people to keep it out of inertia. But each
- * job carries its own colours on screen, so the incumbent is easy to
- * follow wherever it sits, and shuffling it only made the page jump
- * about. Any general lean to one side is still measured: the analysis
- * fits a position term.
+ * This used to be "winner stays on": the pick stayed and met a new
+ * challenger. That halved the reading, but people tend to stick with
+ * a job they have already chosen, and that stickiness would have
+ * leaked into the attribute weights; later rounds also became lopsided
+ * (a strong incumbent against a random card), and a lopsided choice
+ * says little. Independent pairs are the standard design and keep each
+ * choice a clean comparison. Any lean to one side is still measured:
+ * the analysis fits a position term.
  */
 export function nextPair(
   q: ConjointQuestion,
@@ -140,16 +136,8 @@ export function nextPair(
   rounds: readonly Round[]
 ): { a: Card; b: Card } {
   const rand = seededRandom(`${seed}:${q.id}:${rounds.length}`);
-  if (rounds.length === 0) {
-    const a = drawCard(q, rand);
-    return { a, b: drawCard(q, rand, a) };
-  }
-  const last = rounds[rounds.length - 1];
-  const champion = winnerOf(last);
-  const challenger = drawCard(q, rand, champion);
-  return last.pick === 'a'
-    ? { a: champion, b: challenger }
-    : { a: challenger, b: champion };
+  const a = drawCard(q, rand);
+  return { a, b: drawCard(q, rand, a) };
 }
 
 /** The stored strings, parsed. Null if any round is malformed. */
@@ -169,10 +157,10 @@ export function parseRounds(
 /**
  * Check a complete answer. Returns an error message, or null.
  *
- * Beyond the per-card allowlisting, it checks the answer is a real
- * "winner stays on" run: two different cards each time, no card that
- * the exclusions forbid, and each round's pick present in the next
- * round. A payload that fails any of these was not made by our form.
+ * Beyond the per-card allowlisting, it checks the right number of
+ * rounds, two different cards each time and no card that the
+ * exclusions forbid. A payload that fails any of these was not made by
+ * our form.
  */
 export function validateConjoint(
   q: ConjointQuestion,
@@ -185,14 +173,9 @@ export function validateConjoint(
   if (value.length > q.rounds) return invalid;
   const rounds = parseRounds(q, value);
   if (!rounds) return invalid;
-  for (let i = 0; i < rounds.length; i++) {
-    const r = rounds[i];
+  for (const r of rounds) {
     if (sameCard(r.a, r.b)) return invalid;
     if (isExcluded(q, r.a) || isExcluded(q, r.b)) return invalid;
-    if (i > 0) {
-      const prev = winnerOf(rounds[i - 1]);
-      if (!sameCard(prev, r.a) && !sameCard(prev, r.b)) return invalid;
-    }
   }
   return null;
 }

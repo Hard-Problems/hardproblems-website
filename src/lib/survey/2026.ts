@@ -1,4 +1,4 @@
-// The 2026 "Are design and product good careers?" survey.
+// The 2026 "What we want from work" survey.
 //
 // Pure data — see types.ts for why. To run this again next year, copy
 // this file to 2027.ts, change the dates, adjust the questions, and
@@ -18,9 +18,11 @@ function likert(id: string, text: string, labels: readonly string[]) {
 
 export const SURVEY_2026: SurveyDefinition = {
   year: 2026,
-  title: 'Are design and product good careers?',
+  title: 'What we want from work: A Design & Product Survey',
+  minutes: 7,
+  shortTitle: 'What we want from work',
   intro:
-    'We want to hear from designers, researchers, writers and product people about how they feel about their career paths.',
+    'We want to hear from designers, researchers, writers and product people about how they feel about their careers.',
   image: '/images/content/thumb-survey-2026.jpg',
   opensAt: '2026-11-04T00:00:00.000Z',
   // Exclusive: the form closes as 30 November ends.
@@ -153,7 +155,7 @@ export const SURVEY_2026: SurveyDefinition = {
       kind: 'conjoint',
       id: 'job-choice',
       text: 'Which job would you take?',
-      hint: 'Imagine you are offered both jobs. Your pick stays, and a new job challenges it — 8 choices to find your winner.',
+      hint: 'Imagine you are offered both jobs. Pick the one you would prefer.',
       rounds: 8,
       attributes: [
         {
@@ -190,8 +192,18 @@ export const SURVEY_2026: SurveyDefinition = {
           id: 'level',
           label: 'Level',
           levels: [
-            { id: 'same', label: 'Same level as now', short: 'Same level' },
-            { id: 'promotion', label: 'A promotion', short: 'Promotion' }
+            {
+              id: 'same',
+              label: 'Same level as now',
+              short: 'Same level',
+              icon: 'arrow-right'
+            },
+            {
+              id: 'promotion',
+              label: 'A promotion',
+              short: 'Promotion',
+              icon: 'arrow-up'
+            }
           ]
         },
         {
@@ -288,7 +300,10 @@ export const SURVEY_2026: SurveyDefinition = {
       ],
       card: [
         { attributes: ['work'], subtitle: true },
-        { attributes: ['pay', 'level'], icon: 'banknote', strong: true },
+        { attributes: ['pay'], icon: 'banknote', strong: true },
+        // The icon comes from the level: up for a promotion, across
+        // for the same level.
+        { attributes: ['level'], strong: true },
         { attributes: ['brand'], icon: 'building' },
         { attributes: ['mission'], icon: 'heart' }
       ]
@@ -297,11 +312,10 @@ export const SURVEY_2026: SurveyDefinition = {
     {
       kind: 'multi',
       id: 'what-matters',
-      text: 'What matters most to you?',
-      // A suggestion, not a rule — nothing enforces the number. The
-      // selection cap that used to back wording like this was removed
-      // from the schema entirely.
-      hint: 'Choose 2–3 criteria that matter to you most.',
+      // "2–3" is a suggestion, not a rule — nothing enforces the number.
+      // The selection cap that used to back wording like this was
+      // removed from the schema entirely.
+      text: 'What 2–3 matter most to you?',
       order: 'shuffle',
       options: [
         { id: 'craft', label: 'Craft' },
@@ -511,6 +525,8 @@ export const SURVEY_2026: SurveyDefinition = {
       id: 'org-type',
       text: 'What type of organisation do you work at?',
       hint: 'Choose the one that fits you best.',
+      // Alphabetical so it is scannable; "Other…" stays last.
+      order: 'alphaExceptLast',
       options: [
         { id: 'startup', label: 'Startup' },
         { id: 'scale-up', label: 'Scale-up' },

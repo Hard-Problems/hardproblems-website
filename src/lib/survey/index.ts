@@ -234,13 +234,14 @@ export function surveyAsArticle(survey: SurveyDefinition): Article {
     publishedAt: opens,
     updatedAt: opens,
     status: 'published',
-    // Empty so the card renders no type link; the caller supplies
-    // `kickerLabel` instead.
+    // Empty so the card renders no type link — the survey is not an
+    // article type, and /articles/type/ would 404.
     articleType: '',
     topics: [],
     organizations: [],
     people: [],
-    readingTime: 5,
+    // Shown on the card as "7 min survey" — see durationLabel.
+    readingTime: survey.minutes,
     featured: false,
     image: survey.image,
     imageAlt: `${survey.title} — take part`,

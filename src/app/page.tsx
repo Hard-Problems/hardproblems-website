@@ -97,7 +97,8 @@ export default async function Home() {
     <ArticleCard
       article={surveyAsArticle(survey)}
       href={`/survey/${survey.year}`}
-      kickerLabel="Survey"
+      imageCta="Take the survey"
+      durationLabel="survey"
     />
   ) : heroArticle ? (
     <ArticleCard article={heroArticle} />

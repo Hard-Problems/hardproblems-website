@@ -98,7 +98,7 @@ export default async function SurveyPage({ params, searchParams }: Props) {
             {/* While open, SurveyForm renders the title itself so the
                 thank-you screen can change it. */}
             <p className={styles.kicker}>Survey</p>
-            <h1 className="page-title">{survey.title}</h1>
+            <h1 className="page-title">{survey.shortTitle ?? survey.title}</h1>
             <p className="intro">{survey.intro}</p>
             <ClosedNotice survey={survey} />
           </>

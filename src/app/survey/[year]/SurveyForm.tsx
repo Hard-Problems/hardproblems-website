@@ -31,6 +31,9 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import {
+  ArrowDown,
+  ArrowRight,
+  ArrowUp,
   Banknote,
   Briefcase,
   Building2,
@@ -62,8 +65,6 @@ import {
   encodeRound,
   nextPair,
   parseRounds,
-  sameCard,
-  winnerOf,
   type Card,
   type Side
 } from '../../../lib/survey/conjoint';
@@ -481,22 +482,17 @@ export default function SurveyForm({
   // site-wide page-title treatment: Instrument Serif at the article-title
   // size, left aligned — the same class /conduct, /privacy, /events and
   // the job permalinks use, so the survey leads the way every page does.
-  // The masthead takes an optional Back control, shown beside the title
-  // on wide screens — see .titleRow. Only the question steps pass one:
-  // there is nowhere to go back to from the start screen, and the
-  // thank-you page is past the point of going back at all.
-  const mastheadWith = (back?: ReactNode) => (
+  // On the question steps the title moves up into the header bar
+  // instead — see SurveyHeader.
+  const shortTitle = survey.shortTitle ?? survey.title;
+  const masthead = (
     <>
       <p className={styles.kicker}>Survey</p>
-      <div className={styles.titleRow}>
-        {back}
-        <h1 className="page-title">
-          {phase === 'done' ? 'Thank you!' : survey.title}
-        </h1>
-      </div>
+      <h1 className="page-title">
+        {phase === 'done' ? 'Thank you!' : shortTitle}
+      </h1>
     </>
   );
-  const masthead = mastheadWith();
 
   // ---- start ---------------------------------------------------------
   if (phase === 'start') {
@@ -520,14 +516,11 @@ export default function SurveyForm({
             reachable without reading a privacy notice first. */}
           <h2 className="section-label">Before you start</h2>
           <ul className={styles.startFacts}>
-            {/* Questions, not steps. `total` is the step count now that
-              some steps hold several questions, and "21 questions"
-              would be a straightforwardly wrong promise. */}
-            <li>{survey.questions.length} questions, about 7 minutes.</li>
-            <li>Every answer is anonymous.</li>
+            <li>~{survey.minutes} minutes to complete.</li>
+            <li>Answers are anonymous.</li>
+            <li>You could win a free book (see below).</li>
             <li>
-              Your progress is saved in this browser, so you can stop and come
-              back.
+              Progress is saved in this browser, so you can stop and come back.
             </li>
           </ul>
           <button
@@ -629,7 +622,7 @@ export default function SurveyForm({
   // finished when the last one lands. Until then Continue cannot do
   // anything except fail validation ("Please make all N choices."), so
   // it is held back rather than shown as a button that only errors.
-  // Once the winner is revealed it returns, as the way onward.
+  // Once the last choice is made it returns, as the way onward.
   const pending = current.find(
     (q) =>
       q.kind === 'conjoint' &&
@@ -643,59 +636,21 @@ export default function SurveyForm({
 
   return (
     <>
-      {mastheadWith(
-        <button
-          type="button"
-          className={`black-button black-button--small ${styles.titleBack}`}
-          onClick={goBack}
-        >
-          <span aria-hidden="true">←</span> Back
-        </button>
-      )}
+      {/* The visible title is in the header bar; the page still needs
+          its <h1> for anyone navigating by headings. */}
+      <h1 className="sr-only">{shortTitle}</h1>
+      {headerEl &&
+        createPortal(
+          <SurveyHeader
+            title={shortTitle}
+            step={step}
+            total={total}
+            onExit={() => setPhase('start')}
+            onBack={goBack}
+          />,
+          headerEl
+        )}
       <div className={styles.step}>
-        {headerEl &&
-          createPortal(
-            // A plain class, not a module one: globals.css places it in
-            // the header grid, and a hashed name could not be targeted
-            // from there.
-            //
-            // Back to the survey's own first screen rather than off the
-            // site — "exit" here means step out of the questionnaire, and
-            // the answers stay saved in this browser, so Start picks up
-            // where they left off.
-            <button
-              type="button"
-              className="survey-exit"
-              onClick={() => setPhase('start')}
-            >
-              {/* aria-hidden: the word beside it already says what this
-                does, so announcing the icon would just repeat it. */}
-              <DoorOpen className="survey-exit-icon" aria-hidden="true" />
-              {/* The second word goes on a phone, along with the icon —
-                  see globals.css. Marked up rather than swapped in JS,
-                  so the server and the client render the same thing. */}
-              Exit<span className="survey-word-long"> survey</span>
-            </button>,
-            headerEl
-          )}
-        {headerEl &&
-          createPortal(
-            // Top right, mirroring Exit. A new tab on purpose: this is
-            // the one thing someone part-way through a form may
-            // reasonably want to read, and navigating away to read it
-            // would drop them out of the questionnaire.
-            <a
-              className="survey-privacy"
-              href="/privacy"
-              target="_blank"
-              rel="noopener"
-            >
-              Privacy<span className="survey-word-long"> policy</span>
-            </a>,
-            headerEl
-          )}
-        <Progress step={step} total={total} onBack={goBack} />
-
         {errorList.length > 0 && (
           <div
             className={styles.errorSummary}
@@ -841,46 +796,101 @@ function flatten(answers: Answers): Record<string, unknown> {
   return out;
 }
 
-function Progress({
+/**
+ * The survey's own header, portalled into the site header bar while
+ * someone is answering (focus mode — see `body.survey-focus` in
+ * globals.css, which hides the site's own logo and navigation and lays
+ * these pieces out on the header's grid):
+ *
+ *   Exit survey     Survey: <title> by Hard Problems.     Privacy policy
+ *   ─────────────────────── progress bar ───────────────────────────────
+ *   ← Back                    STEP 4 OF 22
+ *
+ * The progress bar takes the place of the header's bottom rule. Plain
+ * class names, not module ones: globals.css places them on the header
+ * grid, and a hashed name could not be targeted from there.
+ */
+function SurveyHeader({
+  title,
   step,
   total,
+  onExit,
   onBack
 }: {
+  title: string;
   step: number;
   total: number;
+  /** Back to the survey's own first screen; the answers stay saved. */
+  onExit: () => void;
   /**
    * Always present. On the first step it goes to the survey's opening
-   * screen rather than nowhere — that screen holds the intro, the
-   * prize draw and the privacy notice, so it is somewhere worth being
-   * able to get back to.
+   * screen — that screen holds the intro, the prize draw and the
+   * privacy notice, so it is somewhere worth being able to get back to.
    */
   onBack: () => void;
 }) {
-  const done = step; // questions completed, not counting the current one
-  const pct = Math.round((done / total) * 100);
+  // Counts the current step, so step 1 already shows some progress and
+  // the last step fills the bar.
+  const pct = Math.round(((step + 1) / total) * 100);
   return (
-    <div className={styles.progress}>
-      {/* The bar is decorative — the count below it is the accessible
-          version, so this is hidden rather than announced twice. */}
-      <div className={styles.progressTrack} aria-hidden="true">
-        <div className={styles.progressBar} style={{ width: `${pct}%` }} />
+    <>
+      {/* "Exit" here means step out of the questionnaire, not off the
+          site — Start picks up where they left off. */}
+      <button type="button" className="survey-exit" onClick={onExit}>
+        {/* aria-hidden: the word beside it already says what this does. */}
+        <DoorOpen className="survey-exit-icon" aria-hidden="true" />
+        {/* The second word goes on a phone, along with the icon — see
+            globals.css. Marked up rather than swapped in JS, so the
+            server and the client render the same thing. */}
+        Exit<span className="survey-word-long"> survey</span>
+      </button>
+
+      {/* Not a heading: the page's <h1> is in the content (sr-only),
+          and the question below is what someone is here to read. The
+          site logo is hidden in focus mode, so this carries it — still
+          linking home, still the logo's type and green full stop. */}
+      <p className="survey-header-title">
+        <span className="survey-header-name">
+          <span className="survey-word-long">Survey: </span>
+          {title}
+        </span>{' '}
+        <span className="survey-header-by">
+          by{' '}
+          <Link href="/" className="site-logo survey-header-logo">
+            Hard Problems<span className="hp-period">.</span>
+          </Link>
+        </span>
+      </p>
+
+      {/* A new tab on purpose: the one thing someone part-way through a
+          form may reasonably want to read, without leaving it. */}
+      <a
+        className="survey-privacy"
+        href="/privacy"
+        target="_blank"
+        rel="noopener"
+      >
+        Privacy<span className="survey-word-long"> policy</span>
+      </a>
+
+      {/* Decorative — the count below is the accessible version. */}
+      <div className="survey-progress" aria-hidden="true">
+        <div className="survey-progress-bar" style={{ width: `${pct}%` }} />
       </div>
-      <div className={styles.progressRow}>
-        {/* An empty span on question 1 rather than nothing, so
-            space-between still pushes the count to the right edge
-            instead of letting it slide left. */}
-        {onBack ? (
-          <button type="button" className={styles.backLink} onClick={onBack}>
-            ← Back
-          </button>
-        ) : (
-          <span />
-        )}
-        <p className={styles.progressLabel}>
+
+      <div className="survey-step-row">
+        <button
+          type="button"
+          className="black-button black-button--small survey-back"
+          onClick={onBack}
+        >
+          <span aria-hidden="true">←</span> Back
+        </button>
+        <p className="survey-step-count">
           Step {step + 1} of {total}
         </p>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -1038,25 +1048,14 @@ function QuestionBody({
       // options rather than flagged in the definition, so any question
       // that is genuinely a yes/no gets it without anyone remembering
       // to say so — and a question that stops being one loses it.
+      //
+      // Not on a grouped step ("About you"): there every option stacks,
+      // Yes/No included, as one column to run down.
       const yesNo =
+        !inGroup &&
         question.kind === 'single' &&
         options.length === 2 &&
         options.every((o) => o.id === 'yes' || o.id === 'no');
-
-      // A short ordered scale on a grouped step flows across the column
-      // instead of stacking — see .optionsWrap. Grouped steps only,
-      // because that is where the row count actually hurts; a question
-      // that owns its own step has the room to stack.
-      //
-      // "Other…" is excluded: it owns a text field that appears beneath
-      // it when chosen, which needs the full width of the column.
-      const compactScale =
-        !yesNo &&
-        inGroup &&
-        question.kind === 'single' &&
-        options.length <= 8 &&
-        !options.some((o) => o.isOther) &&
-        options.every((o) => o.label.length <= 16);
 
       return (
         <fieldset
@@ -1066,9 +1065,7 @@ function QuestionBody({
           <legend className={styles.legend}>{title}</legend>
           {hint}
           <div
-            className={`${styles.options} ${yesNo ? styles.optionsInline : ''} ${
-              compactScale ? styles.optionsWrap : ''
-            }`}
+            className={`${styles.options} ${yesNo ? styles.optionsInline : ''}`}
           >
             {options.map((option) => (
               <OptionRow
@@ -1253,7 +1250,7 @@ function QuestionBody({
 
 /**
  * "Which job would you take?" — two built job cards, side by side, and
- * the pick stays on to meet the next challenger. See ConjointQuestion
+ * a fresh pair after every pick. See ConjointQuestion
  * in types.ts for why the cards are built rather than real jobs, and
  * conjoint.ts for how they are drawn and stored.
  *
@@ -1301,15 +1298,18 @@ function ConjointChoice({
 
   // The choose buttons vanish when the last pick is made, which would
   // drop keyboard focus onto the page body. Move it to the result.
-  const winnerRef = useRef<HTMLHeadingElement>(null);
+  const doneRef = useRef<HTMLHeadingElement>(null);
   const wasDone = useRef(done);
   useEffect(() => {
-    if (done && !wasDone.current) winnerRef.current?.focus();
+    if (done && !wasDone.current) doneRef.current?.focus();
     wasDone.current = done;
   }, [done]);
 
   const lines = cardLines(question);
-  const jobs = jobNumbers(rounds, pair);
+  // Each job gets its own palette: round r shows jobs 2r and 2r+1, so
+  // the two cards always differ, and so does each new pair from the
+  // last — the colour change is what says "new jobs".
+  const jobs = { a: rounds.length * 2, b: rounds.length * 2 + 1 };
   const palette = (n: number) => styles[`jobPalette${n % JOB_PALETTES}`];
 
   function choose(pick: Side) {
@@ -1358,10 +1358,9 @@ function ConjointChoice({
                 <thead>
                   <tr>
                     <td className="sr-only" />
-                    {/* Cells are keyed by job number: the job that stays is
-                      the same element round to round, so only the
-                      challenger's cells are new — and only they animate
-                      in. `--row` staggers them top to bottom. */}
+                    {/* Cells are keyed by job number, so each new pair is
+                      new elements and animates in. `--row` staggers the
+                      lines top to bottom. */}
                     <th
                       key={`a-${jobs.a}`}
                       scope="col"
@@ -1409,10 +1408,8 @@ function ConjointChoice({
                   <tr>
                     <td className="sr-only" />
                     {(['a', 'b'] as const).map((side) => (
-                      // Keyed by job too, so the new job's button arrives
-                      // with its card. The clicked button belongs to the
-                      // job that stays, so it keeps its element — and
-                      // keyboard focus.
+                      // Keyed by job too, so each button arrives with its
+                      // card.
                       <td
                         key={`${side}-${jobs[side]}`}
                         className={`${palette(jobs[side])} ${styles.conjointFresh}`}
@@ -1447,33 +1444,30 @@ function ConjointChoice({
           )}
         </>
       ) : (
-        <div className={`${styles.conjointWinner} ${palette(jobs.winner)}`}>
+        <div className={styles.conjointDone}>
           <h3
-            className={styles.conjointWinnerHeading}
+            className={styles.conjointDoneHeading}
             tabIndex={-1}
-            ref={winnerRef}
+            ref={doneRef}
           >
-            Your winner
+            All {question.rounds} choices made
           </h3>
-          {/* The same job ad as the cards, so the winner is recognisably
-              the one they kept choosing. */}
-          <ul className={styles.conjointWinnerList}>
-            {lines.map((line, n) => (
-              <li key={line.key} className={cardRowClass(line, n)}>
-                <CardLine
-                  line={line}
-                  card={winnerOf(rounds[rounds.length - 1])}
-                  all={question.attributes}
-                />
-              </li>
-            ))}
-          </ul>
+          <button
+            type="button"
+            className={styles.conjointLink}
+            onClick={() => onAnswer({ value: kept.slice(0, -1) })}
+          >
+            Undo last choice
+          </button>
+          <span className={styles.conjointLinkGap} aria-hidden="true">
+            ·
+          </span>
           <button
             type="button"
             className={styles.conjointLink}
             onClick={() => onAnswer({ value: [] })}
           >
-            Make these choices again
+            Go back and choose jobs again
           </button>
         </div>
       )}
@@ -1489,36 +1483,10 @@ function rowStyle(row: number): CSSProperties {
 /** How many palettes page.module.scss defines (.jobPalette0…). */
 const JOB_PALETTES = 9;
 
-/**
- * Which job each card is, numbered in order of first appearance, so
- * each job keeps its own colours for as long as it stays in play: the
- * first two cards are jobs 0 and 1, and every challenger after that is
- * a new number. A full run of 8 choices meets 9 jobs.
- */
-function jobNumbers(
-  rounds: readonly { a: Card; b: Card; pick: Side }[],
-  pair: { a: Card; b: Card } | null
-): { a: number; b: number; winner: number } {
-  let champion = 0;
-  const numbered = (round: number, a: Card, b: Card, held: Card | null) => {
-    if (round === 0 || !held) return { a: 0, b: 1 };
-    return sameCard(a, held)
-      ? { a: champion, b: round + 1 }
-      : { a: round + 1, b: champion };
-  };
-  let held: Card | null = null;
-  rounds.forEach((r, i) => {
-    const n = numbered(i, r.a, r.b, held);
-    champion = r.pick === 'a' ? n.a : n.b;
-    held = winnerOf(r);
-  });
-  const now = pair
-    ? numbered(rounds.length, pair.a, pair.b, held)
-    : { a: champion, b: champion };
-  return { ...now, winner: champion };
-}
-
 const CARD_ICONS: Record<ConjointIcon, LucideIcon> = {
+  'arrow-down': ArrowDown,
+  'arrow-right': ArrowRight,
+  'arrow-up': ArrowUp,
   banknote: Banknote,
   briefcase: Briefcase,
   building: Building2,
@@ -1610,7 +1578,13 @@ function CardLine({
   /** Every attribute, so a line can borrow another's `noun`. */
   all: ConjointQuestion['attributes'];
 }) {
-  const Icon = line.icon ? CARD_ICONS[line.icon] : null;
+  // A level's own icon wins over the line's, on a line of one
+  // attribute: the arrow for the level shown.
+  const only = line.attributes.length === 1 ? line.attributes[0] : null;
+  const icon =
+    (only && only.levels.find((l) => l.id === card[only.id])?.icon) ??
+    line.icon;
+  const Icon = icon ? CARD_ICONS[icon] : null;
   const words = line.titles
     ? [
         line.titles.find((t) =>
@@ -1745,7 +1719,7 @@ function PrizeDraw({
     // A div, not a <section>: the site-wide `.container section` rule
     // adds 42px/84px padding on wide screens and outranks `.prize`. An
     // unlabelled section is not a landmark anyway, so nothing is lost.
-    <div className={styles.prize}>
+    <div className={`${styles.prize} ${large ? styles.prizeOpen : ''}`}>
       {/* A real alt, not alt="": the cover is what is on offer, so it
           carries information rather than decorating the words. */}
       <Image
@@ -1838,11 +1812,9 @@ function PrizeDraw({
 
 function ThankYou({ survey }: { survey: SurveyDefinition }) {
   const shareUrl = `https://www.hardproblems.com/survey/${survey.year}?source=share`;
-  // Quoted, because the title is a question: unquoted it would read
-  // "I took the Are design and product good careers? survey". The
-  // leading "The" of a statement-style title is dropped so a future
-  // year does not read "the “The …” survey".
-  const shareText = `I took the “${survey.title.replace(/^The /, '')}” survey and you should too! ${shareUrl} Please re-share.`;
+  // The full title already ends in "Survey", so it is not followed by
+  // another "survey". Quoted so the title reads as a name.
+  const shareText = `I took “${survey.title}” and you should too! ${shareUrl} Please re-share.`;
   const [copied, setCopied] = useState(false);
 
   return (

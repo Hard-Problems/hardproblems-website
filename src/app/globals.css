@@ -2003,24 +2003,187 @@ body.survey-focus .site-header {
      sat tight under the header on mobile and comfortably clear of it
      everywhere else. One value at every width. */
   margin: 0 0 2rem 0;
-  /* Asymmetric on purpose — see the note on body padding above. */
-  padding: 8px 0 24px;
+  /* No bottom padding or rule: the survey's progress bar is the line
+     under the title row now, and the Back/step row sits below it. */
+  padding: 8px 0 0;
   /* The rule above the logo closes a band that no longer exists — the
      rotating tagline above it is hidden in focus mode, so the border
-     was drawing a line under nothing. The bottom border stays: it
-     separates the logo from the survey. */
+     was drawing a line under nothing. */
   border-top: 0;
+  border-bottom: 0;
+  row-gap: 0;
+  /* The base header centres its items below 1000px; the progress bar
+     and the Back row need the full width. Each top-row item places
+     itself. */
+  justify-items: stretch;
 }
 
-body.survey-focus .site-logo {
-  /* `grid-row: 1` on both items is what keeps them on one line. The
-     exit link is portalled in AFTER the logo, so with auto row
-     placement the grid cursor had already moved past row 1 and dropped
-     it onto a second row beneath. */
+/* The site's own logo steps aside: the survey's title line in the
+   middle of the header (SurveyHeader) carries it, as "… by Hard
+   Problems." The child combinator matters — the survey's copy of the
+   logo also has the class, nested inside the title. */
+body.survey-focus .site-header > .site-logo {
+  display: none;
+}
+
+/* "Survey: What we want from work by Hard Problems." — the survey's
+   name in bold, then the logo exactly as it looks everywhere else.
+   `grid-row: 1` on every top-row item: they are portalled in after the
+   logo, and auto placement would otherwise start them on a new row. */
+/* Exit, the title and Privacy share a text baseline rather than being
+   centred as boxes. Centred boxes still looked uneven: the title is
+   Helvetica (the logo's face) and the links are the site font, whose
+   letters sit at different heights inside their line boxes, so the
+   title read as a few pixels higher. A common baseline is what the eye
+   reads as level. */
+body.survey-focus .survey-exit,
+body.survey-focus .survey-header-title,
+body.survey-focus .survey-privacy {
+  align-self: baseline;
+}
+
+/* Exit's baseline has to come from its words, not its icon. A flex
+   row takes its baseline from the first item that is baseline-aligned
+   — and failing that, from the first item, here the icon, whose
+   "baseline" is its bottom edge. So the words align by baseline and
+   the icon centres itself beside them. */
+body.survey-focus .site-header .survey-exit {
+  align-items: baseline;
+}
+
+body.survey-focus .survey-exit-icon {
+  align-self: center;
+}
+
+body.survey-focus .survey-header-title {
   grid-column: 2;
   grid-row: 1;
   justify-self: center;
-  font-size: 1.2rem;
+  margin: 0;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.02rem;
+  text-align: center;
+  color: #333;
+}
+
+body.survey-focus .survey-header-name {
+  font-weight: 700;
+}
+
+/* Inline, at the title's size — the global .site-logo is a block at
+   the page logo's size. Colour, weight and the green full stop (and
+   its nudge on hover) come from .site-logo. */
+body.survey-focus .survey-header-logo {
+  display: inline;
+  font-size: inherit;
+  line-height: inherit;
+  text-decoration: none;
+}
+
+/* The progress bar, in place of the header's bottom rule. */
+body.survey-focus .survey-progress {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  height: 4px;
+  margin-top: 24px;
+  border-radius: 100px;
+  background: #e8e8e8;
+  overflow: hidden;
+}
+
+body.survey-focus .survey-progress-bar {
+  height: 100%;
+  background: var(--color-mid-green);
+  /* Eases between steps; a bar that jumps is harder to read as
+     progress. */
+  transition: width 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.survey-focus .survey-progress-bar {
+    transition: none;
+  }
+}
+
+/* Back on the left edge, the step count centred under the title. */
+body.survey-focus .survey-step-row {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+body.survey-focus .survey-back {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+/* The global button lifts and casts a shadow on hover, which suits
+   Continue but not a fixed landmark you are aiming at. Here the arrow
+   slides back instead — the way it points. */
+body.survey-focus button.survey-back:hover:not(:disabled),
+body.survey-focus button.survey-back:focus-visible {
+  transform: none;
+  box-shadow: none;
+}
+
+body.survey-focus .survey-back > span {
+  transition: transform 0.2s ease;
+}
+
+body.survey-focus button.survey-back:hover:not(:disabled) > span,
+body.survey-focus button.survey-back:focus-visible > span {
+  transform: translateX(-3px);
+}
+
+body.survey-focus .survey-step-count {
+  grid-column: 2;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #555;
+  white-space: nowrap;
+}
+
+/* Below desktop the three top-row items would squeeze the title, so
+   "by Hard Problems." drops to a second line under the survey's name. */
+@media only screen and (max-width: 999px) {
+  body.survey-focus .survey-header-by {
+    display: block;
+    font-size: 0.85em;
+  }
+}
+
+/* On a phone: smaller type, and the title loses its "Survey:" prefix
+   (it is a .survey-word-long, hidden below). The step count moves to
+   the right, clear of Back, rather than squeezing in beside it. */
+@media only screen and (max-width: 600px) {
+  body.survey-focus .survey-header-title {
+    font-size: 0.9rem;
+  }
+
+  body.survey-focus .survey-progress {
+    margin-top: 16px;
+  }
+
+  body.survey-focus .survey-step-row {
+    grid-template-columns: auto 1fr;
+    margin-top: 1rem;
+  }
+
+  body.survey-focus .survey-step-count {
+    justify-self: end;
+  }
 }
 
 /* The way out, top left. Quiet on purpose: visible to anyone looking

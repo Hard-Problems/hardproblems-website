@@ -17,7 +17,6 @@ import {
   nextPair,
   parseRounds,
   sameCard,
-  winnerOf,
   type Card,
   type Round
 } from './conjoint';
@@ -207,7 +206,7 @@ check('source capped', normalizeSource('a'.repeat(500)).length === 64);
 check('source empty', normalizeSource(null) === '');
 
 // ---- conjoint helpers -------------------------------------------------
-// Plays a whole "winner stays on" run the way the form does, with
+// Plays a whole run of choices the way the form does, with
 // `choose` standing in for the respondent.
 function playConjoint(
   q: ConjointQuestion,
@@ -474,14 +473,25 @@ check(
 }
 
 {
-  // The pick stays on the side it was picked from.
-  const rounds = parseRounds(
+  // Every round is a fresh pair: the pick does not carry over, and
+  // the pairs do not depend on which side was picked.
+  const byB = parseRounds(
     jobQ,
-    playConjoint(jobQ, 'sides', (_a, _b) => 'b')
+    playConjoint(jobQ, 'fresh', () => 'b')
+  )!;
+  const byA = parseRounds(
+    jobQ,
+    playConjoint(jobQ, 'fresh', () => 'a')
   )!;
   check(
-    'conjoint pick keeps its side',
-    rounds.slice(1).every((r, i) => sameCard(r.b, winnerOf(rounds[i])))
+    'conjoint pick does not carry into the next pair',
+    byB
+      .slice(1)
+      .every((r, i) => !sameCard(r.a, byB[i].b) && !sameCard(r.b, byB[i].b))
+  );
+  check(
+    'conjoint pairs do not depend on the picks',
+    byA.every((r, i) => sameCard(r.a, byB[i].a) && sameCard(r.b, byB[i].b))
   );
 }
 
@@ -509,10 +519,21 @@ check(
   }) !== null
 );
 check(
-  'conjoint rejects a broken winner chain',
+  'conjoint rejects two identical cards',
   validateAnswer(jobQ, {
-    value: [goodRun[0], ...playConjoint(jobQ, 'other', () => 'a').slice(1)]
+    value: [
+      `${goodRun[0].split('|')[0]}|${goodRun[0].split('|')[0]}|a`,
+      ...goodRun.slice(1)
+    ]
   }) !== null
+);
+check(
+  'conjoint accepts a run saved under winner-stays-on',
+  validateAnswer(jobQ, {
+    value: goodRun.map((r, i) =>
+      i === 0 ? r : `${goodRun[i - 1].split('|')[1]}|${r.split('|')[1]}|b`
+    )
+  }) === null
 );
 check(
   'conjoint rejects a bad pick',
@@ -599,17 +620,6 @@ check(
       promo.moneyEquivalent > 8 &&
       promo.moneyEquivalent < 20,
     `${promo?.moneyEquivalent?.toFixed(1)}%`
-  );
-  // Winner chain is respected by the simulation too.
-  const one = parseRounds(jobQ, responses[0].answers['job-choice'].value)!;
-  check(
-    'simulated run keeps the winner each round',
-    one.every(
-      (r, i) =>
-        i === 0 ||
-        sameCard(winnerOf(one[i - 1]), r.a) ||
-        sameCard(winnerOf(one[i - 1]), r.b)
-    )
   );
 }
 

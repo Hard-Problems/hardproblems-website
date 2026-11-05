@@ -170,6 +170,22 @@ export default function Page() {
               For gifting us copies of their book <i>Why Design Is Hard</i>.
             </p>
           </Link>
+
+          <a
+            className="grid-cell"
+            href="https://www.linkedin.com/in/matthew-gieve-2050b135b/"
+          >
+            <Image
+              src="/images/illustration-thanks.svg"
+              width="120"
+              height="120"
+              alt="Illustration of hands in a heart shape."
+            />
+            <b className="grid-link">Matt Gieve</b>
+            <p className="grid-detail">
+              For helping us with our annual survey.
+            </p>
+          </a>
         </div>
       </section>
     </>

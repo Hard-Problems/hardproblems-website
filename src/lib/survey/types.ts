@@ -172,6 +172,12 @@ export type ConjointAttribute = {
      */
     noun?: string;
     /**
+     * The icon for this level, in place of its line's `icon` — so a
+     * line can show which way something goes: up for a promotion,
+     * across for the same level. Only on a line of one attribute.
+     */
+    icon?: ConjointIcon;
+    /**
      * A number for the level, on the attribute that is money. Only the
      * analysis reads it: with pay as a number it can price every other
      * attribute in pay — "a promotion is worth 9% of salary".
@@ -181,12 +187,11 @@ export type ConjointAttribute = {
 };
 
 /**
- * Choice-based conjoint, run as "winner stays on".
+ * Choice-based conjoint.
  *
  * The respondent sees two job cards, built from `attributes` with
- * values drawn at random, and picks the one they would take. The pick
- * stays and a new card challenges it, `rounds` times; the last one
- * standing is their winner.
+ * values drawn at random, and picks the one they would take — `rounds`
+ * times, with two fresh cards each time.
  *
  * The cards are built rather than real jobs so the attributes vary
  * independently of each other. A real job is a bundle (big brand AND
@@ -240,7 +245,15 @@ export type ConjointQuestion = BaseQuestion & {
 
 /** Icons a conjoint card line can carry; the form maps them to lucide. */
 export type ConjointIcon =
-  'briefcase' | 'building' | 'sparkles' | 'heart' | 'users' | 'banknote';
+  | 'arrow-down'
+  | 'arrow-right'
+  | 'arrow-up'
+  | 'banknote'
+  | 'briefcase'
+  | 'building'
+  | 'heart'
+  | 'sparkles'
+  | 'users';
 
 export type SurveyQuestion =
   | SingleQuestion
@@ -262,9 +275,20 @@ export const OTHER_MAX_LENGTH = 100;
 export type SurveyDefinition = {
   /** Calendar year, and the URL segment: /survey/2026. */
   year: number;
+  /** The full name: page title, listings, social cards, share text. */
   title: string;
+  /**
+   * The name on the survey page's own header, where the full title
+   * would be long. Falls back to `title`.
+   */
+  shortTitle?: string;
   /** Shown on the landing page above the Start button. */
   intro: string;
+  /**
+   * Roughly how long it takes, in minutes: the start screen's "about 7
+   * minutes" and the homepage card's "7 min survey".
+   */
+  minutes: number;
   /**
    * Card and social-share image, as a site-absolute path. Follows the
    * articles' convention: `thumb-*` images are used for listings and for
