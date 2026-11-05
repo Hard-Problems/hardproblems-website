@@ -20,6 +20,7 @@ export const COUNTRY_ALIASES: readonly (readonly string[])[] = [
   ['USA', 'US', 'U.S.', 'U.S.A.', 'United States', 'United States of America'],
   ['UK', 'United Kingdom', 'Great Britain', 'Britain'],
   ['UAE', 'United Arab Emirates'],
+  ['New Zealand', 'NZ', 'Aotearoa'],
   ['South Korea', 'Korea', 'Republic of Korea', 'ROK'],
   ['North Korea', "Democratic People's Republic of Korea", 'DPRK'],
   ['Czech Republic', 'Czechia'],
@@ -27,6 +28,12 @@ export const COUNTRY_ALIASES: readonly (readonly string[])[] = [
   ['Democratic Republic of the Congo', 'DRC', 'DR Congo', 'Congo-Kinshasa'],
   ['Republic of the Congo', 'Congo-Brazzaville'],
   ['Myanmar', 'Burma'],
+  // Türkiye first: it is what the sheet writes and what the
+  // dropdown already shows, so the canonical name does not change
+  // under anyone. "Turkey" is the spelling MIDDLE_EAST_COUNTRIES
+  // uses, and without this pairing those jobs missed the Middle
+  // East region filter entirely.
+  ['Türkiye', 'Turkey', 'Turkiye'],
   ['Cape Verde', 'Cabo Verde'],
   ['Timor-Leste', 'East Timor'],
   ['Vietnam', 'Viet Nam'],

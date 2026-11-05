@@ -45,6 +45,7 @@ import {
   isHardProblemsPick,
   matchesCountry,
   paragraphs,
+  regionForCountry,
   splitCountries
 } from '../../filters';
 import CompanyFavicon from '../../CompanyFavicon';
@@ -307,8 +308,29 @@ export default async function JobPage({ params }: Props) {
   // every country sent most of these breadcrumbs to a 404. The sheet's
   // country field can also list several ("USA, Canada"), which is not a
   // slug at all — take the first listed country that qualifies.
+  const listedCountries = splitCountries(job.country);
+  const qualifying =
+    listedCountries.find((c) => countryQualifies(jobs, c)) ?? null;
+
+  // The region above that country: "All jobs > North America > USA".
+  //
+  // Taken from the country already chosen for the crumb, so the two
+  // steps always agree. When no country qualifies there is still often
+  // a region — a job in a country with too few listings for its own
+  // page — and that becomes the last step on its own.
+  const regionCrumb =
+    (qualifying
+      ? regionForCountry(qualifying)
+      : listedCountries.map(regionForCountry).find(Boolean)) ?? null;
+
+  // A job tagged with a bare region name ("Asia") passes the country
+  // threshold under that name too, because the count behind it is the
+  // whole region's. Left alone the trail came out "All jobs > Asia >
+  // Asia"; the region step already says it, so the country step drops.
   const countryCrumb =
-    splitCountries(job.country).find((c) => countryQualifies(jobs, c)) ?? null;
+    qualifying && qualifying.toLowerCase() !== regionCrumb?.toLowerCase()
+      ? qualifying
+      : null;
   const where = placeOf(job);
   const sector = job.sector ? displaySector(job.sector) : '';
 
@@ -461,10 +483,23 @@ export default async function JobPage({ params }: Props) {
   return (
     <main className={styles.job}>
       <JobPostingSchema job={job} slug={slug} />
-      <BreadcrumbSchema job={job} slug={slug} country={countryCrumb} />
+      <BreadcrumbSchema
+        job={job}
+        slug={slug}
+        region={regionCrumb}
+        country={countryCrumb}
+      />
 
       <p className={styles.breadcrumb}>
         <Link href="/jobs">All jobs</Link>
+        {regionCrumb && (
+          <>
+            <ChevronRight className={styles.crumbSep} aria-hidden="true" />
+            <Link href={`/jobs/${locationSlug(regionCrumb)}`}>
+              {regionCrumb}
+            </Link>
+          </>
+        )}
         {countryCrumb && (
           <>
             <ChevronRight className={styles.crumbSep} aria-hidden="true" />

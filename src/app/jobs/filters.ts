@@ -47,11 +47,7 @@ export const WORK_STYLE_OPTIONS: { value: WorkStyle; label: string }[] = [
   { value: 'remote', label: 'Remote' }
 ];
 
-export type SeniorityCategory =
-  | 'junior'
-  | 'general'
-  | 'senior'
-  | 'director';
+export type SeniorityCategory = 'junior' | 'general' | 'senior' | 'director';
 
 // Order matters — the dropdown / checkbox rendering follows this
 // array, not an alphabetical sort.
@@ -90,10 +86,7 @@ export const SENIORITY_OPTIONS: {
 ];
 
 export type SectorCategory =
-  | 'climate'
-  | 'health'
-  | 'public-services'
-  | 'education';
+  'climate' | 'health' | 'public-services' | 'education';
 
 export const SECTOR_OPTIONS: {
   value: SectorCategory;
@@ -175,7 +168,10 @@ export const EUROPEAN_COUNTRIES = [
   'Ukraine',
   'Moldova',
   'Malta',
-  'Cyprus'
+  'Cyprus',
+  // Transcontinental, like Cyprus above it: filed under Europe because
+  // that is where the board counts it, not as a geographic claim.
+  'Armenia'
 ];
 
 const SOUTH_AMERICAN_COUNTRIES = [
@@ -340,12 +336,40 @@ const NORTH_AMERICAN_COUNTRIES = [
   'Trinidad and Tobago'
 ];
 
+// Yes, New Zealand — Oceania is the region that carries both it and
+// Australia, which is why neither had one before.
+//
+// "Australasia" earns its place as a tag the sheet may use for the
+// pair. "Pacific" deliberately does not: matching is by whole word, so
+// it would pull in every "Asia Pacific" and "APAC" listing and file
+// Asian jobs under Oceania.
+const OCEANIA_COUNTRIES = [
+  'Oceania',
+  'Australasia',
+  'Australia',
+  'Fiji',
+  'Kiribati',
+  'Marshall Islands',
+  'Micronesia',
+  'Nauru',
+  'New Caledonia',
+  'New Zealand',
+  'Palau',
+  'Papua New Guinea',
+  'Samoa',
+  'Solomon Islands',
+  'Tonga',
+  'Tuvalu',
+  'Vanuatu'
+];
+
 export const META_REGIONS: MetaRegion[] = [
   { name: 'Africa', countries: AFRICAN_COUNTRIES },
   { name: 'Asia', countries: ASIAN_COUNTRIES },
   { name: 'Europe', countries: EUROPEAN_COUNTRIES },
   { name: 'Middle East', countries: MIDDLE_EAST_COUNTRIES },
   { name: 'North America', countries: NORTH_AMERICAN_COUNTRIES },
+  { name: 'Oceania', countries: OCEANIA_COUNTRIES },
   { name: 'South America', countries: SOUTH_AMERICAN_COUNTRIES }
 ];
 
@@ -373,6 +397,27 @@ function regionIncludes(region: MetaRegion, country: string): boolean {
   return region.countries.some(
     (c) => canonicalCountryName(c).toLowerCase() === target
   );
+}
+
+// The meta-region a single country belongs to, or null for a country
+// we have no region for ("Global", or somewhere missing from the six
+// lists above). A country tag that IS a region name ("Asia") resolves
+// to itself, so a job listed region-wide gets the same crumb as one in
+// a member country.
+//
+// First match wins. The six lists are disjoint in practice; where a
+// country could arguably sit in two (Turkey, Russia), whichever list
+// names it is the one the board already files it under, so following
+// the list order keeps this consistent with the location pages.
+export function regionForCountry(country: string): string | null {
+  const name = country.trim();
+  if (!name) return null;
+  if (isMetaRegionName(name)) {
+    return META_REGIONS.find(
+      (r) => r.name.toLowerCase() === name.toLowerCase()
+    )!.name;
+  }
+  return META_REGIONS.find((r) => regionIncludes(r, name))?.name ?? null;
 }
 
 export function escapeRegex(s: string): string {
@@ -510,8 +555,7 @@ export function parseWorkStyleParam(value: string | null): WorkStyle[] {
   return value
     .split(',')
     .filter(
-      (v): v is WorkStyle =>
-        v === 'remote' || v === 'hybrid' || v === 'onsite'
+      (v): v is WorkStyle => v === 'remote' || v === 'hybrid' || v === 'onsite'
     );
 }
 
@@ -521,9 +565,7 @@ export function parseOrgParam(value: string | null): OrgCategory[] {
     .split(',')
     .filter(
       (v): v is OrgCategory =>
-        v === 'for-profit' ||
-        v === 'nonprofit' ||
-        v === 'public-sector'
+        v === 'for-profit' || v === 'nonprofit' || v === 'public-sector'
     );
 }
 
@@ -546,10 +588,7 @@ export function parseSeniorityParam(value: string | null): SeniorityCategory[] {
     .split(',')
     .filter(
       (v): v is SeniorityCategory =>
-        v === 'junior' ||
-        v === 'general' ||
-        v === 'senior' ||
-        v === 'director'
+        v === 'junior' || v === 'general' || v === 'senior' || v === 'director'
     );
 }
 
@@ -593,9 +632,7 @@ export function parseSectorPickParam(value: string | null): string[] {
     .filter((v) => v.length > 0);
 }
 
-export function parseFiltersFromParams(
-  params: URLSearchParams
-): JobFilters {
+export function parseFiltersFromParams(params: URLSearchParams): JobFilters {
   return {
     country: params.get('country') ?? 'all',
     workStyles: parseWorkStyleParam(params.get('work')),
