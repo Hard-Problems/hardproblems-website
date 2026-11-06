@@ -34,7 +34,7 @@ export const SURVEY_2026: SurveyDefinition = {
   ],
   image: '/images/content/thumb-survey-2026.jpg',
   // Midnight UTC, which is midnight in London in November.
-  opensAt: '2026-11-01T00:00:00.000Z', // TEMP-QA
+  opensAt: '2026-11-11T00:00:00.000Z',
   // Exclusive: the form closes as 30 November ends.
   closesAt: '2026-12-01T00:00:00.000Z',
 
