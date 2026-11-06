@@ -1081,26 +1081,6 @@ $job-palettes: (
   }
 }
 
-// TEMPORARY, DEV ONLY — paired with the `devReset` button in
-// SurveyForm, which is compiled out of production builds. Styled to
-// look like scaffolding rather than part of the survey, so it is
-// obvious it should not be here when the survey goes live.
-.devReset {
-  display: block;
-  width: fit-content;
-  // Parked well below the real controls so it is never mistaken for
-  // part of the survey, and never clicked by accident mid-question.
-  margin-top: 5rem;
-  padding: 0.3rem 0.7rem;
-  border: 1px dashed #b05c00;
-  border-radius: 6px;
-  background: #fff6e8;
-  color: #b05c00;
-  font: inherit;
-  font-size: var(--font-size-xs);
-  cursor: pointer;
-}
-
 // The question area between the progress bar and the Continue button.
 .stepBody {
   animation: stepInFromRight 0.22s ease-out both;

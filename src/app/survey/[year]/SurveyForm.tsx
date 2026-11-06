@@ -219,17 +219,6 @@ export default function SurveyForm({
     }
   }, [survey.year, total]);
 
-  // TEMPORARY, DEV ONLY — like devReset below. `?preview=thanks` opens
-  // straight on the thank-you screen, so it can be designed without
-  // submitting a response, and it survives the reloads that editing
-  // this file causes. Declared after the persistence effect so it wins
-  // over a saved session. Dead code in a production build.
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'production') return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('preview') === 'thanks') setPhase('done');
-  }, []);
-
   // Funnel analytics: one event per step shown, so PostHog can show how
   // far people get and where they stop. Progress only — never an
   // answer. The step's question ids say which question it is; nothing
@@ -553,35 +542,6 @@ export default function SurveyForm({
     }
   }
 
-  // TEMPORARY, DEV ONLY — remove when the survey goes live.
-  //
-  // Walking the survey while building it means clearing localStorage by
-  // hand every time. `process.env.NODE_ENV` is inlined at build time, so
-  // in a production build this whole branch is dead code and the button
-  // is not in the bundle at all — it cannot leak to real respondents.
-  const devReset =
-    process.env.NODE_ENV === 'production' ? null : (
-      <button
-        type="button"
-        className={styles.devReset}
-        onClick={() => {
-          try {
-            window.localStorage.removeItem(storageKey(survey.year));
-          } catch {
-            // Nothing stored; resetting state below is enough.
-          }
-          setAnswers({});
-          setStep(0);
-          setSeed('');
-          setErrors({});
-          setSubmitError(null);
-          setPhase('start');
-        }}
-      >
-        ↺ Start over (dev only)
-      </button>
-    );
-
   // The kicker and page title. Rendered here rather than in page.tsx so
   // the title can become "Thank you!" once the answers are in. The
   // site-wide page-title treatment: Instrument Serif at the article-title
@@ -718,7 +678,6 @@ export default function SurveyForm({
         </aside>
         {masthead}
         <ThankYou survey={survey} />
-        {devReset}
       </>
     );
   }
@@ -895,8 +854,6 @@ export default function SurveyForm({
             )}
           </div>
         )}
-
-        {devReset}
       </div>
     </>
   );
