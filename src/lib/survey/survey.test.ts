@@ -7,7 +7,8 @@ import {
   subjectFor,
   applyTerm,
   orderedOptions,
-  normalizeSource
+  normalizeSource,
+  questionTextFor
 } from './index';
 import {
   normalizeAnswers,
@@ -203,15 +204,43 @@ check(
   asks('other') === 'My career in 2026 feels like…',
   asks('other')
 );
+// Founders run all kinds of organisations, so the questions about the
+// work itself are worded for founders rather than for a field.
+const asked = (role: string, id: string) =>
+  questionTextFor(
+    SURVEY_2026,
+    qs.find((q) => q.id === id)!,
+    { role }
+  );
 check(
-  'founder keeps a field noun for "a career in …"',
-  applyTerm(
-    qs.find((q) => q.id === 'would-recommend')!.text,
-    termFor(SURVEY_2026, { role: 'founder' })
-  ).includes('a career in startups'),
-  applyTerm(
-    qs.find((q) => q.id === 'would-recommend')!.text,
-    termFor(SURVEY_2026, { role: 'founder' })
+  'founder questions do not assume a startup or a field',
+  ['still-here-in-5', 'would-recommend', 'one-change', 'metaphor'].every(
+    (id) => !/startup|design/i.test(asked('founder', id))
+  ),
+  asked('founder', 'would-recommend')
+);
+check(
+  'founder recommend question',
+  asked('founder', 'would-recommend') ===
+    'Would you recommend becoming a founder to a younger friend?'
+);
+check(
+  '"Other" is asked about their field, not design',
+  asked('other', 'would-recommend') ===
+    'Would you recommend a career in your field to a younger friend?' &&
+    asked('other', 'still-here-in-5').includes('working in your field')
+);
+check(
+  'other roles still get their field',
+  asked('product-manager', 'would-recommend') ===
+    'Would you recommend a career in product management to a younger friend?'
+);
+check(
+  'roleQuestionText only names real roles and questions',
+  Object.entries(SURVEY_2026.roleQuestionText ?? {}).every(
+    ([role, byQuestion]) =>
+      role in SURVEY_2026.roleTerms &&
+      Object.keys(byQuestion).every((id) => qs.some((q) => q.id === id))
   )
 );
 check(

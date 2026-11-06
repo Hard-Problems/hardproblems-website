@@ -50,11 +50,9 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import {
-  applyTerm,
   buildSteps,
   orderedOptions,
-  subjectFor,
-  termFor
+  questionTextFor
 } from '../../../lib/survey';
 import type {
   ConjointIcon,
@@ -298,7 +296,13 @@ export default function SurveyForm({
   useEffect(() => {
     const focused = phase === 'questions';
     document.body.classList.toggle('survey-focus', focused);
-    return () => document.body.classList.remove('survey-focus');
+    // Past the start screen: hides the band under the menu (page.tsx),
+    // which belongs to the first page only.
+    document.body.classList.toggle('survey-past-start', phase !== 'start');
+    return () => {
+      document.body.classList.remove('survey-focus');
+      document.body.classList.remove('survey-past-start');
+    };
   }, [phase]);
 
   // On each step: back to the top of the page, and move focus to the new
@@ -352,16 +356,14 @@ export default function SurveyForm({
     return () => window.removeEventListener('popstate', onPop);
   }, [total]);
 
-  const term = useMemo(
-    () => termFor(survey, flatten(answers)),
-    [survey, answers]
-  );
-  // The subject form, for the questions that open on the role rather
-  // than referring to it mid-sentence. Same answer, different word for
-  // the handful of roles where one noun cannot do both jobs.
-  const subject = useMemo(
-    () => subjectFor(survey, flatten(answers)),
-    [survey, answers]
+  // A question's wording for this respondent: worded for their role
+  // (see roleTerms, roleSubjects and roleQuestionText in the
+  // definition).
+  const flatAnswers = useMemo(() => flatten(answers), [answers]);
+  const questionText = useCallback(
+    (q: { id: string; text: string }) =>
+      questionTextFor(survey, q, flatAnswers),
+    [survey, flatAnswers]
   );
 
   const setAnswer = useCallback((id: string, answer: Answer) => {
@@ -452,13 +454,13 @@ export default function SurveyForm({
         q,
         answers[q.id],
         countries,
-        applyTerm(q.text, term, subject)
+        questionText(q)
       );
       if (message) found[q.id] = message;
     }
     setErrors(found);
     return Object.keys(found).length === 0;
-  }, [current, answers, countries, term, subject]);
+  }, [current, answers, countries, questionText]);
 
   const onContinue = useCallback(() => {
     if (!validateStep()) return;
@@ -480,7 +482,15 @@ export default function SurveyForm({
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           year: survey.year,
-          answers,
+          // Only answers to questions this survey still has. Progress
+          // saved before a question was renamed or removed would
+          // otherwise carry an answer the server rejects as unknown,
+          // and the respondent could never submit.
+          answers: Object.fromEntries(
+            Object.entries(answers).filter(([id]) =>
+              survey.questions.some((q) => q.id === id)
+            )
+          ),
           source,
           access: accessCode,
           hp: honeypot
@@ -513,8 +523,7 @@ export default function SurveyForm({
           for (const q of steps[at]) {
             const f = fields.find((x) => x.questionId === q.id);
             if (f) {
-              found[q.id] =
-                `“${applyTerm(q.text, term, subject)}”: ${f.message}`;
+              found[q.id] = `“${questionText(q)}”: ${f.message}`;
             }
           }
           setErrors(found);
@@ -577,6 +586,13 @@ export default function SurveyForm({
             priority
           />
           <p className="intro">{survey.intro}</p>
+          {survey.why && (
+            <div className={styles.why}>
+              {survey.why.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+            </div>
+          )}
           {/* What taking part involves — kept short, so the button is
             reachable without reading a privacy notice first. */}
           <h2 className="section-label">Before you start</h2>
@@ -635,7 +651,7 @@ export default function SurveyForm({
           </h2>
           <ul className={styles.startFacts}>
             <li>
-              Your answers are anonymous. We do not ask who you are, and we do
+              All answers are anonymous. We do not ask who you are, and we do
               not record your IP address.
             </li>
             <li>
@@ -777,7 +793,7 @@ export default function SurveyForm({
             <QuestionBody
               key={q.id}
               question={q}
-              heading={applyTerm(q.text, term, subject)}
+              heading={questionText(q)}
               // Focus goes to the step's heading, which is the group's
               // when there is one — so only an ungrouped question takes
               // the ref.
@@ -1471,7 +1487,7 @@ function ConjointChoice({
               on after each pick, since the table itself only swaps its
               cell text. */}
             <p className={styles.conjointCount} aria-live="polite">
-              Choice {rounds.length + 1} of {question.rounds}
+              Round {rounds.length + 1} of {question.rounds}
             </p>
             {/* Wraps the table so the "vs." badge can be centred on
                 the gap between the two cards. */}

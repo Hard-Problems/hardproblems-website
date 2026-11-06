@@ -75,6 +75,18 @@
   margin-bottom: 0;
 }
 
+// The "why" paragraph reads as the intro's second half, so it sits
+// close under it rather than after the intro's usual 3rem.
+.startPanel :global(p.intro):has(+ .why) {
+  margin-bottom: 1rem;
+}
+
+// …and keeps clear space under it, so "Before you start" opens a new
+// section rather than continuing the paragraph.
+.why {
+  margin-bottom: 2rem;
+}
+
 // Illustration on the landing screen, with the intro and the
 // "Before you start" list wrapping around it.
 .startImage {
