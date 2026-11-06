@@ -19,7 +19,8 @@ const MAX_EMAIL_LENGTH = 254;
 
 // User-agent signatures we treat as automated. Real browsers always
 // send a non-empty UA that starts with "Mozilla/…".
-const BOT_UA_RE = /^$|curl|wget|python-requests|scrapy|httpclient|bot|spider|crawler/i;
+const BOT_UA_RE =
+  /^$|curl|wget|python-requests|scrapy|httpclient|bot|spider|crawler/i;
 
 // Best-effort per-IP rate limit. Runs in the serverless function's
 // process memory — sufficient to swat obvious flooding within one hot
@@ -31,9 +32,7 @@ const hits = new Map<string, number[]>();
 
 function rateLimit(ip: string): boolean {
   const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter(
-    (t) => now - t < RATE_WINDOW_MS
-  );
+  const recent = (hits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
   if (recent.length >= RATE_MAX_HITS) {
     hits.set(ip, recent);
     return false;
@@ -63,9 +62,7 @@ function clientIp(request: Request): string {
 
 function isAllowedOrigin(request: Request): boolean {
   const originHeader =
-    request.headers.get('origin') ??
-    request.headers.get('referer') ??
-    '';
+    request.headers.get('origin') ?? request.headers.get('referer') ?? '';
   if (!originHeader) return false;
   let host: string;
   try {
@@ -84,6 +81,13 @@ function isAllowedOrigin(request: Request): boolean {
   if (host.endsWith('-hard-problems.vercel.app')) return true;
   return allowed.includes(host);
 }
+
+// Campaign labels a signup form may send (see NewsletterForm's
+// `campaign`). Add one here before using it on a page.
+//   survey-2026  the annual survey's thank-you page — lets Beehiiv list
+//                who signed up after taking the survey. Says nothing
+//                about what they answered; the answers carry no email.
+const ALLOWED_CAMPAIGNS = new Set(['survey-2026']);
 
 export async function POST(request: Request) {
   const apiKey = process.env.BEEHIIV_API_KEY;
@@ -151,11 +155,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  if (
-    !email ||
-    email.length > MAX_EMAIL_LENGTH ||
-    !EMAIL_RE.test(email)
-  ) {
+  // Where on the site the signup came from, passed on to Beehiiv as the
+  // UTM campaign. Only known values: anything else is dropped rather
+  // than stored, so the field cannot be filled with arbitrary text.
+  const requestedCampaign =
+    body && typeof body === 'object' && 'campaign' in body
+      ? String((body as { campaign?: unknown }).campaign ?? '')
+      : '';
+  const campaign = ALLOWED_CAMPAIGNS.has(requestedCampaign)
+    ? requestedCampaign
+    : undefined;
+
+  if (!email || email.length > MAX_EMAIL_LENGTH || !EMAIL_RE.test(email)) {
     return NextResponse.json(
       { ok: false, error: 'Please enter a valid email address.' },
       { status: 400 }
@@ -177,16 +188,21 @@ export async function POST(request: Request) {
           reactivate_existing: true,
           send_welcome_email: true,
           utm_source: 'hardproblems.com',
-          utm_medium: 'custom_form'
+          utm_medium: 'custom_form',
+          ...(campaign ? { utm_campaign: campaign } : {})
         })
       }
     );
 
     const responseText = await res.text().catch(() => '');
     if (!res.ok) {
-      logError('[subscribe] Beehiiv error', new Error(responseText || 'Beehiiv non-2xx'), {
-        status: res.status
-      });
+      logError(
+        '[subscribe] Beehiiv error',
+        new Error(responseText || 'Beehiiv non-2xx'),
+        {
+          status: res.status
+        }
+      );
       return NextResponse.json(
         {
           ok: false,

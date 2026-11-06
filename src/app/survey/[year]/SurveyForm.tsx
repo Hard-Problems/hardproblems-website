@@ -744,9 +744,9 @@ export default function SurveyForm({
               telling who sent an answer.
             </li>
             <li>
-              To get the results, join our newsletter at the end. That is an
-              ordinary newsletter signup, kept entirely separate from the
-              survey, and it is not linked to what you answered.
+              To get the results, join our newsletter at the end. We will know
+              you signed up from the survey, but your email is never linked to
+              what you answered.
             </li>
           </ul>
           <p className={styles.privacyLine}>
@@ -2229,7 +2229,7 @@ function ThankYou({ survey }: { survey: SurveyDefinition }) {
       </p>
 
       <div className={styles.newsletterBox}>
-        <NewsletterForm hideLabel />
+        <NewsletterForm hideLabel campaign={`survey-${survey.year}`} />
       </div>
 
       <h2 className={styles.thankYouHeading}>Help us reach more people</h2>
