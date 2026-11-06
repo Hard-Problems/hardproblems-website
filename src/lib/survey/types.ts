@@ -307,6 +307,12 @@ export type SurveyDefinition = {
   /** Shown on the landing page above the Start button. */
   intro: string;
   /**
+   * Paragraphs under the intro on the start page only — why the survey
+   * matters. Not used in listings or social cards, where `intro` stands
+   * alone.
+   */
+  why?: string[];
+  /**
    * Roughly how long it takes, in minutes: the start screen's "about 7
    * minutes" and the homepage card's "7 min survey".
    */
@@ -336,7 +342,18 @@ export type SurveyDefinition = {
    * Headings for the shared steps — see `group` on a question. Keyed by
    * group id; a group with no entry here falls back to no heading.
    */
-  groups?: Record<string, { title: string; hint?: string }>;
+  groups?: Record<
+    string,
+    {
+      title: string;
+      hint?: string;
+      /**
+       * Asked only after the answers are sent, as an unnumbered bonus
+       * round — see bonus.ts. Its questions must all be optional.
+       */
+      afterSend?: boolean;
+    }
+  >;
   /** Option id → the wording used for `{term}` in later questions. */
   roleTerms: Record<string, string>;
   /**
@@ -351,6 +368,17 @@ export type SurveyDefinition = {
    * falls back to its `roleTerms` entry.
    */
   roleSubjects?: Record<string, string>;
+  /**
+   * Role id → question id → that question's whole wording, for a role
+   * no single noun can serve. Takes precedence over `{term}` and
+   * `{Subject}` substitution for that question.
+   *
+   * Founders are the case: they run startups, agencies, NGOs and big
+   * companies, so "a career in startups" or "working in design" both
+   * misdescribe many of them, and no field noun fits all three
+   * questions that ask about the work itself.
+   */
+  roleQuestionText?: Record<string, Record<string, string>>;
   /** Fallback when the role question is somehow unanswered. */
   defaultTerm: string;
   questions: SurveyQuestion[];

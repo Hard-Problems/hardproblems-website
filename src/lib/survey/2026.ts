@@ -28,9 +28,13 @@ export const SURVEY_2026: SurveyDefinition = {
   shortTitle: 'What we want from work',
   intro:
     'A survey for designers, researchers, writers and product people about how they feel about their careers.',
+  why: [
+    'There’s a lot of data on what companies want from designers and PMs, and almost none on what designers and PMs want from their careers. Help us fix that. What actually makes people feel satisfied with their work?',
+    'In our report, we will try to show where pockets of joy and pride are in our industry. And, maybe you can find your way there.'
+  ],
   image: '/images/content/thumb-survey-2026.jpg',
   // Midnight UTC, which is midnight in London in November.
-  opensAt: '2026-11-11T00:00:00.000Z',
+  opensAt: '2026-11-01T00:00:00.000Z', // TEMP-QA
   // Exclusive: the form closes as 30 November ends.
   closesAt: '2026-12-01T00:00:00.000Z',
 
@@ -38,10 +42,11 @@ export const SURVEY_2026: SurveyDefinition = {
   // Supplies `{term}` / `{Term}` in later questions, so a product
   // manager is asked about "product management" rather than "design".
   //
-  // Every entry but the last two falls out of the role name. `founder`
-  // and `other` do not, so they also carry a `roleSubjects` override
-  // below: the noun that works in "a career in …" is not the one that
-  // works as the subject of "… in 2026 feels like…".
+  // Every entry but the last two falls out of the role name. `other`
+  // gets "your field", which reads in every template without assuming
+  // what the field is. `founder` has its own wording for each question
+  // instead (see roleQuestionText below); its entry here is only a
+  // fallback.
   roleTerms: {
     'product-designer': 'design',
     'graphic-designer': 'design',
@@ -55,18 +60,36 @@ export const SURVEY_2026: SurveyDefinition = {
     'ui-designer': 'design',
     'design-writer': 'writing',
     'product-manager': 'product management',
-    founder: 'startups',
-    other: 'design'
+    founder: 'your organisation',
+    other: 'your field'
   },
   // Headings for the shared steps — see `group` on a question.
   groups: {
-    'about-you': { title: 'About you and where you work' }
+    'about-you': { title: 'About you and where you work' },
+    bonus: {
+      title: 'Bonus round',
+      hint: 'Your answers are saved.',
+      afterSend: true
+    }
   },
 
   // Subject position only — see roleSubjects on SurveyDefinition.
   roleSubjects: {
     founder: 'being a founder',
     other: 'my career'
+  },
+
+  // Founders run startups, agencies, NGOs and big companies, so they
+  // get questions about being a founder rather than about a field.
+  // `{Subject}` already covers the metaphor ("Being a founder in 2026
+  // feels like…").
+  roleQuestionText: {
+    founder: {
+      'still-here-in-5':
+        'How likely are you to still be running your own organisation in five years?',
+      'would-recommend':
+        'Would you recommend becoming a founder to a younger friend?'
+    }
   },
   defaultTerm: 'design',
 
@@ -198,7 +221,7 @@ export const SURVEY_2026: SurveyDefinition = {
       kind: 'conjoint',
       id: 'job-choice',
       text: 'Which job would you take?',
-      hint: 'Imagine you are offered both jobs. Pick the one you would prefer.',
+      hint: 'Imagine you are offered both jobs. Pick the one you’d prefer.',
       rounds: 8,
       attributes: [
         {
@@ -379,7 +402,7 @@ export const SURVEY_2026: SurveyDefinition = {
       kind: 'multi',
       id: 'feelings',
       text: 'What best captures your feelings about your career?',
-      hint: 'Choose as many as you like.',
+      hint: 'Multiple choice',
       order: 'shuffle',
       options: [
         { id: 'optimistic', label: 'Optimistic' },
@@ -404,7 +427,7 @@ export const SURVEY_2026: SurveyDefinition = {
       kind: 'text',
       id: 'metaphor',
       text: '{Subject} in 2026 feels like…',
-      hint: 'Finish the sentence with a metaphor.',
+      hint: 'Finish the sentence.',
       maxLength: 200
     },
 
@@ -482,7 +505,7 @@ export const SURVEY_2026: SurveyDefinition = {
       kind: 'multi',
       id: 'ai-feelings',
       text: 'How do you feel about AI in your work?',
-      hint: 'Choose as many as you like.',
+      hint: 'Multiple choice',
       // "Other…" stays last; the rest are shuffled.
       order: 'shuffleExceptLast',
       options: [
@@ -558,9 +581,9 @@ export const SURVEY_2026: SurveyDefinition = {
 
     {
       kind: 'single',
-      id: 'designer-count',
+      id: 'designer-pm-count',
       group: 'about-you',
-      text: 'How many designers work at your company or organisation?',
+      text: 'How many designers and PMs work at your company or organisation?',
       options: [
         { id: '1-4', label: '1–4' },
         { id: '5-9', label: '5–9' },
@@ -595,7 +618,7 @@ export const SURVEY_2026: SurveyDefinition = {
       kind: 'multi',
       id: 'sectors',
       text: 'What are the main sectors you work in?',
-      hint: 'Choose as many as you like.',
+      hint: 'Multiple choice',
       // Alphabetical, with "Other…" kept last.
       order: 'alphaExceptLast',
       options: [
@@ -618,15 +641,33 @@ export const SURVEY_2026: SurveyDefinition = {
       ]
     },
 
+    // The bonus round: optional written questions asked AFTER the
+    // answers are sent (`afterSend` on the group — see bonus.ts), so
+    // anyone who stops here has already sent everything else. Not a
+    // numbered step.
     {
       kind: 'textarea',
       id: 'one-change',
-      // "working in {term}" rather than "the {term} industry": the
-      // latter breaks for most terms ("the startups industry").
-      text: 'If you could change one thing about working in {term}, what would it be?',
-      hint: 'Optional — you can skip this and finish.',
+      group: 'bonus',
+      text: 'One thing you’d change about our industry?',
       optional: true,
       maxLength: 2000
+    },
+    {
+      kind: 'textarea',
+      id: 'admire',
+      group: 'bonus',
+      text: 'Who do you admire in your field? Why?',
+      optional: true,
+      maxLength: 1000
+    },
+    {
+      kind: 'textarea',
+      id: 'amazing-work',
+      group: 'bonus',
+      text: 'What’s one project or organisation that you think is amazing?',
+      optional: true,
+      maxLength: 1000
     }
   ]
 };

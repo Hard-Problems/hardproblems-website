@@ -85,6 +85,27 @@ export function subjectFor(
 }
 
 /**
+ * A question's wording as this respondent sees it: the role's own
+ * wording if `roleQuestionText` has one, otherwise the text with
+ * `{term}` / `{Subject}` filled in.
+ */
+export function questionTextFor(
+  survey: SurveyDefinition,
+  question: { id: string; text: string },
+  answers: Record<string, unknown>
+): string {
+  const chosen = answers[survey.termSourceId];
+  const role = typeof chosen === 'string' ? chosen : '';
+  const own = survey.roleQuestionText?.[role]?.[question.id];
+  if (own) return own;
+  return applyTerm(
+    question.text,
+    termFor(survey, answers),
+    subjectFor(survey, answers)
+  );
+}
+
+/**
  * Group the flat question list into steps.
  *
  * Consecutive questions carrying the same `group` become one step;

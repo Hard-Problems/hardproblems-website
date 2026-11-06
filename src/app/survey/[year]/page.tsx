@@ -88,42 +88,59 @@ export default async function SurveyPage({ params, searchParams }: Props) {
     // here. Autocapture records the text of what is clicked, which on
     // this page is someone's answers. Progress is sent instead as
     // explicit events (see SurveyForm), carrying no answers.
-    <main className={`${styles.survey} ph-no-capture`}>
-      {/* No class: the column width and padding come from `.survey` on
+    <>
+      {/* The same pale-green band the article pages carry under the
+          menu, here saying who is asking. Start screen only: it is
+          hidden once someone is answering or has finished (the
+          `survey-past-start` class SurveyForm sets on <body>). Reuses
+          the newsletter band's classes for an identical look. */}
+      <div className="newsletter-module newsletter-module--under-nav survey-band">
+        <div className="newsletter-module-inner">
+          <p className="newsletter-form-label">
+            We are a nonprofit that helps designers to work on the world&rsquo;s
+            urgent problems.
+          </p>
+        </div>
+      </div>
+      <main className={`${styles.survey} ph-no-capture`}>
+        {/* No class: the column width and padding come from `.survey` on
           the <main>, and this element only groups the content. It used
           to reference a `styles.intro` rule that was never written. */}
-      <article>
-        {/* The intro belongs to the landing state, not to every step —
+        <article>
+          {/* The intro belongs to the landing state, not to every step —
             left here it sat above all 25 questions, repeating what the
             survey is while someone is in the middle of answering it. The
             form renders it on its own start screen, so it is still in
             the server-rendered HTML for anyone arriving cold; only the
             closed state needs its own copy. */}
-        {earlyAccess && (
-          <p className={styles.previewBanner} role="status">
-            <strong>Internal test.</strong> This survey isn&rsquo;t open to the
-            public yet. Responses sent from here are saved as test data.
-          </p>
-        )}
-        {open || earlyAccess ? (
-          <SurveyForm
-            survey={survey}
-            countries={COUNTRY_NAMES}
-            source={rawSource}
-            accessCode={earlyAccess ? accessCode : undefined}
-          />
-        ) : (
-          <>
-            {/* While open, SurveyForm renders the title itself so the
+          {earlyAccess && (
+            <p className={styles.previewBanner} role="status">
+              <strong>Internal test.</strong> This survey isn&rsquo;t open to
+              the public yet. Responses sent from here are saved as test data.
+            </p>
+          )}
+          {open || earlyAccess ? (
+            <SurveyForm
+              survey={survey}
+              countries={COUNTRY_NAMES}
+              source={rawSource}
+              accessCode={earlyAccess ? accessCode : undefined}
+            />
+          ) : (
+            <>
+              {/* While open, SurveyForm renders the title itself so the
                 thank-you screen can change it. */}
-            <p className={styles.kicker}>Survey</p>
-            <h1 className="page-title">{survey.shortTitle ?? survey.title}</h1>
-            <p className="intro">{survey.intro}</p>
-            <ClosedNotice survey={survey} />
-          </>
-        )}
-      </article>
-    </main>
+              <p className={styles.kicker}>Survey</p>
+              <h1 className="page-title">
+                {survey.shortTitle ?? survey.title}
+              </h1>
+              <p className="intro">{survey.intro}</p>
+              <ClosedNotice survey={survey} />
+            </>
+          )}
+        </article>
+      </main>
+    </>
   );
 }
 
