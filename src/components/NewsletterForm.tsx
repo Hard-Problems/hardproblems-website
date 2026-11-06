@@ -1,21 +1,9 @@
 'use client';
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  type FormEvent
-} from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import {
-  Mail,
-  X,
-  Check,
-  AlertCircle,
-  ArrowRight,
-  Loader2
-} from 'lucide-react';
+import { Mail, X, Check, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
@@ -28,11 +16,16 @@ type Props = {
   // surrounding copy already says it. The input keeps its own
   // aria-label, so nothing is lost for screen readers.
   hideLabel?: boolean;
+  // Where on the site the signup came from, stored on the subscriber
+  // in Beehiiv as its UTM campaign (e.g. 'survey-2026'). Must be one
+  // the subscribe route allows — see ALLOWED_CAMPAIGNS there.
+  campaign?: string;
 };
 
 export default function NewsletterForm({
   labelSuffix = ':',
-  hideLabel = false
+  hideLabel = false,
+  campaign
 }: Props = {}) {
   const [email, setEmail] = useState('');
   const [honeypot, setHoneypot] = useState('');
@@ -71,7 +64,7 @@ export default function NewsletterForm({
       const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, hp: honeypot })
+        body: JSON.stringify({ email, hp: honeypot, campaign })
       });
       const data = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
@@ -79,13 +72,11 @@ export default function NewsletterForm({
       };
       if (res.ok && data.ok) {
         setStatus('success');
-        setMessage("You are now subscribed.");
+        setMessage('You are now subscribed.');
         setEmail('');
       } else {
         setStatus('error');
-        setMessage(
-          data.error ?? "Couldn't subscribe you. Please try again."
-        );
+        setMessage(data.error ?? "Couldn't subscribe you. Please try again.");
       }
     } catch {
       setStatus('error');

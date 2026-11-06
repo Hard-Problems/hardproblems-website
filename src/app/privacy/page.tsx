@@ -374,9 +374,11 @@ export default function Page() {
         </p>
         <p>
           We do not collect your email address with the survey. If you join our
-          newsletter at the end, that is an ordinary newsletter signup, handled
-          like any other and kept entirely separate from your answers. We cannot
-          tell which response, if any, belongs to a subscriber.
+          newsletter at the end, our newsletter provider records that you signed
+          up from the survey page, so we know you took part (for example, to
+          enter you in the book draw). Your email is never linked to your
+          answers: we cannot tell which response, if any, belongs to a
+          subscriber.
         </p>
         <p>
           Our lawful basis for the anonymous answers is legitimate interest
