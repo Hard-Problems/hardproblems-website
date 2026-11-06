@@ -1262,3 +1262,15 @@ $job-palettes: (
     background: #ececec;
   }
 }
+
+// Shown above the form during early access (see lib/survey/preview.ts),
+// so nobody mistakes a test run for the live survey.
+.previewBanner {
+  margin: 0 0 1.5rem 0;
+  padding: 0.6rem 0.9rem;
+  border: 1px dashed #b05c00;
+  border-radius: 6px;
+  background: #fff6ea;
+  color: #7a3f00;
+  font-size: var(--font-size-sm);
+}

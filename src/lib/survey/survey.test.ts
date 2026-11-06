@@ -26,6 +26,7 @@ import {
   type Round
 } from './conjoint';
 import { analyseConjoint, choicesFrom } from './conjoint-analysis';
+import { hasEarlyAccess, isValidPreviewCode } from './preview';
 
 let pass = 0,
   fail = 0;
@@ -133,6 +134,40 @@ check(
   'CLOSED on 1 Dec',
   !isOpen(SURVEY_2026, new Date('2026-12-01T00:00:01Z'))
 );
+// ---- early access (preview.ts) ----------------------------------------
+{
+  const saved = process.env.SURVEY_PREVIEW_CODE;
+  const before = new Date('2026-11-10T12:00:00Z');
+  const after = new Date('2026-11-12T12:00:00Z');
+
+  delete process.env.SURVEY_PREVIEW_CODE;
+  check('early access off when no code is set', !isValidPreviewCode(''));
+
+  process.env.SURVEY_PREVIEW_CODE = 'short';
+  check(
+    'early access off when the code is too short',
+    !isValidPreviewCode('short')
+  );
+
+  process.env.SURVEY_PREVIEW_CODE = 'team-test-7f3k2q9x';
+  check('right code accepted', isValidPreviewCode('team-test-7f3k2q9x'));
+  check(
+    'wrong or missing code refused',
+    !isValidPreviewCode('team-test-7f3k2q9y') &&
+      !isValidPreviewCode('') &&
+      !isValidPreviewCode(undefined) &&
+      !isValidPreviewCode(['team-test-7f3k2q9x'])
+  );
+  check(
+    'early access only before opening',
+    hasEarlyAccess(SURVEY_2026, 'team-test-7f3k2q9x', before) &&
+      !hasEarlyAccess(SURVEY_2026, 'team-test-7f3k2q9x', after)
+  );
+
+  if (saved === undefined) delete process.env.SURVEY_PREVIEW_CODE;
+  else process.env.SURVEY_PREVIEW_CODE = saved;
+}
+
 check(
   'closed before opening',
   !isOpen(SURVEY_2026, new Date('2026-01-01T00:00:00Z'))

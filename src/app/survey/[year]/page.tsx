@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { allSurveys, getSurvey, isOpen } from '../../../lib/survey';
 import { COUNTRY_NAMES } from '../../../lib/countries';
+import { hasEarlyAccess, opensLater } from '../../../lib/survey/preview';
 import SurveyForm from './SurveyForm';
 import styles from './page.module.scss';
 
@@ -38,6 +39,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${survey.title} — Hard Problems`,
     description: survey.intro,
+    // Kept out of search results until it opens: before then the page
+    // is only an "opens on…" notice, plus the early-access form for
+    // the team (see preview.ts).
+    robots: opensLater(survey) ? { index: false, follow: false } : undefined,
     alternates: {
       // The ?source= parameter is for attribution, not for indexing —
       // without this every shared variant would be a separate URL in
@@ -74,6 +79,9 @@ export default async function SurveyPage({ params, searchParams }: Props) {
   const rawSource = typeof sp.source === 'string' ? sp.source : '';
 
   const open = isOpen(survey);
+  // Early access for the team before opening — see preview.ts.
+  const accessCode = typeof sp.access === 'string' ? sp.access : '';
+  const earlyAccess = !open && hasEarlyAccess(survey, accessCode);
 
   return (
     // `ph-no-capture` turns PostHog's autocapture off for everything in
@@ -91,11 +99,18 @@ export default async function SurveyPage({ params, searchParams }: Props) {
             form renders it on its own start screen, so it is still in
             the server-rendered HTML for anyone arriving cold; only the
             closed state needs its own copy. */}
-        {open ? (
+        {earlyAccess && (
+          <p className={styles.previewBanner} role="status">
+            <strong>Internal test.</strong> This survey isn&rsquo;t open to the
+            public yet. Responses sent from here are saved as test data.
+          </p>
+        )}
+        {open || earlyAccess ? (
           <SurveyForm
             survey={survey}
             countries={COUNTRY_NAMES}
             source={rawSource}
+            accessCode={earlyAccess ? accessCode : undefined}
           />
         ) : (
           <>
@@ -129,11 +144,18 @@ function ClosedNotice({
     timeZone: 'UTC'
   });
 
+  const openLabel = new Date(survey.opensAt).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC'
+  });
+
   return (
     <div className={styles.closed}>
       <p>
         {notYet ? (
-          <>This year&rsquo;s survey isn&rsquo;t open yet. Check back soon.</>
+          <>This survey opens on {openLabel}.</>
         ) : (
           <>
             This survey closed on {closedLabel} and is no longer accepting
@@ -142,8 +164,10 @@ function ClosedNotice({
         )}
       </p>
       <p>
-        <Link href="/newsletter">Join the newsletter</Link> to hear when the
-        results are published.
+        <Link href="/newsletter">Join the newsletter</Link> to hear{' '}
+        {notYet
+          ? 'when it opens, and when the results are published.'
+          : 'when the results are published.'}
       </p>
     </div>
   );

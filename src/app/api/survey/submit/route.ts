@@ -15,6 +15,7 @@ import { alertsDb } from '../../../../lib/alerts/supabase';
 import { logError } from '../../../../lib/posthog-server';
 import { COUNTRY_NAMES } from '../../../../lib/countries';
 import { getSurvey, isOpen, normalizeSource } from '../../../../lib/survey';
+import { PREVIEW_SOURCE, hasEarlyAccess } from '../../../../lib/survey/preview';
 import {
   normalizeAnswers,
   validateSubmission,
@@ -115,8 +116,11 @@ export async function POST(request: Request) {
   }
 
   // Checked here as well as in the page: a tab opened before the
-  // deadline would otherwise still be able to post after it.
-  if (!isOpen(survey)) {
+  // deadline would otherwise still be able to post after it. Before
+  // opening, the team's early-access code lets a response through —
+  // stored as test data (see preview.ts).
+  const earlyAccess = !isOpen(survey) && hasEarlyAccess(survey, payload.access);
+  if (!isOpen(survey) && !earlyAccess) {
     return NextResponse.json(
       { ok: false, error: 'This survey is closed.' },
       { status: 410 }
@@ -150,9 +154,17 @@ export async function POST(request: Request) {
   }
 
   const clean = normalizeAnswers(survey, answers as Answers);
-  const source = normalizeSource(
+  const linkSource = normalizeSource(
     typeof payload.source === 'string' ? payload.source : ''
   );
+  // Early-access responses are always labelled as tests, and nobody
+  // else can claim that label — a link carrying ?source=internal-preview
+  // would otherwise get a real response deleted with the test data.
+  const source = earlyAccess
+    ? PREVIEW_SOURCE
+    : linkSource === PREVIEW_SOURCE
+      ? ''
+      : linkSource;
   const token = randomUUID();
 
   // alertsDb() THROWS when Supabase is unconfigured rather than

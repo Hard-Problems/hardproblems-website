@@ -146,11 +146,18 @@ function newSeed(): string {
 export default function SurveyForm({
   survey,
   countries,
-  source
+  source,
+  accessCode
 }: {
   survey: SurveyDefinition;
   countries: readonly string[];
   source: string;
+  /**
+   * The team's early-access code, when the survey has not opened yet
+   * and the page was visited with it (see lib/survey/preview.ts). Sent
+   * with the submission so the server lets it through, as test data.
+   */
+  accessCode?: string;
 }) {
   const [phase, setPhase] = useState<Phase>('start');
   const [step, setStep] = useState(0);
@@ -234,9 +241,10 @@ export default function SurveyForm({
       survey_year: survey.year,
       step: step + 1,
       total_steps: total,
-      question_ids: steps[step]?.map((q) => q.id).join(',')
+      question_ids: steps[step]?.map((q) => q.id).join(','),
+      internal_test: Boolean(accessCode)
     });
-  }, [phase, step, total, steps, survey.year, posthog]);
+  }, [phase, step, total, steps, survey.year, posthog, accessCode]);
 
   // The entry for however this page first appeared. replaceState, not
   // push: it describes the load itself rather than a move away from it.
@@ -485,6 +493,7 @@ export default function SurveyForm({
           year: survey.year,
           answers,
           source,
+          access: accessCode,
           hp: honeypot
         })
       });
@@ -533,7 +542,10 @@ export default function SurveyForm({
       } catch {
         // Nothing to do; the answers are already safely stored.
       }
-      posthog?.capture('survey_completed', { survey_year: survey.year });
+      posthog?.capture('survey_completed', {
+        survey_year: survey.year,
+        internal_test: Boolean(accessCode)
+      });
       setPhase('done');
     } catch {
       setPhase('questions');
@@ -627,7 +639,9 @@ export default function SurveyForm({
                 survey_year: survey.year,
                 // A seed means they have been in before (Exit, or a
                 // return visit with saved progress).
-                resumed: Boolean(seed)
+                resumed: Boolean(seed),
+                // Early-access testing, to filter out of the funnel.
+                internal_test: Boolean(accessCode)
               });
               if (!seed) setSeed(newSeed());
               setPhase('questions');
