@@ -1480,15 +1480,9 @@ function ConjointChoice({
 
       {pair ? (
         <>
-          {/* The count and the two cards sit on a tinted panel on wide
+          {/* The two cards and the count sit on a tinted panel on wide
               screens, so the choice reads as one object on the page. */}
           <div className={styles.conjointStage}>
-            {/* Polite live region: a screen reader hears the count move
-              on after each pick, since the table itself only swaps its
-              cell text. */}
-            <p className={styles.conjointCount} aria-live="polite">
-              Round {rounds.length + 1} of {question.rounds}
-            </p>
             {/* Wraps the table so the "vs." badge can be centred on
                 the gap between the two cards. */}
             <div className={styles.conjointPair}>
@@ -1521,7 +1515,9 @@ function ConjointChoice({
                       className={`${palette(jobs.a)} ${styles.conjointFresh}`}
                       style={rowStyle(0)}
                     >
-                      Job A
+                      {/* No visible label — the card opens on its title.
+                        Kept for screen readers as the column header. */}
+                      <span className="sr-only">First job</span>
                     </th>
                     <th
                       key={`b-${jobs.b}`}
@@ -1529,7 +1525,7 @@ function ConjointChoice({
                       className={`${palette(jobs.b)} ${styles.conjointFresh}`}
                       style={rowStyle(0)}
                     >
-                      Job B
+                      <span className="sr-only">Second job</span>
                     </th>
                   </tr>
                 </thead>
@@ -1573,9 +1569,15 @@ function ConjointChoice({
                           type="button"
                           className={`black-button ${styles.conjointChoose}`}
                           onClick={() => choose(side)}
-                          aria-label={`Choose job ${side.toUpperCase()}`}
+                          // Two identical "Choose" buttons need telling
+                          // apart when read aloud.
+                          aria-label={
+                            side === 'a'
+                              ? 'Choose the first job'
+                              : 'Choose the second job'
+                          }
                         >
-                          Choose {side.toUpperCase()}
+                          Choose
                         </button>
                       </td>
                     ))}
@@ -1586,6 +1588,12 @@ function ConjointChoice({
                 vs.
               </span>
             </div>
+            {/* Under the cards. A polite live region: a screen reader
+              hears the count move on after each pick, since the table
+              itself only swaps its cell text. */}
+            <p className={styles.conjointCount} aria-live="polite">
+              Round {rounds.length + 1} of {question.rounds}
+            </p>
           </div>
           {rounds.length > 0 && (
             <button
@@ -1604,7 +1612,7 @@ function ConjointChoice({
             tabIndex={-1}
             ref={doneRef}
           >
-            All {question.rounds} choices made
+            All {question.rounds} rounds done
           </h3>
           <button
             type="button"

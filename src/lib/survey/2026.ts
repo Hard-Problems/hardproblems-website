@@ -218,7 +218,7 @@ export const SURVEY_2026: SurveyDefinition = {
       kind: 'conjoint',
       id: 'job-choice',
       text: 'Which job would you take?',
-      hint: 'Imagine you are offered both jobs. Pick the one you would prefer.',
+      hint: 'Imagine you are offered both jobs. Pick the one you’d prefer.',
       rounds: 8,
       attributes: [
         {

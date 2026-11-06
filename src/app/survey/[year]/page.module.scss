@@ -594,9 +594,11 @@ $job-palettes: (
 
 // "Choice 3 of 8", above the cards.
 .conjointCount {
-  margin: 0 0 0.6rem 0;
+  margin: 0.75rem 0 0 0;
   font-size: var(--font-size-xs);
   color: #555;
+  // Centred under the two cards, in line with the "vs." between them.
+  text-align: center;
 }
 
 // Two job cards side by side. It is a table so the rows line up across
@@ -635,12 +637,14 @@ $job-palettes: (
     border: 0;
   }
 
-  // "Job A" — a small label, so the headline under it is what reads.
+  // The card's top: just the coloured band, then the title. The header
+  // cell's only content is a screen-reader label ("First job"), so its
+  // height is the padding — the space between band and title.
   // The coloured band is an inset shadow rather than a thick top
   // border, so it follows the rounded corners instead of meeting the
   // grey side borders at an angle.
   thead th {
-    padding: 1.05rem 1rem 0.15rem;
+    padding: 0.85rem 1rem 0;
     border-top: 1px solid #e2e2e2;
     border-radius: 10px 10px 0 0;
     box-shadow: inset 0 4px 0 var(--job-accent);
