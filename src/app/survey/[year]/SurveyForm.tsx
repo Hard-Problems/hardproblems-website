@@ -1957,9 +1957,7 @@ function PrizeDraw({
 
 function ThankYou({ survey }: { survey: SurveyDefinition }) {
   const shareUrl = `https://www.hardproblems.com/survey/${survey.year}?source=share`;
-  // The full title already ends in "Survey", so it is not followed by
-  // another "survey". Quoted so the title reads as a name.
-  const shareText = `I took “${survey.title}” and you should too! ${shareUrl} Please re-share.`;
+  const shareText = `I just took the Hard Problems survey about design and product careers. Let’s find out what we think makes a career satisfying. ${shareUrl} Please re-share.`;
   const [copied, setCopied] = useState(false);
 
   return (
