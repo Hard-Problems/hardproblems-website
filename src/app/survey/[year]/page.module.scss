@@ -365,6 +365,9 @@
 .select,
 .textarea {
   display: block;
+  // border-box, or `width: 100%` plus the padding and border ran 28px
+  // past the column on a phone and scrolled the page sideways.
+  box-sizing: border-box;
   width: 100%;
   margin-top: 1.25rem;
   padding: 0.7rem 0.8rem;
@@ -386,8 +389,43 @@
 }
 
 .textarea {
-  resize: vertical;
-  line-height: 1.5;
+  // One line tall until used, so the bonus round's three optional boxes
+  // read as a short list rather than a wall of empty space. Grows to
+  // six lines on focus, and stays open once it has text in it
+  // (`:placeholder-shown` is false then; the placeholder, "Optional",
+  // is set in SurveyForm). Its count line is hidden while it is
+  // collapsed.
+  // 1em of text, a little under one line, plus the padding and border
+  // (border-box): only ever seen empty, since focusing or filling it
+  // opens it to six lines.
+  height: calc(1em + 1.4rem + 2px);
+  // Collapsed, the one line is set to the box's height so the
+  // placeholder sits centred in it; it opens back to 1.5 below.
+  line-height: 1;
+  overflow: hidden;
+  resize: none;
+
+  @media (prefers-reduced-motion: no-preference) {
+    transition: height 0.18s ease;
+  }
+
+  &:focus,
+  &:not(:placeholder-shown) {
+    // Six lines of 1.5, plus padding and border.
+    height: calc(9em + 1.4rem + 2px);
+    line-height: 1.5;
+    overflow: auto;
+    resize: vertical;
+  }
+
+  &:placeholder-shown:not(:focus) + .charCount {
+    display: none;
+  }
+
+  &::placeholder {
+    color: #999;
+    opacity: 1;
+  }
 }
 
 // The country picker — the one dropdown left in the survey.
@@ -945,6 +983,61 @@ $job-palettes: (
 .shareText {
   margin: 0 0 1rem 0;
   font-size: var(--font-size-sm);
+}
+
+.shareOr {
+  margin: 1.25rem 0 0.5rem;
+  font-size: var(--font-size-sm);
+  color: #555;
+}
+
+// One-click shares to each network, as small round outlined icons
+// under the copy button — secondary to it, and quiet enough that seven
+// of them do not shout.
+.shareLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shareLink,
+.shareLink:visited {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  // A faint ring: the icon is what reads, the circle only groups it.
+  border: 1px solid #d3e4d9;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--color-dark-green);
+  text-decoration: none;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--color-dark-green);
+    background: var(--color-dark-green);
+    color: #fff;
+  }
+}
+
+// Brand marks are filled shapes; the email envelope (Lucide) is a
+// stroked one, so it keeps its stroke and no fill.
+.shareIcon {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+
+  &:global(.lucide) {
+    fill: none;
+  }
 }
 
 // The shared newsletter form, which ships its own styling from

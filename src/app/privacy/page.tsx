@@ -360,8 +360,10 @@ export default function Page() {
           When you submit the survey we store your answers, the time you sent
           them, and a short label indicating where you found the link (for
           example <em>smashing-magazine</em>, taken from the shared URL). Until
-          you press &ldquo;Finish and send&rdquo;, your answers are kept only in
+          you press &ldquo;Send my answers&rdquo;, your answers are kept only in
           your own browser, so you can leave at any point and nothing is sent.
+          Answers to the optional bonus questions afterwards are added to the
+          same response if you choose to send them.
         </p>
         <p>
           Separately, our analytics record how far through the survey visitors

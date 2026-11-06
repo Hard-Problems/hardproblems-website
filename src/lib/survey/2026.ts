@@ -34,7 +34,7 @@ export const SURVEY_2026: SurveyDefinition = {
   ],
   image: '/images/content/thumb-survey-2026.jpg',
   // Midnight UTC, which is midnight in London in November.
-  opensAt: '2026-11-11T00:00:00.000Z',
+  opensAt: '2026-11-01T00:00:00.000Z', // TEMP-QA
   // Exclusive: the form closes as 30 November ends.
   closesAt: '2026-12-01T00:00:00.000Z',
 
@@ -65,7 +65,12 @@ export const SURVEY_2026: SurveyDefinition = {
   },
   // Headings for the shared steps — see `group` on a question.
   groups: {
-    'about-you': { title: 'About you and where you work' }
+    'about-you': { title: 'About you and where you work' },
+    bonus: {
+      title: 'Bonus round',
+      hint: 'Your answers are saved.',
+      afterSend: true
+    }
   },
 
   // Subject position only — see roleSubjects on SurveyDefinition.
@@ -83,9 +88,7 @@ export const SURVEY_2026: SurveyDefinition = {
       'still-here-in-5':
         'How likely are you to still be running your own organisation in five years?',
       'would-recommend':
-        'Would you recommend becoming a founder to a younger friend?',
-      'one-change':
-        'If you could change one thing about being a founder, what would it be?'
+        'Would you recommend becoming a founder to a younger friend?'
     }
   },
   defaultTerm: 'design',
@@ -424,7 +427,7 @@ export const SURVEY_2026: SurveyDefinition = {
       kind: 'text',
       id: 'metaphor',
       text: '{Subject} in 2026 feels like…',
-      hint: 'Finish the sentence with a metaphor.',
+      hint: 'Finish the sentence.',
       maxLength: 200
     },
 
@@ -638,15 +641,33 @@ export const SURVEY_2026: SurveyDefinition = {
       ]
     },
 
+    // The bonus round: optional written questions asked AFTER the
+    // answers are sent (`afterSend` on the group — see bonus.ts), so
+    // anyone who stops here has already sent everything else. Not a
+    // numbered step.
     {
       kind: 'textarea',
       id: 'one-change',
-      // "working in {term}" rather than "the {term} industry": the
-      // latter breaks for most terms ("the startups industry").
-      text: 'If you could change one thing about working in {term}, what would it be?',
-      hint: 'Optional — you can skip this and finish.',
+      group: 'bonus',
+      text: 'One thing you’d change about our industry?',
       optional: true,
       maxLength: 2000
+    },
+    {
+      kind: 'textarea',
+      id: 'admire',
+      group: 'bonus',
+      text: 'Who do you admire in your field? Why?',
+      optional: true,
+      maxLength: 1000
+    },
+    {
+      kind: 'textarea',
+      id: 'amazing-work',
+      group: 'bonus',
+      text: 'What’s one project or organisation that you think is amazing?',
+      optional: true,
+      maxLength: 1000
     }
   ]
 };

@@ -17,6 +17,7 @@
 import type { SurveyDefinition, SurveyQuestion } from './types';
 import { LIKERT_MIN, LIKERT_MAX, OTHER_MAX_LENGTH } from './types';
 import { validateConjoint } from './conjoint';
+import { isBonusQuestion } from './bonus';
 
 /**
  * One question's answer.
@@ -222,6 +223,30 @@ export function validateSubmission(
     if (message) errors.push({ questionId: question.id, message });
   }
 
+  return errors;
+}
+
+/**
+ * Validate bonus-round answers, sent after the main submission.
+ *
+ * Only bonus questions may appear: this route adds to a stored
+ * response, so it must not be a way to rewrite the answers already
+ * given. Each answer gets the same checks as in a full submission.
+ */
+export function validateBonus(
+  survey: SurveyDefinition,
+  answers: Answers
+): FieldError[] {
+  const errors: FieldError[] = [];
+  for (const [id, answer] of Object.entries(answers)) {
+    const question = survey.questions.find((q) => q.id === id);
+    if (!question || !isBonusQuestion(survey, question)) {
+      errors.push({ questionId: id, message: 'Unknown question.' });
+      continue;
+    }
+    const message = validateAnswer(question, answer);
+    if (message) errors.push({ questionId: id, message });
+  }
   return errors;
 }
 

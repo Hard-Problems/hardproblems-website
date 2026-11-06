@@ -8,10 +8,12 @@ import {
   applyTerm,
   orderedOptions,
   normalizeSource,
+  buildSteps,
   questionTextFor
 } from './index';
 import {
   normalizeAnswers,
+  validateBonus,
   validateSubmission,
   validateAnswer,
   type Answers
@@ -28,6 +30,7 @@ import {
 } from './conjoint';
 import { analyseConjoint, choicesFrom } from './conjoint-analysis';
 import { hasEarlyAccess, isValidPreviewCode } from './preview';
+import { bonusQuestions, mainQuestions } from './bonus';
 
 let pass = 0,
   fail = 0;
@@ -42,7 +45,7 @@ function check(name: string, cond: boolean, extra = '') {
 
 // ---- definition integrity -------------------------------------------
 const qs = SURVEY_2026.questions;
-check('26 questions', qs.length === 26, `got ${qs.length}`);
+check('28 questions', qs.length === 28, `got ${qs.length}`);
 check('question ids unique', new Set(qs.map((q) => q.id)).size === qs.length);
 for (const q of qs) {
   if ('options' in q) {
@@ -103,13 +106,46 @@ check(
         new Set(q.labels).size === q.labels.length
     )
 );
+// The optional questions are exactly the bonus round, all on the last
+// step — nothing required can be skipped by accident.
 check(
-  'exactly one optional question',
-  qs.filter((q) => q.optional).length === 1
+  'optional questions are the bonus round',
+  JSON.stringify(qs.filter((q) => q.optional).map((q) => q.id)) ===
+    JSON.stringify(['one-change', 'admire', 'amazing-work']) &&
+    qs.filter((q) => q.optional).every((q) => q.group === 'bonus')
+);
+// The bonus round is asked after sending, so it is not a numbered step
+// and nothing in it may be required.
+check(
+  'bonus questions are not numbered steps',
+  mainQuestions(SURVEY_2026).every((q) => q.group !== 'bonus') &&
+    bonusQuestions(SURVEY_2026).length === 3 &&
+    buildSteps(mainQuestions(SURVEY_2026)).length === 21
 );
 check(
-  'the optional one is one-change',
-  qs.find((q) => q.optional)?.id === 'one-change'
+  'every bonus question is optional',
+  bonusQuestions(SURVEY_2026).every((q) => q.optional)
+);
+check(
+  'bonus answers accepted on their own',
+  validateBonus(SURVEY_2026, {
+    admire: { value: 'Someone who mentored me.' }
+  }).length === 0
+);
+check(
+  'bonus route cannot rewrite main answers',
+  validateBonus(SURVEY_2026, {
+    admire: { value: 'ok' },
+    role: { value: 'founder' }
+  }).some((e) => e.questionId === 'role')
+);
+check(
+  'bonus answers get the usual checks',
+  validateBonus(SURVEY_2026, { 'one-change': { value: '=HYPERLINK(1)' } })
+    .length === 1 &&
+    validateBonus(SURVEY_2026, { admire: { value: 'x'.repeat(1001) } })
+      .length === 1 &&
+    validateBonus(SURVEY_2026, { admire: { value: 5 } } as never).length === 1
 );
 
 // ---- registry + open window -----------------------------------------
@@ -214,7 +250,7 @@ const asked = (role: string, id: string) =>
   );
 check(
   'founder questions do not assume a startup or a field',
-  ['still-here-in-5', 'would-recommend', 'one-change', 'metaphor'].every(
+  ['still-here-in-5', 'would-recommend', 'metaphor'].every(
     (id) => !/startup|design/i.test(asked('founder', id))
   ),
   asked('founder', 'would-recommend')

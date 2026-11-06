@@ -42,6 +42,7 @@ import {
   Copy,
   DoorOpen,
   Heart,
+  Mail,
   RotateCcw,
   Sparkles,
   Users,
@@ -54,6 +55,7 @@ import {
   orderedOptions,
   questionTextFor
 } from '../../../lib/survey';
+import { bonusQuestions, mainQuestions } from '../../../lib/survey/bonus';
 import type {
   ConjointIcon,
   ConjointQuestion,
@@ -80,8 +82,10 @@ import {
 } from '../../../lib/survey/validate';
 import NewsletterForm from '../../../components/NewsletterForm';
 import styles from './page.module.scss';
+import { SHARE_ICON_PATHS } from './shareIcons';
 
-type Phase = 'start' | 'questions' | 'sending' | 'done';
+// 'bonus' is the optional bonus round, after the answers are sent.
+type Phase = 'start' | 'questions' | 'sending' | 'bonus' | 'done';
 
 type Saved = { seed: string; answers: Answers; step: number };
 
@@ -180,7 +184,17 @@ export default function SurveyForm({
   // puts several on the same one — see buildSteps(). Everything below
   // counts, validates and navigates in steps; the questions inside a
   // step are still wholly separate answers.
-  const steps = useMemo(() => buildSteps(survey.questions), [survey.questions]);
+  // The numbered steps are the questions asked before sending; the
+  // bonus round comes after and is not counted (see lib/survey/bonus.ts).
+  const steps = useMemo(() => buildSteps(mainQuestions(survey)), [survey]);
+  const bonus = useMemo(() => bonusQuestions(survey), [survey]);
+  // The stored response's key, kept in this tab's memory only, so the
+  // bonus answers can be added to it. Never written to storage.
+  const [responseToken, setResponseToken] = useState('');
+  // Set once the answers are saved. After that, browser Back does not
+  // return to the questions, where pressing send again would store a
+  // second copy of the same response.
+  const sentRef = useRef(false);
   const total = steps.length;
   const current = steps[step];
   const groupId = current[0].group;
@@ -280,7 +294,9 @@ export default function SurveyForm({
   const [headerEl, setHeaderEl] = useState<Element | null>(null);
   useEffect(() => {
     setHeaderEl(
-      phase === 'questions' ? document.querySelector('.site-header') : null
+      phase === 'questions' || phase === 'bonus'
+        ? document.querySelector('.site-header')
+        : null
     );
   }, [phase]);
 
@@ -294,7 +310,8 @@ export default function SurveyForm({
   // mid-survey would leave the class on the body and the next page
   // would render with no navigation at all.
   useEffect(() => {
-    const focused = phase === 'questions';
+    // The bonus round too: it is still part of the survey.
+    const focused = phase === 'questions' || phase === 'bonus';
     document.body.classList.toggle('survey-focus', focused);
     // Past the start screen: hides the band under the menu (page.tsx),
     // which belongs to the first page only.
@@ -336,7 +353,7 @@ export default function SurveyForm({
       )?.hpSurvey;
       // No entry of ours: an older entry from before this page, which
       // the browser is navigating to on its own. Leave it alone.
-      if (!state) return;
+      if (!state || sentRef.current) return;
       fromPopState.current = true;
       setErrors({});
       // 'sending' and 'done' are not navigable — a submitted response
@@ -488,7 +505,7 @@ export default function SurveyForm({
           // and the respondent could never submit.
           answers: Object.fromEntries(
             Object.entries(answers).filter(([id]) =>
-              survey.questions.some((q) => q.id === id)
+              steps.some((s) => s.some((q) => q.id === id))
             )
           ),
           source,
@@ -496,11 +513,11 @@ export default function SurveyForm({
           hp: honeypot
         })
       });
-      // The route still returns a `token`, and the response row still
-      // carries one as its dedupe key — the client just has no use for
-      // it now that nothing is attached to a response after the fact.
+      // `token` is the stored response's key, used to add the bonus
+      // answers to it.
       const body = (await res.json()) as {
         ok: boolean;
+        token?: string;
         error?: string;
         fields?: { questionId: string; message: string }[];
       };
@@ -544,10 +561,78 @@ export default function SurveyForm({
         survey_year: survey.year,
         internal_test: Boolean(accessCode)
       });
-      setPhase('done');
+      sentRef.current = true;
+      setResponseToken(body.token ?? '');
+      setErrors({});
+      setPhase(bonus.length > 0 ? 'bonus' : 'done');
     } catch {
       setPhase('questions');
       setSubmitError('We could not reach the server. Please try again.');
+    }
+  }
+
+  // ---- the bonus round, after sending ----------------------------------
+  const [bonusSending, setBonusSending] = useState(false);
+
+  function finishBonus(
+    event: 'survey_bonus_submitted' | 'survey_bonus_skipped',
+    answered = 0
+  ) {
+    posthog?.capture(event, {
+      survey_year: survey.year,
+      answered,
+      internal_test: Boolean(accessCode)
+    });
+    setErrors({});
+    setSubmitError(null);
+    setPhase('done');
+  }
+
+  async function sendBonus() {
+    // Only the boxes with something in them. All blank is the same as
+    // skipping, and needs no request.
+    const given = bonus.filter((q) => {
+      const v = answers[q.id]?.value;
+      return typeof v === 'string' && v.trim() !== '';
+    });
+    if (given.length === 0) {
+      finishBonus('survey_bonus_skipped');
+      return;
+    }
+    // The same checks the server makes, so a problem shows on the box
+    // rather than as a refusal.
+    const found: Record<string, string> = {};
+    for (const q of given) {
+      const message = validateAnswer(q, answers[q.id], countries);
+      if (message) found[q.id] = `“${questionText(q)}”: ${message}`;
+    }
+    setErrors(found);
+    if (Object.keys(found).length > 0) return;
+
+    setBonusSending(true);
+    setSubmitError(null);
+    try {
+      const res = await fetch('/api/survey/bonus', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          year: survey.year,
+          token: responseToken,
+          answers: Object.fromEntries(given.map((q) => [q.id, answers[q.id]]))
+        })
+      });
+      const body = (await res.json()) as { ok: boolean; error?: string };
+      if (!res.ok || !body.ok) {
+        setSubmitError(
+          body.error ?? 'Something went wrong. Please try again in a moment.'
+        );
+        return;
+      }
+      finishBonus('survey_bonus_submitted', given.length);
+    } catch {
+      setSubmitError('We could not reach the server. Please try again.');
+    } finally {
+      setBonusSending(false);
     }
   }
 
@@ -668,6 +753,95 @@ export default function SurveyForm({
             See our <Link href="/privacy#survey">privacy notice</Link> for how
             we handle this data.
           </p>
+        </div>
+      </>
+    );
+  }
+
+  // ---- bonus round ---------------------------------------------------
+  // After sending: the answers are already stored, so everything here is
+  // extra. Still inside the survey's frame (focus mode, the header bar),
+  // but not a numbered step: the bar is full and the count reads "Bonus
+  // round". No Back — there is nothing to go back to once the answers
+  // are sent — and Exit goes on to the thank-you page.
+  if (phase === 'bonus') {
+    const group = survey.groups?.[bonus[0]?.group ?? ''];
+    const bonusErrors = bonus
+      .map((q) => ({ id: q.id, message: errors[q.id] }))
+      .filter((e): e is { id: string; message: string } => Boolean(e.message));
+    return (
+      <>
+        <h1 className="sr-only">{shortTitle}</h1>
+        {headerEl &&
+          createPortal(
+            <SurveyHeader
+              title={shortTitle}
+              step={total - 1}
+              total={total}
+              stepLabel="Bonus round"
+              onExit={() => finishBonus('survey_bonus_skipped')}
+            />,
+            headerEl
+          )}
+        <div className={styles.step}>
+          {bonusErrors.length > 0 && (
+            <div className={styles.errorSummary} role="alert">
+              <ul className={styles.errorList}>
+                {bonusErrors.map((e) => (
+                  <li key={e.id} id={`${e.id}-error`}>
+                    {e.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <div className={styles.stepBody}>
+            <h2
+              className={styles.questionHeading}
+              tabIndex={-1}
+              ref={headingRef}
+            >
+              {group?.title ?? 'Bonus round'}
+            </h2>
+            {group?.hint && <p className={styles.hint}>{group.hint}</p>}
+            {bonus.map((q, i) => (
+              <QuestionBody
+                key={q.id}
+                question={q}
+                heading={questionText(q)}
+                inGroup
+                describedBy={errors[q.id] ? `${q.id}-error` : undefined}
+                answer={answers[q.id]}
+                seed={seed}
+                countries={countries}
+                onAnswer={(a) => setAnswer(q.id, a)}
+                first={i === 0}
+              />
+            ))}
+          </div>
+          {submitError && (
+            <p className={styles.errorSummary} role="alert">
+              {submitError}
+            </p>
+          )}
+          <div className={styles.actions}>
+            <button
+              type="button"
+              className="black-button"
+              onClick={sendBonus}
+              disabled={bonusSending}
+            >
+              {/* One button either way: with answers it adds them, with
+                none it simply moves on (see sendBonus). */}
+              {bonusSending ? (
+                'Sending…'
+              ) : (
+                <>
+                  Done <span aria-hidden="true">→</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </>
     );
@@ -853,7 +1027,7 @@ export default function SurveyForm({
                   'Sending…'
                 ) : (
                   <>
-                    {step === total - 1 ? 'Finish and send' : 'Continue'}{' '}
+                    {step === total - 1 ? 'Send my answers' : 'Continue'}{' '}
                     <span aria-hidden="true">→</span>
                   </>
                 )}
@@ -900,20 +1074,24 @@ function SurveyHeader({
   title,
   step,
   total,
+  stepLabel,
   onExit,
   onBack
 }: {
   title: string;
   step: number;
   total: number;
+  /** In place of "Step N of M" — the bonus round's "Bonus round". */
+  stepLabel?: string;
   /** Back to the survey's own first screen; the answers stay saved. */
   onExit: () => void;
   /**
-   * Always present. On the first step it goes to the survey's opening
-   * screen — that screen holds the intro, the prize draw and the
-   * privacy notice, so it is somewhere worth being able to get back to.
+   * On every numbered step. On the first it goes to the survey's
+   * opening screen — that screen holds the intro, the prize draw and
+   * the privacy notice, so it is somewhere worth being able to get back
+   * to. Absent in the bonus round, after the answers are sent.
    */
-  onBack: () => void;
+  onBack?: () => void;
 }) {
   // Counts the current step, so step 1 already shows some progress and
   // the last step fills the bar.
@@ -962,15 +1140,20 @@ function SurveyHeader({
       </div>
 
       <div className="survey-step-row">
-        <button
-          type="button"
-          className="black-button black-button--small survey-back"
-          onClick={onBack}
-        >
-          <span aria-hidden="true">←</span> Back
-        </button>
+        {onBack ? (
+          <button
+            type="button"
+            className="black-button black-button--small survey-back"
+            onClick={onBack}
+          >
+            <span aria-hidden="true">←</span> Back
+          </button>
+        ) : (
+          // Holds Back's grid cell, so the count stays where it was.
+          <span aria-hidden="true" />
+        )}
         <p className="survey-step-count">
-          Step {step + 1} of {total}
+          {stepLabel ?? `Step ${step + 1} of ${total}`}
         </p>
       </div>
     </>
@@ -1388,6 +1571,10 @@ function QuestionBody({
             {...NO_AUTOFILL}
             className={styles.textarea}
             rows={6}
+            // Also how the stylesheet tells an empty box from one with
+            // an answer (`:placeholder-shown`) — empty ones collapse to a
+            // single line. Never empty, or that test stops working.
+            placeholder={question.optional ? 'Optional' : ' '}
             maxLength={question.maxLength}
             aria-describedby={describedBy}
             value={typeof answer?.value === 'string' ? answer.value : ''}
@@ -1963,10 +2150,67 @@ function PrizeDraw({
   );
 }
 
+// Where the share buttons go. Each link carries its own ?source=, so
+// the results can say which network brought people in. LinkedIn and
+// Facebook take only a link — they build the preview from the page's
+// social card, and do not let a link prefill the post's text.
+type ShareTarget = {
+  name: string;
+  source: string;
+  href: (url: string, text: string) => string;
+};
+const SHARE_TARGETS: ShareTarget[] = [
+  {
+    name: 'LinkedIn',
+    source: 'share-linkedin',
+    href: (url) =>
+      `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
+  },
+  {
+    name: 'X',
+    source: 'share-x',
+    href: (_url, text) =>
+      `https://x.com/intent/post?text=${encodeURIComponent(text)}`
+  },
+  {
+    name: 'Bluesky',
+    source: 'share-bluesky',
+    href: (_url, text) =>
+      `https://bsky.app/intent/compose?text=${encodeURIComponent(text)}`
+  },
+  {
+    name: 'Threads',
+    source: 'share-threads',
+    href: (_url, text) =>
+      `https://www.threads.net/intent/post?text=${encodeURIComponent(text)}`
+  },
+  {
+    name: 'WhatsApp',
+    source: 'share-whatsapp',
+    href: (_url, text) => `https://wa.me/?text=${encodeURIComponent(text)}`
+  },
+  {
+    name: 'Facebook',
+    source: 'share-facebook',
+    href: (url) =>
+      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`
+  },
+  {
+    name: 'Email',
+    source: 'share-email',
+    href: (_url, text) =>
+      `mailto:?subject=${encodeURIComponent('A survey about design and product careers')}&body=${encodeURIComponent(text)}`
+  }
+];
+
 function ThankYou({ survey }: { survey: SurveyDefinition }) {
-  const shareUrl = `https://www.hardproblems.com/survey/${survey.year}?source=share`;
-  const shareText = `I just took the Hard Problems survey about design and product careers. Let’s find out what we think makes a career satisfying. ${shareUrl} Please re-share.`;
+  const linkFor = (source: string) =>
+    `https://www.hardproblems.com/survey/${survey.year}?source=${source}`;
+  const textWith = (url: string) =>
+    `I just took the Hard Problems survey about design and product careers. Let’s find out what we think makes a career satisfying. ${url} Please re-share.`;
+  const shareText = textWith(linkFor('share'));
   const [copied, setCopied] = useState(false);
+  const posthog = usePostHog();
 
   return (
     <div className={styles.thankYou}>
@@ -2017,6 +2261,50 @@ function ThankYou({ survey }: { survey: SurveyDefinition }) {
           )}
           {copied ? 'Copied' : 'Copy text'}
         </button>
+        <p className={styles.shareOr}>Or share it on</p>
+        <ul className={styles.shareLinks}>
+          {SHARE_TARGETS.map((t) => {
+            const url = linkFor(t.source);
+            const isMail = t.href(url, '').startsWith('mailto:');
+            return (
+              <li key={t.name}>
+                <a
+                  className={styles.shareLink}
+                  href={t.href(url, textWith(url))}
+                  // A new tab for the networks, so this page — and the
+                  // newsletter signup on it — is still here afterwards.
+                  {...(isMail
+                    ? {}
+                    : { target: '_blank', rel: 'noopener noreferrer' })}
+                  // Icon only, so the name is given here for screen
+                  // readers, and as a tooltip for everyone else.
+                  aria-label={`Share on ${t.name}`}
+                  title={t.name}
+                  onClick={() =>
+                    posthog?.capture('survey_shared', {
+                      survey_year: survey.year,
+                      network: t.source
+                    })
+                  }
+                >
+                  {SHARE_ICON_PATHS[t.name] ? (
+                    <svg
+                      viewBox="0 0 24 24"
+                      className={styles.shareIcon}
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <path d={SHARE_ICON_PATHS[t.name]} />
+                    </svg>
+                  ) : (
+                    // Email has no brand mark: the site's own icon set.
+                    <Mail className={styles.shareIcon} aria-hidden="true" />
+                  )}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </div>
   );

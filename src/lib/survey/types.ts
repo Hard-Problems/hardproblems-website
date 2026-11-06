@@ -342,7 +342,18 @@ export type SurveyDefinition = {
    * Headings for the shared steps — see `group` on a question. Keyed by
    * group id; a group with no entry here falls back to no heading.
    */
-  groups?: Record<string, { title: string; hint?: string }>;
+  groups?: Record<
+    string,
+    {
+      title: string;
+      hint?: string;
+      /**
+       * Asked only after the answers are sent, as an unnumbered bonus
+       * round — see bonus.ts. Its questions must all be optional.
+       */
+      afterSend?: boolean;
+    }
+  >;
   /** Option id → the wording used for `{term}` in later questions. */
   roleTerms: Record<string, string>;
   /**
