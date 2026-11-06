@@ -14,35 +14,52 @@ import { Redis } from '@upstash/redis';
 // fallback is still available via the legacy `rateLimit()` in http.ts
 // for callers that want any protection during development.
 
-let cached: Ratelimit | null = null;
-let bootstrapped = false;
+// One limiter per bucket, cached by prefix.
+//
+// Buckets are separate on purpose. Everything used to share
+// `hp:signup`, which meant unrelated endpoints spent each other's
+// budget: someone who had just subscribed to the newsletter arrived at
+// another form with attempts already used up, and a burst against one
+// endpoint weakened the protection on all of them.
+const limiters = new Map<string, Ratelimit | null>();
 
-function getLimiter(): Ratelimit | null {
-  if (bootstrapped) return cached;
-  bootstrapped = true;
+// Requests per minute per key, unless a caller asks for its own.
+const DEFAULT_PER_MINUTE = 5;
+
+function getLimiter(prefix: string, perMinute: number): Ratelimit | null {
+  const existing = limiters.get(prefix);
+  if (existing !== undefined) return existing;
+
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) {
+    limiters.set(prefix, null);
     return null;
   }
-  cached = new Ratelimit({
+  const limiter = new Ratelimit({
     redis: new Redis({ url, token }),
     // Sliding window feels smoother than a fixed-bucket for bursty
-    // human traffic. 5 requests per minute per key is generous for
+    // human traffic. The default 5 per minute per key is generous for
     // real signups and tight for bots.
-    limiter: Ratelimit.slidingWindow(5, '60 s'),
-    prefix: 'hp:signup',
+    limiter: Ratelimit.slidingWindow(perMinute, '60 s'),
+    prefix,
     analytics: false
   });
-  return cached;
+  limiters.set(prefix, limiter);
+  return limiter;
 }
 
 // Returns true if the request should be allowed. Never throws — on
 // any Upstash failure we fail open (allow) so a Redis outage doesn't
 // take down signups.
-export async function isAllowedByRateLimit(key: string): Promise<boolean> {
+export async function isAllowedByRateLimit(
+  key: string,
+  prefix = 'hp:signup',
+  perMinute = DEFAULT_PER_MINUTE
+): Promise<boolean> {
   if (!key) return true;
-  const rl = getLimiter();
+  // Cached by prefix, so one prefix must always be used with one limit.
+  const rl = getLimiter(prefix, perMinute);
   if (!rl) return true;
   try {
     const { success } = await rl.limit(key);
@@ -52,3 +69,22 @@ export async function isAllowedByRateLimit(key: string): Promise<boolean> {
     return true;
   }
 }
+
+/**
+ * The survey's own bucket.
+ *
+ * Separate from the signup forms because the two have nothing to do
+ * with each other: a respondent makes one call (the answers) and should
+ * not arrive to find their budget spent by an unrelated newsletter
+ * signup from the same IP — nor should survey traffic erode the
+ * protection on those forms.
+ */
+export const SURVEY_RATE_LIMIT_PREFIX = 'hp:survey';
+
+/**
+ * Survey submissions per minute per IP — far above the signup forms'
+ * 5. Everyone on one office, university or conference network shares
+ * an IP, and a link shared in a room produces a burst of finishes
+ * within a minute or two. 30 still stops bulk scripted submission.
+ */
+export const SURVEY_RATE_LIMIT_PER_MINUTE = 30;

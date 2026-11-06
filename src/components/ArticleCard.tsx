@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { SquarePlay, Headphones, Sparkle } from 'lucide-react';
+import { ArrowRight, SquarePlay, Headphones, Sparkle } from 'lucide-react';
 import {
   type Article,
   articleTypeSlug,
@@ -24,12 +24,36 @@ export default function ArticleCard({
   article,
   compact = false,
   hero = false,
-  hideDate = false
+  hideDate = false,
+  href,
+  imageCta,
+  durationLabel
 }: {
   article: Article;
   compact?: boolean;
   hero?: boolean;
   hideDate?: boolean;
+  /**
+   * Where the card links, when that is not an article. The annual
+   * survey appears in the homepage list and lives at /survey/<year>.
+   *
+   * An override rather than a second card component: these cards have
+   * a lot of markup and a lot of layout variants, and a copy of them
+   * for the survey would be one more thing to keep in step by eye.
+   */
+  href?: string;
+  /**
+   * A call to action set over the image, styled as a button: "Take the
+   * survey". Not a separate control — the whole card is already the
+   * link, and a link inside a link is invalid HTML — so it is a span
+   * that looks like a button and responds to hovering the card.
+   */
+  imageCta?: string;
+  /**
+   * The words after "N min" on the meta line, in place of read / watch
+   * / podcast: the survey's "7 min survey".
+   */
+  durationLabel?: string;
 }) {
   const articleTypeLower = article.articleType?.toLowerCase();
   const isVideo = articleTypeLower === 'video';
@@ -76,7 +100,7 @@ export default function ArticleCard({
         </div>
       )}
       <Link
-        href={`/articles/${article.slug}`}
+        href={href ?? `/articles/${article.slug}`}
         className={`${styles.articleCardLink} hover-saturate`}
       >
         {(article.image || article.thumbnailVideo) && (
@@ -117,6 +141,15 @@ export default function ArticleCard({
                 Watch
               </span>
             )}
+            {imageCta && (
+              <span className={styles.articleCardCta}>
+                {imageCta}
+                <ArrowRight
+                  className={styles.articleCardCtaIcon}
+                  aria-hidden="true"
+                />
+              </span>
+            )}
             {isPodcast && (
               <span className={styles.articleCardBadge}>
                 <Headphones
@@ -134,7 +167,8 @@ export default function ArticleCard({
               {article.readingTime ? (
                 <>
                   {article.readingTime} min{' '}
-                  {isVideo ? 'watch' : isPodcast ? 'podcast' : 'read'}
+                  {durationLabel ??
+                    (isVideo ? 'watch' : isPodcast ? 'podcast' : 'read')}
                 </>
               ) : null}
               {article.readingTime && showDate && (

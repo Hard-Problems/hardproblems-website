@@ -35,9 +35,7 @@ export function truncateIp(ip: string | null | undefined): string | null {
   const trimmed = ip.trim();
   const ipv4 = trimmed.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3})\.\d{1,3}$/);
   if (ipv4) return `${ipv4[1]}.0`;
-  const ipv6 = trimmed.match(
-    /^([0-9a-f]{1,4}:[0-9a-f]{1,4}:[0-9a-f]{1,4}):/i
-  );
+  const ipv6 = trimmed.match(/^([0-9a-f]{1,4}:[0-9a-f]{1,4}:[0-9a-f]{1,4}):/i);
   if (ipv6) return `${ipv6[1]}::`;
   return null;
 }
@@ -72,12 +70,10 @@ const RATE_WINDOW_MS = 60_000;
 const RATE_MAX_HITS = 3;
 const hits = new Map<string, number[]>();
 
-export function rateLimit(ip: string): boolean {
+export function rateLimit(ip: string, maxHits = RATE_MAX_HITS): boolean {
   const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter(
-    (t) => now - t < RATE_WINDOW_MS
-  );
-  if (recent.length >= RATE_MAX_HITS) {
+  const recent = (hits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
+  if (recent.length >= maxHits) {
     hits.set(ip, recent);
     return false;
   }
@@ -97,9 +93,7 @@ export function rateLimit(ip: string): boolean {
 // (NEXT_PUBLIC_SITE_URL) so preview deployments can point at
 // themselves; falls back to production.
 export function siteUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || SITE_URL
-  );
+  return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || SITE_URL;
 }
 
 // Append UTM parameters to a URL so PostHog can attribute the landing

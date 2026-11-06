@@ -344,6 +344,52 @@ export default function Page() {
         </h3>
         <p>Directly from you</p>
 
+        <h3 className="space-top-large" id="survey">
+          The annual survey
+        </h3>
+        <p>
+          Once a year we run a survey about working in design (for example,{' '}
+          <Link href="/survey/2026">
+            “What we want from work: A Design &amp; Product Survey”
+          </Link>
+          ). Your answers are <strong>anonymous</strong>. We do not ask who you
+          are, we do not record your IP address with your answers, and nothing
+          in the questionnaire is used to identify you.
+        </p>
+        <p>
+          When you submit the survey we store your answers, the time you sent
+          them, and a short label indicating where you found the link (for
+          example <em>smashing-magazine</em>, taken from the shared URL). Until
+          you press &ldquo;Finish and send&rdquo;, your answers are kept only in
+          your own browser, so you can leave at any point and nothing is sent.
+        </p>
+        <p>
+          Separately, our analytics record how far through the survey visitors
+          get — which step is reached, and whether the survey is finished — so
+          we can see where people stop. These records never include your
+          answers. They use the same cookieless{' '}
+          <Link href="#cookies">analytics</Link> as the rest of the site.
+        </p>
+        <p>
+          We do not collect your email address with the survey. If you join our
+          newsletter at the end, that is an ordinary newsletter signup, handled
+          like any other and kept entirely separate from your answers. We cannot
+          tell which response, if any, belongs to a subscriber.
+        </p>
+        <p>
+          Our lawful basis for the anonymous answers is legitimate interest
+          (understanding the design profession in order to publish research).
+          Our lawful basis for the newsletter is your consent, which you can
+          withdraw at any time.
+        </p>
+        <p>
+          <strong>Deleting a response.</strong> Because the answers are
+          anonymous, once they are sent we have no way to tell which response is
+          yours, so we cannot find or delete an individual response. Please do
+          not include personal details, such as your name or employer, in the
+          written answers.
+        </p>
+
         <h3 className="space-top-large" id="keep">
           How long we keep information
         </h3>
@@ -366,9 +412,13 @@ export default function Page() {
           Contact information provided for the purpose of attending an event or
           applying for a service are removed after 3 months.
         </p>
+        <p>
+          Anonymous survey answers are kept indefinitely so that each year can
+          be compared with the last.
+        </p>
 
         <h3 className="space-top-large">Last updated</h3>
-        <p>8 July 2026</p>
+        <p>5 November 2026</p>
       </section>
       <section className="right">
         <h3 id="complain">How to complain</h3>

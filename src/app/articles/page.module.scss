@@ -109,6 +109,58 @@
   flex-shrink: 0;
 }
 
+// A call to action over the image — the homepage survey hero's "Take
+// the survey". Looks like the site's black-button; it is a span inside
+// the card's link (see ArticleCard), so it lights up when the card is
+// hovered rather than on its own.
+.articleCardCta {
+  position: absolute;
+  left: 50%;
+  bottom: 32px;
+  // Centred on the image. Kept in a transform rather than a margin so
+  // it never fights with the card's own spacing.
+  transform: translateX(-50%);
+  white-space: nowrap;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  // 5rem wider than the site's normal button sides (28px each), so
+  // the one call to action on the homepage reads as the main one.
+  padding: 12px calc(28px + 2.5rem);
+  border-radius: 100px;
+  background: var(--color-dark-green);
+  color: #fff;
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  line-height: 1;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  transition: background 0.2s ease;
+}
+
+.articleCardCtaIcon {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.articleCardLink:hover .articleCardCta,
+.articleCardLink:focus-visible .articleCardCta {
+  background: var(--color-mid-green);
+}
+
+.articleCardLink:hover .articleCardCtaIcon,
+.articleCardLink:focus-visible .articleCardCtaIcon {
+  transform: translateX(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .articleCardCtaIcon {
+    transition: none;
+  }
+}
+
 // Row above the thumbnail carrying the "NEW" chip (recent articles
 // only) followed by the article-type kicker. Rendered as an inline
 // flex row so both sit on the same baseline. Mono-kicker typography
@@ -157,7 +209,6 @@
     align-self: center;
   }
 }
-
 
 // Article-type kicker sitting above the thumbnail (e.g. "OPINION",
 // "VIDEO", "BOOK REVIEW"). Plain text, no pill background — matches

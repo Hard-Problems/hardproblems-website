@@ -2,11 +2,10 @@ import type { MetadataRoute } from 'next';
 import { getAllArticles, articleTypeSlug } from '../lib/articles';
 import { AUTHORS } from '../lib/authors';
 import { fetchJobs } from './jobs/fetchJobs';
-import {
-  locationSlug,
-  qualifyingCountries
-} from './jobs/locations';
+import { locationSlug, qualifyingCountries } from './jobs/locations';
 import { buildJobSlugs, jobKey } from './jobs/jobSlug';
+import { allSurveys, isOpen } from '../lib/survey';
+import { opensLater } from '../lib/survey/preview';
 import { SITE_URL } from '../lib/siteUrl';
 import { META_REGIONS } from './jobs/filters';
 
@@ -40,6 +39,10 @@ const TOP_LEVEL: Array<{
   { path: '/conduct', priority: 0.3, changeFrequency: 'yearly' }
 ];
 
+// Rebuilt hourly rather than once per deploy, so a survey appears here
+// within the hour of opening without anyone redeploying.
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
@@ -50,6 +53,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: t.changeFrequency,
     priority: t.priority
   }));
+
+  // Every survey we have run. Included after it closes as well as while
+  // it is open: the permalink still describes the survey and will carry
+  // the results, so it stays worth indexing. `isOpen` only changes the
+  // crawl hints — a live survey is worth revisiting, a closed one is
+  // not going to change again.
+  // A survey that has not opened yet is left out: its page is only an
+  // "opens on…" notice, marked noindex until then.
+  const surveys: MetadataRoute.Sitemap = allSurveys()
+    .filter((survey) => !opensLater(survey))
+    .map((survey) => ({
+      url: `${SITE}/survey/${survey.year}`,
+      lastModified: now,
+      changeFrequency: isOpen(survey)
+        ? ('weekly' as const)
+        : ('yearly' as const),
+      priority: isOpen(survey) ? 0.8 : 0.4
+    }));
 
   // Published articles + the article-type index pages that group them.
   const articles = getAllArticles();
@@ -117,6 +138,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...top,
+    ...surveys,
     ...articleUrls,
     ...typeUrls,
     ...regionUrls,

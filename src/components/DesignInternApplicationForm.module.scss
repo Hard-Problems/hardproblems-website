@@ -93,7 +93,7 @@
 // span carries `aria-label="required"` in the JSX so screen readers
 // announce it as words rather than reading a bare star glyph.
 .requiredMark {
-  color: #b23a2a;
+  color: var(--color-error);
   font-weight: 400;
   margin-left: 0.25em;
 }
