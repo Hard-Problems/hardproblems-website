@@ -946,13 +946,24 @@ $job-palettes: (
   }
 }
 
+// Wide screens use the card floated beside the title; phones use the
+// copy placed after the newsletter signup (see SurveyForm).
+.donePrizeNarrow {
+  display: none;
+}
+
 // Too narrow to sit beside anything on a phone: back into the flow,
-// full width, above the title.
+// full width, under the newsletter signup.
 @media only screen and (max-width: 600px) {
-  .donePrize {
+  .donePrizeWide {
+    display: none;
+  }
+
+  .donePrize.donePrizeNarrow {
+    display: block;
     float: none;
     width: auto;
-    margin: 0 0 2rem;
+    margin: 2rem 0 0;
   }
 }
 
