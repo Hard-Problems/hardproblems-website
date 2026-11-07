@@ -467,13 +467,23 @@ export const SURVEY_2026: SurveyDefinition = {
     },
 
     {
+      // Five points, not three ("Burnt out / Close to / Not"): three
+      // answers lump very different people together, which blurs any
+      // link with satisfaction and makes burnout look like a weaker
+      // driver than it is (shown by scripts/survey-simulate.ts).
+      // Frequency wording is close to how burnout is usually measured.
+      // Listed best first like every `scale` question, so as a row it
+      // reads Always (red) to Never (green).
       kind: 'single',
       id: 'burnout',
-      text: 'Do you feel burnt out?',
+      text: 'How often do you feel burnt out by your work?',
+      scale: 'row',
       options: [
-        { id: 'burnt-out', label: 'Burnt out' },
-        { id: 'close', label: 'Close to burn out' },
-        { id: 'not-burnt-out', label: 'Not burnt out' }
+        { id: 'never', label: 'Never' },
+        { id: 'rarely', label: 'Rarely' },
+        { id: 'sometimes', label: 'Sometimes' },
+        { id: 'often', label: 'Often' },
+        { id: 'always', label: 'Always' }
       ]
     },
 
