@@ -849,25 +849,37 @@ export default function SurveyForm({
 
   // ---- done ----------------------------------------------------------
   if (phase === 'done') {
+    const prize = (
+      <PrizeDraw
+        survey={survey}
+        as="h2"
+        imageSizes="(max-width: 600px) calc(100vw - 72px), 218px"
+      >
+        <p>
+          Newsletter subscribers will be entered into a draw for one of{' '}
+          {PRIZE.copies} copies of <em>{PRIZE.title}</em> by {PRIZE.authors}.{' '}
+          <Link href={PRIZE.review}>Read our review of the book</Link>.
+        </p>
+      </PrizeDraw>
+    );
     return (
       <>
-        {/* First, so it floats top right from the very top of the
-            screen, level with the title. */}
-        <aside className={styles.donePrize}>
-          <PrizeDraw
-            survey={survey}
-            as="h2"
-            imageSizes="(max-width: 600px) calc(100vw - 72px), 218px"
-          >
-            <p>
-              Newsletter subscribers will be entered into a draw for one of{' '}
-              {PRIZE.copies} copies of <em>{PRIZE.title}</em> by {PRIZE.authors}
-              . <Link href={PRIZE.review}>Read our review of the book</Link>.
-            </p>
-          </PrizeDraw>
+        {/* The prize card is in two places, one shown at a time (no
+            ids inside, so the copy is harmless). Wide: first, so it
+            floats top right level with the title. Phone: after the
+            newsletter signup it rewards, rather than above the title. */}
+        <aside className={`${styles.donePrize} ${styles.donePrizeWide}`}>
+          {prize}
         </aside>
         {masthead}
-        <ThankYou survey={survey} />
+        <ThankYou
+          survey={survey}
+          prize={
+            <aside className={`${styles.donePrize} ${styles.donePrizeNarrow}`}>
+              {prize}
+            </aside>
+          }
+        />
       </>
     );
   }
@@ -2203,7 +2215,14 @@ const SHARE_TARGETS: ShareTarget[] = [
   }
 ];
 
-function ThankYou({ survey }: { survey: SurveyDefinition }) {
+function ThankYou({
+  survey,
+  prize
+}: {
+  survey: SurveyDefinition;
+  /** The prize card, placed after the newsletter signup (phones only). */
+  prize?: React.ReactNode;
+}) {
   const linkFor = (source: string) =>
     `https://www.hardproblems.com/survey/${survey.year}?source=${source}`;
   const textWith = (url: string) =>
@@ -2231,6 +2250,8 @@ function ThankYou({ survey }: { survey: SurveyDefinition }) {
       <div className={styles.newsletterBox}>
         <NewsletterForm hideLabel campaign={`survey-${survey.year}`} />
       </div>
+
+      {prize}
 
       <h2 className={styles.thankYouHeading}>Help us reach more people</h2>
       <p>
