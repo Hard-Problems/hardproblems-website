@@ -11,14 +11,22 @@
 //                       survey, but the form is gone. The brief asks
 //                       for exactly this, and it is also what keeps the
 //                       URL worth linking to after the fact.
+//
+// In any of the survey's languages, picked with ?lang= (see
+// lib/survey/i18n). The translation is chosen here, on the server, and
+// the form gets only that one — never the whole set.
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { allSurveys, getSurvey, isOpen } from '../../../lib/survey';
-import { COUNTRY_NAMES } from '../../../lib/countries';
+import { COUNTRY_ISO_CODES, COUNTRY_NAMES } from '../../../lib/countries';
 import { hasEarlyAccess, opensLater } from '../../../lib/survey/preview';
-import SurveyForm from './SurveyForm';
+import { languagesFor, translate } from '../../../lib/survey/i18n';
+import { splitTemplate } from '../../../lib/survey/i18n/format';
+import type { SurveyLanguage } from '../../../lib/survey/i18n/languages';
+import type { SurveyUi } from '../../../lib/survey/i18n/types';
+import SurveyForm, { LanguageLinks, type LanguageLink } from './SurveyForm';
 import styles from './page.module.scss';
 
 type Props = {
@@ -32,56 +40,159 @@ export function generateStaticParams() {
   return allSurveys().map((s) => ({ year: String(s.year) }));
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams
+}: Props): Promise<Metadata> {
   const { year } = await params;
-  const survey = getSurvey(year);
-  if (!survey) return { title: 'Survey — Hard Problems' };
+  const base = getSurvey(year);
+  if (!base) return { title: 'Survey — Hard Problems' };
+  const sp = await searchParams;
+  const { survey } = translate(base, sp.lang);
   return {
     title: `${survey.title} — Hard Problems`,
     description: survey.intro,
     // Kept out of search results until it opens: before then the page
     // is only an "opens on…" notice, plus the early-access form for
     // the team (see preview.ts).
-    robots: opensLater(survey) ? { index: false, follow: false } : undefined,
+    robots: opensLater(base) ? { index: false, follow: false } : undefined,
     alternates: {
       // The ?source= parameter is for attribution, not for indexing —
       // without this every shared variant would be a separate URL in
       // Google's eyes, all with identical content.
-      canonical: `/survey/${survey.year}`
+      canonical: `/survey/${base.year}`
     },
     openGraph: {
       title: survey.title,
       description: survey.intro,
-      url: `/survey/${survey.year}`,
+      url: `/survey/${base.year}`,
       type: 'website',
       // Relative is fine — the root layout's metadataBase resolves it.
       // Setting it here replaces the site-wide /opengraph-image, which is
       // the point: a shared survey link should show the survey.
-      images: survey.image ? [survey.image] : undefined
+      images: base.image ? [base.image] : undefined
     },
     twitter: {
       card: 'summary_large_image',
       title: survey.title,
       description: survey.intro,
-      images: survey.image ? [survey.image] : undefined
+      images: base.image ? [base.image] : undefined
     }
   };
 }
 
+/**
+ * A date in the respondent's language, formatted here on the server so
+ * the browser's own date data cannot render it differently and trip a
+ * hydration mismatch.
+ */
+function formatDate(iso: string, locale: string, month: 'long' | 'short') {
+  const options: Intl.DateTimeFormatOptions = {
+    day: 'numeric',
+    month,
+    year: 'numeric',
+    timeZone: 'UTC'
+  };
+  try {
+    return new Date(iso).toLocaleDateString(locale, options);
+  } catch {
+    return new Date(iso).toLocaleDateString('en-GB', options);
+  }
+}
+
+/** closesAt is exclusive: the last day anyone could answer is the day before. */
+function lastDay(closesAt: string): string {
+  const d = new Date(closesAt);
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString();
+}
+
+/**
+ * Country names in the respondent's language, from the browser-standard
+ * region names (Intl.DisplayNames). The VALUES stay the English names
+ * the validator and the analysis use; only what is shown changes.
+ * Sorted by the translated name, as someone reading that language
+ * would look for it.
+ */
+function localizedCountries(locale: string): {
+  names: string[];
+  labels: Record<string, string>;
+} {
+  const labels: Record<string, string> = {};
+  let display: Intl.DisplayNames | null = null;
+  try {
+    display = new Intl.DisplayNames([locale], {
+      type: 'region',
+      fallback: 'none'
+    });
+  } catch {
+    display = null;
+  }
+  for (const name of COUNTRY_NAMES) {
+    let label: string | undefined;
+    try {
+      label = display?.of(COUNTRY_ISO_CODES[name]);
+    } catch {
+      label = undefined;
+    }
+    labels[name] = label || name;
+  }
+  let collator: Intl.Collator;
+  try {
+    collator = new Intl.Collator(locale);
+  } catch {
+    collator = new Intl.Collator('en');
+  }
+  const names = [...COUNTRY_NAMES].sort((a, b) =>
+    collator.compare(labels[a], labels[b])
+  );
+  return { names, labels };
+}
+
+/** This page in another language, keeping the link's other parameters. */
+function languageHref(
+  year: number,
+  code: string,
+  sp: Record<string, string | string[] | undefined>
+): string {
+  const q = new URLSearchParams();
+  for (const key of ['source', 'access'] as const) {
+    const v = sp[key];
+    if (typeof v === 'string' && v) q.set(key, v);
+  }
+  if (code !== 'en') q.set('lang', code);
+  const s = q.toString();
+  return `/survey/${year}${s ? `?${s}` : ''}`;
+}
+
 export default async function SurveyPage({ params, searchParams }: Props) {
   const { year } = await params;
-  const survey = getSurvey(year);
-  if (!survey) notFound();
+  const base = getSurvey(year);
+  if (!base) notFound();
 
   // Captured blindly from the link, as the brief asks. It is normalised
   // on the way into storage, not here — see normalizeSource().
   const sp = await searchParams;
   const rawSource = typeof sp.source === 'string' ? sp.source : '';
 
-  const open = isOpen(survey);
+  const { language, survey, ui } = translate(base, sp.lang);
+  const locale = language.htmlLang;
+
+  const open = isOpen(base);
   // Early access for the team before opening — see preview.ts.
   const accessCode = typeof sp.access === 'string' ? sp.access : '';
-  const earlyAccess = !open && hasEarlyAccess(survey, accessCode);
+  const earlyAccess = !open && hasEarlyAccess(base, accessCode);
+
+  const languages: LanguageLink[] = languagesFor(base).map(
+    (l: SurveyLanguage) => ({
+      code: l.code,
+      nativeName: l.nativeName,
+      htmlLang: l.htmlLang,
+      dir: l.dir,
+      href: languageHref(base.year, l.code, sp)
+    })
+  );
+  const countries = localizedCountries(locale);
 
   return (
     // `ph-no-capture` turns PostHog's autocapture off for everything in
@@ -94,15 +205,20 @@ export default async function SurveyPage({ params, searchParams }: Props) {
           hidden once someone is answering or has finished (the
           `survey-past-start` class SurveyForm sets on <body>). Reuses
           the newsletter band's classes for an identical look. */}
-      <div className="newsletter-module newsletter-module--under-nav survey-band">
+      <div
+        className="newsletter-module newsletter-module--under-nav survey-band"
+        lang={locale}
+        dir={language.dir}
+      >
         <div className="newsletter-module-inner">
-          <p className="newsletter-form-label">
-            We are a nonprofit that helps designers to work on the world&rsquo;s
-            urgent problems.
-          </p>
+          <p className="newsletter-form-label">{ui.band}</p>
         </div>
       </div>
-      <main className={`${styles.survey} ph-no-capture`}>
+      <main
+        className={`${styles.survey} ph-no-capture`}
+        lang={locale}
+        dir={language.dir}
+      >
         {/* No class: the column width and padding come from `.survey` on
           the <main>, and this element only groups the content. It used
           to reference a `styles.intro` rule that was never written. */}
@@ -114,7 +230,14 @@ export default async function SurveyPage({ params, searchParams }: Props) {
             the server-rendered HTML for anyone arriving cold; only the
             closed state needs its own copy. */}
           {earlyAccess && (
-            <p className={styles.previewBanner} role="status">
+            // English on purpose: it is for the team, whatever language
+            // they are testing.
+            <p
+              className={styles.previewBanner}
+              role="status"
+              lang="en"
+              dir="ltr"
+            >
               <strong>Internal test.</strong> This survey isn&rsquo;t open to
               the public yet. Responses sent from here are saved as test data.
             </p>
@@ -122,7 +245,19 @@ export default async function SurveyPage({ params, searchParams }: Props) {
           {open || earlyAccess ? (
             <SurveyForm
               survey={survey}
-              countries={COUNTRY_NAMES}
+              ui={ui}
+              language={{
+                code: language.code,
+                htmlLang: language.htmlLang,
+                dir: language.dir
+              }}
+              languages={languages}
+              countries={countries.names}
+              countryLabels={countries.labels}
+              dates={{
+                closesLong: formatDate(lastDay(base.closesAt), locale, 'long'),
+                closesShort: formatDate(lastDay(base.closesAt), locale, 'short')
+              }}
               source={rawSource}
               accessCode={earlyAccess ? accessCode : undefined}
             />
@@ -130,12 +265,22 @@ export default async function SurveyPage({ params, searchParams }: Props) {
             <>
               {/* While open, SurveyForm renders the title itself so the
                 thank-you screen can change it. */}
-              <p className={styles.kicker}>Survey</p>
+              <LanguageLinks
+                languages={languages}
+                current={language.code}
+                ui={ui}
+              />
+              <p className={styles.kicker}>{ui.kicker}</p>
               <h1 className="page-title">
                 {survey.shortTitle ?? survey.title}
               </h1>
               <p className="intro">{survey.intro}</p>
-              <ClosedNotice survey={survey} />
+              <ClosedNotice
+                notYet={Date.now() < Date.parse(base.opensAt)}
+                opens={formatDate(base.opensAt, locale, 'long')}
+                closed={formatDate(lastDay(base.closesAt), locale, 'long')}
+                ui={ui}
+              />
             </>
           )}
         </article>
@@ -145,46 +290,34 @@ export default async function SurveyPage({ params, searchParams }: Props) {
 }
 
 function ClosedNotice({
-  survey
+  notYet,
+  opens,
+  closed,
+  ui
 }: {
-  survey: { year: number; opensAt: string; closesAt: string };
+  notYet: boolean;
+  opens: string;
+  closed: string;
+  ui: SurveyUi;
 }) {
-  const notYet = Date.now() < Date.parse(survey.opensAt);
-  const closed = new Date(survey.closesAt);
-  // closesAt is exclusive — the last day people could answer was the day
-  // before it.
-  closed.setUTCDate(closed.getUTCDate() - 1);
-  const closedLabel = closed.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC'
-  });
-
-  const openLabel = new Date(survey.opensAt).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC'
-  });
-
+  const link = <Link href="/newsletter">{ui.closed.newsletterLinkText}</Link>;
+  const hear = notYet ? ui.closed.hearWhenOpens : ui.closed.hearResults;
   return (
     <div className={styles.closed}>
       <p>
-        {notYet ? (
-          <>This survey opens on {openLabel}.</>
-        ) : (
-          <>
-            This survey closed on {closedLabel} and is no longer accepting
-            responses. Thank you to everyone who took part.
-          </>
+        {(notYet ? ui.closed.opensOn : ui.closed.closedOn).replace(
+          '{date}',
+          notYet ? opens : closed
         )}
       </p>
       <p>
-        <Link href="/newsletter">Join the newsletter</Link> to hear{' '}
-        {notYet
-          ? 'when it opens, and when the results are published.'
-          : 'when the results are published.'}
+        {splitTemplate(hear).map((part, i) =>
+          'key' in part ? (
+            <span key={i}>{part.key === 'link' ? link : `{${part.key}}`}</span>
+          ) : (
+            <span key={i}>{part.text}</span>
+          )
+        )}
       </p>
     </div>
   );

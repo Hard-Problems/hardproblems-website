@@ -13,6 +13,10 @@
 //   --by <questionId>  also break importance down by the answer to a
 //                      single-choice question (role, seniority, …)
 //   --min <n>          smallest segment worth reporting (default 50)
+//   --min-seconds <n>  leave out responses that finished all the
+//                      choices in under n seconds (too fast to have
+//                      read the cards). Responses with no recorded
+//                      time are kept, and counted in the report.
 //   --json             machine-readable output instead of Markdown
 //
 // Reads Supabase with SUPABASE_URL / SUPABASE_SECRET_KEY, the same
@@ -25,6 +29,7 @@ import type { ConjointQuestion } from '../src/lib/survey/types';
 import {
   analyseConjoint,
   choicesFrom,
+  durationOf,
   type ConjointResult
 } from '../src/lib/survey/conjoint-analysis';
 
@@ -137,7 +142,27 @@ async function main() {
   );
   if (!q) throw new Error('No conjoint question found');
 
-  const rows = await loadRows(survey.year);
+  const allRows = await loadRows(survey.year);
+
+  // Speeders out, before anything is fitted, so segments see the same
+  // cleaned sample as the overall model.
+  const minSecondsArg = arg('min-seconds');
+  const minSeconds = minSecondsArg === undefined ? 0 : Number(minSecondsArg);
+  if (!Number.isFinite(minSeconds) || minSeconds < 0) {
+    throw new Error(`--min-seconds must be a number of seconds`);
+  }
+  const untimed = allRows.filter((r) => durationOf(q, r) === undefined);
+  const rows = allRows.filter((r) => {
+    const ms = durationOf(q, r);
+    return ms === undefined || ms >= minSeconds * 1000;
+  });
+  const timing =
+    `Timing: ${allRows.length - untimed.length} of ${allRows.length} responses timed` +
+    (minSeconds > 0
+      ? `; ${allRows.length - rows.length} left out for finishing in under ${minSeconds}s`
+      : '') +
+    (untimed.length ? `; ${untimed.length} with no time kept in.` : '.');
+
   const choices = choicesFrom(q, rows);
   if (choices.length === 0) {
     console.log(`No answers to "${q.id}" yet (${rows.length} responses).`);
@@ -170,11 +195,27 @@ async function main() {
   }
 
   if (flag('json')) {
-    console.log(JSON.stringify({ overall, segments }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          timing: {
+            responses: allRows.length,
+            timed: allRows.length - untimed.length,
+            minSeconds,
+            excluded: allRows.length - rows.length
+          },
+          overall,
+          segments
+        },
+        null,
+        2
+      )
+    );
     return;
   }
 
   console.log(`# ${q.text} — ${survey.title}\n`);
+  console.log(`${timing}\n`);
   console.log(markdown(q, overall));
   if (by) {
     console.log(`\n## Importance by ${by}\n`);

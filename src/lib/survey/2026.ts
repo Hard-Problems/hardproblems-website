@@ -30,7 +30,7 @@ export const SURVEY_2026: SurveyDefinition = {
     'A survey for designers, researchers, writers and product people about how they feel about their careers.',
   why: [
     'There’s a lot of data on what companies want from designers and PMs, and almost none on what designers and PMs want from their careers. Help us fix that. What actually makes people feel satisfied with their work?',
-    'In our report, we will try to show where pockets of joy and pride are in our industry. And, maybe you can find your way there.'
+    'In our report, we will try to show where people find joy and pride in our industry.'
   ],
   image: '/images/content/thumb-survey-2026.jpg',
   // Midnight UTC, which is midnight in London in November.
@@ -229,10 +229,16 @@ export const SURVEY_2026: SurveyDefinition = {
           label: 'Pay',
           levels: [
             {
-              id: 'less-10',
-              label: '10% less than now',
-              short: '10% pay cut',
-              value: -10
+              id: 'less-30',
+              label: '30% less than now',
+              short: '30% pay cut',
+              value: -30
+            },
+            {
+              id: 'less-15',
+              label: '15% less than now',
+              short: '15% pay cut',
+              value: -15
             },
             {
               id: 'same',
@@ -251,24 +257,6 @@ export const SURVEY_2026: SurveyDefinition = {
               label: '30% more than now',
               short: '30% pay rise',
               value: 30
-            }
-          ]
-        },
-        {
-          id: 'level',
-          label: 'Level',
-          levels: [
-            {
-              id: 'same',
-              label: 'Same level as now',
-              short: 'Same career level',
-              icon: 'arrow-right'
-            },
-            {
-              id: 'promotion',
-              label: 'A promotion',
-              short: 'Promotion',
-              icon: 'arrow-up'
             }
           ]
         },
@@ -337,6 +325,11 @@ export const SURVEY_2026: SurveyDefinition = {
               id: 'established',
               label: 'An established product',
               short: 'Improving an established product'
+            },
+            {
+              id: 'new',
+              label: 'New product development',
+              short: 'Developing a new product'
             }
           ]
         }
@@ -367,9 +360,6 @@ export const SURVEY_2026: SurveyDefinition = {
       card: [
         { attributes: ['work'], subtitle: true },
         { attributes: ['pay'], icon: 'banknote', strong: true },
-        // The icon comes from the level: up for a promotion, across
-        // for the same level.
-        { attributes: ['level'], strong: true },
         { attributes: ['brand'], icon: 'building' },
         { attributes: ['mission'], icon: 'heart' }
       ]

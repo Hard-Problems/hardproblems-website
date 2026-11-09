@@ -194,15 +194,22 @@ export type ConjointAttribute = {
      */
     noun?: string;
     /**
+     * Set by a translation (see i18n/content.ts) in place of `short`:
+     * the card wording for each level of `attribute` on the same card.
+     * "Well-known {organisation}" assembled from parts cannot agree an
+     * adjective with the noun's gender; a whole phrase per organisation
+     * can.
+     */
+    shortBy?: { attribute: string; values: Record<string, string> };
+    /**
      * The icon for this level, in place of its line's `icon` — so a
-     * line can show which way something goes: up for a promotion,
-     * across for the same level. Only on a line of one attribute.
+     * line can show which way something goes (say, up or across). Only on a line of one attribute.
      */
     icon?: ConjointIcon;
     /**
      * A number for the level, on the attribute that is money. Only the
      * analysis reads it: with pay as a number it can price every other
-     * attribute in pay — "a promotion is worth 9% of salary".
+     * attribute in pay — "doing good is worth 9% of salary".
      */
     value?: number;
   }[];

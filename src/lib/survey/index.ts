@@ -162,6 +162,14 @@ export function applyTerm(
 // saw, if we ever need to.
 // ---------------------------------------------------------------------
 
+function collatorFor(locale?: string): (a: string, b: string) => number {
+  try {
+    return new Intl.Collator(locale).compare;
+  } catch {
+    return (a, b) => a.localeCompare(b);
+  }
+}
+
 function shuffled<T>(items: T[], rand: () => number): T[] {
   const out = [...items];
   for (let i = out.length - 1; i > 0; i--) {
@@ -179,22 +187,22 @@ function shuffled<T>(items: T[], rand: () => number): T[] {
  */
 export function orderedOptions<T extends { id: string; label: string }>(
   question: { id: string; options?: T[]; order?: string },
-  seed: string
+  seed: string,
+  /** The language the labels are in, for alphabetical order. */
+  locale?: string
 ): T[] {
   const options = question.options ?? [];
+  const compare = collatorFor(locale);
   switch (question.order) {
     case 'alpha':
-      return [...options].sort((a, b) => a.label.localeCompare(b.label));
+      return [...options].sort((a, b) => compare(a.label, b.label));
     case 'alphaExceptLast': {
       // Alphabetical, but "Other…" stays at the bottom. Sorted into
       // place it would sit under O, in the middle of the real choices,
       // where it reads as one of them rather than as the escape hatch.
       const head = options.slice(0, -1);
       const tail = options.slice(-1);
-      return [
-        ...[...head].sort((a, b) => a.label.localeCompare(b.label)),
-        ...tail
-      ];
+      return [...[...head].sort((a, b) => compare(a.label, b.label)), ...tail];
     }
     case 'shuffle':
       return shuffled(options, seededRandom(`${seed}:${question.id}`));

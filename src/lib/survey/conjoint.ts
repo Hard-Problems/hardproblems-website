@@ -9,7 +9,7 @@
 //
 // An answer is `value: string[]`, one string per choice, in order:
 //
-//   "pay:same,level:promotion,…|pay:more-30,level:same,…|b"
+//   "pay:same,mission:for-good,…|pay:more-30,mission:commercial,…|b"
 //
 // That is card A, card B and the pick, each card listing every
 // attribute as `attribute:level` in definition order. Self-describing

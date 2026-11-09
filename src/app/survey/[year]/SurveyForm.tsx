@@ -21,7 +21,9 @@
 // progress. They are cleared on successful submit.
 
 import {
+  createContext,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -80,6 +82,8 @@ import {
   type Answer,
   type Answers
 } from '../../../lib/survey/validate';
+import { fill, plural, splitTemplate } from '../../../lib/survey/i18n/format';
+import type { SurveyUi } from '../../../lib/survey/i18n/types';
 import NewsletterForm from '../../../components/NewsletterForm';
 import styles from './page.module.scss';
 import { SHARE_ICON_PATHS } from './shareIcons';
@@ -103,6 +107,118 @@ const NO_AUTOFILL = {
 
 function storageKey(year: number) {
   return `hp-survey-${year}`;
+}
+
+/** The language the survey is shown in, as the page passes it. */
+export type FormLanguage = {
+  /** Stored with the response: 'en', 'fr'… (see i18n/languages.ts). */
+  code: string;
+  /** BCP 47, for `lang` attributes and number and plural rules. */
+  htmlLang: string;
+  dir: 'ltr' | 'rtl';
+};
+
+/** One entry in the language picker. */
+export type LanguageLink = {
+  code: string;
+  nativeName: string;
+  htmlLang: string;
+  dir: 'ltr' | 'rtl';
+  href: string;
+};
+
+/**
+ * The respondent's language, for the components below the form. A
+ * context rather than props threaded through every question type: all
+ * of them need the interface strings, and most need nothing else from
+ * the form.
+ */
+type I18n = {
+  ui: SurveyUi;
+  language: FormLanguage;
+  /** English country name (the stored value) → name in this language. */
+  countryLabels: Record<string, string>;
+};
+const I18nContext = createContext<I18n | null>(null);
+function useI18n(): I18n {
+  const value = useContext(I18nContext);
+  if (!value) throw new Error('useI18n outside SurveyForm');
+  return value;
+}
+
+/** "→", or "←" in a right-to-left language, where onward is leftward. */
+function forward(dir: 'ltr' | 'rtl') {
+  return dir === 'rtl' ? '←' : '→';
+}
+
+/**
+ * A translated string whose placeholders are elements — a link, the
+ * book's title in italics — rather than text. `parts` maps each
+ * placeholder to what goes there; numbers and words can go in `params`
+ * as usual.
+ */
+function Rich({
+  template,
+  parts = {},
+  params = {}
+}: {
+  template: string;
+  parts?: Record<string, ReactNode>;
+  params?: Record<string, string | number>;
+}) {
+  return (
+    <>
+      {splitTemplate(fill(template, params)).map((part, i) =>
+        'key' in part ? (
+          <span key={i}>{parts[part.key] ?? `{${part.key}}`}</span>
+        ) : (
+          <span key={i}>{part.text}</span>
+        )
+      )}
+    </>
+  );
+}
+
+/**
+ * The language picker: every language named in itself, the current one
+ * marked rather than linked. Plain links, not buttons — each language is
+ * its own page (?lang=), so it can be opened in a new tab, shared, and
+ * works before any JavaScript has loaded.
+ */
+export function LanguageLinks({
+  languages,
+  current,
+  ui
+}: {
+  languages: LanguageLink[];
+  current: string;
+  ui: SurveyUi;
+}) {
+  if (languages.length < 2) return null;
+  return (
+    <nav className={styles.languages} aria-label={ui.languagePicker}>
+      <ul>
+        {languages.map((l) => (
+          <li key={l.code}>
+            {l.code === current ? (
+              <span aria-current="true" lang={l.htmlLang} dir={l.dir}>
+                {l.nativeName}
+              </span>
+            ) : (
+              <a
+                href={l.href}
+                hrefLang={l.htmlLang}
+                lang={l.htmlLang}
+                dir={l.dir}
+              >
+                {l.nativeName}
+              </a>
+            )}
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
 }
 
 // Hue for one point on a Likert scale: red at the low end, through
@@ -145,14 +261,33 @@ function newSeed(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
-export default function SurveyForm({
-  survey,
-  countries,
-  source,
-  accessCode
-}: {
+export default function SurveyForm(props: SurveyFormProps) {
+  const value = useMemo(
+    () => ({
+      ui: props.ui,
+      language: props.language,
+      countryLabels: props.countryLabels
+    }),
+    [props.ui, props.language, props.countryLabels]
+  );
+  return (
+    <I18nContext.Provider value={value}>
+      <SurveyFormInner {...props} />
+    </I18nContext.Provider>
+  );
+}
+
+type SurveyFormProps = {
+  /** Already in the respondent's language (see lib/survey/i18n). */
   survey: SurveyDefinition;
+  ui: SurveyUi;
+  language: FormLanguage;
+  languages: LanguageLink[];
+  /** Stored values (English names), in this language's alphabetical order. */
   countries: readonly string[];
+  countryLabels: Record<string, string>;
+  /** Formatted on the server, in this language. */
+  dates: { closesLong: string; closesShort: string };
   source: string;
   /**
    * The team's early-access code, when the survey has not opened yet
@@ -160,7 +295,18 @@ export default function SurveyForm({
    * with the submission so the server lets it through, as test data.
    */
   accessCode?: string;
-}) {
+};
+
+function SurveyFormInner({
+  survey,
+  ui,
+  language,
+  languages,
+  countries,
+  dates,
+  source,
+  accessCode
+}: SurveyFormProps) {
   const [phase, setPhase] = useState<Phase>('start');
   const [step, setStep] = useState(0);
   const posthog = usePostHog();
@@ -243,9 +389,19 @@ export default function SurveyForm({
       step: step + 1,
       total_steps: total,
       question_ids: steps[step]?.map((q) => q.id).join(','),
-      internal_test: Boolean(accessCode)
+      internal_test: Boolean(accessCode),
+      language: language.code
     });
-  }, [phase, step, total, steps, survey.year, posthog, accessCode]);
+  }, [
+    phase,
+    step,
+    total,
+    steps,
+    survey.year,
+    posthog,
+    accessCode,
+    language.code
+  ]);
 
   // The entry for however this page first appeared. replaceState, not
   // push: it describes the load itself rather than a move away from it.
@@ -471,13 +627,14 @@ export default function SurveyForm({
         q,
         answers[q.id],
         countries,
-        questionText(q)
+        questionText(q),
+        ui.validation
       );
       if (message) found[q.id] = message;
     }
     setErrors(found);
     return Object.keys(found).length === 0;
-  }, [current, answers, countries, questionText]);
+  }, [current, answers, countries, questionText, ui.validation]);
 
   const onContinue = useCallback(() => {
     if (!validateStep()) return;
@@ -509,6 +666,9 @@ export default function SurveyForm({
             )
           ),
           source,
+          // The language the respondent was reading. Stored beside the
+          // answers, which are ids and so the same in every language.
+          language: language.code,
           access: accessCode,
           hp: honeypot
         })
@@ -533,23 +693,35 @@ export default function SurveyForm({
         );
         if (at !== -1) {
           goTo(at);
-          // The server's messages are generic ("Please choose one of the
-          // options."), so each is prefixed with the question it is
-          // about — a grouped step has several.
+          // The server's messages are English, so the form says it in
+          // the respondent's language instead: the same check, run
+          // here, or a generic "answer this again" when the check
+          // passes in the browser (an answer saved before its options
+          // changed). Each is prefixed with its question — a grouped
+          // step has several.
           const found: Record<string, string> = {};
           for (const q of steps[at]) {
             const f = fields.find((x) => x.questionId === q.id);
             if (f) {
-              found[q.id] = `“${questionText(q)}”: ${f.message}`;
+              const message =
+                validateAnswer(
+                  q,
+                  answers[q.id],
+                  countries,
+                  undefined,
+                  ui.validation
+                ) ?? ui.validation.answerAgain;
+              found[q.id] = fill(ui.errors.withQuestion, {
+                question: questionText(q),
+                message
+              });
             }
           }
           setErrors(found);
           setSubmitError(null);
           return;
         }
-        setSubmitError(
-          body.error ?? 'Something went wrong. Please try again in a moment.'
-        );
+        setSubmitError(errorFor(res.status, 'submit'));
         return;
       }
       try {
@@ -559,7 +731,8 @@ export default function SurveyForm({
       }
       posthog?.capture('survey_completed', {
         survey_year: survey.year,
-        internal_test: Boolean(accessCode)
+        internal_test: Boolean(accessCode),
+        language: language.code
       });
       sentRef.current = true;
       setResponseToken(body.token ?? '');
@@ -567,8 +740,21 @@ export default function SurveyForm({
       setPhase(bonus.length > 0 ? 'bonus' : 'done');
     } catch {
       setPhase('questions');
-      setSubmitError('We could not reach the server. Please try again.');
+      setSubmitError(ui.errors.network);
     }
+  }
+
+  /**
+   * What to tell the respondent when a request fails, by status: the
+   * server's own message is English, so it is never shown directly.
+   */
+  function errorFor(status: number, route: 'submit' | 'bonus'): string {
+    if (status === 429) return ui.errors.tooMany;
+    if (status === 410) {
+      return route === 'bonus' ? ui.errors.bonusExpired : ui.errors.closed;
+    }
+    if (status === 503 && route === 'submit') return ui.errors.saveFailed;
+    return ui.errors.generic;
   }
 
   // ---- the bonus round, after sending ----------------------------------
@@ -581,7 +767,8 @@ export default function SurveyForm({
     posthog?.capture(event, {
       survey_year: survey.year,
       answered,
-      internal_test: Boolean(accessCode)
+      internal_test: Boolean(accessCode),
+      language: language.code
     });
     setErrors({});
     setSubmitError(null);
@@ -603,8 +790,19 @@ export default function SurveyForm({
     // rather than as a refusal.
     const found: Record<string, string> = {};
     for (const q of given) {
-      const message = validateAnswer(q, answers[q.id], countries);
-      if (message) found[q.id] = `“${questionText(q)}”: ${message}`;
+      const message = validateAnswer(
+        q,
+        answers[q.id],
+        countries,
+        undefined,
+        ui.validation
+      );
+      if (message) {
+        found[q.id] = fill(ui.errors.withQuestion, {
+          question: questionText(q),
+          message
+        });
+      }
     }
     setErrors(found);
     if (Object.keys(found).length > 0) return;
@@ -623,14 +821,12 @@ export default function SurveyForm({
       });
       const body = (await res.json()) as { ok: boolean; error?: string };
       if (!res.ok || !body.ok) {
-        setSubmitError(
-          body.error ?? 'Something went wrong. Please try again in a moment.'
-        );
+        setSubmitError(errorFor(res.status, 'bonus'));
         return;
       }
       finishBonus('survey_bonus_submitted', given.length);
     } catch {
-      setSubmitError('We could not reach the server. Please try again.');
+      setSubmitError(ui.errors.network);
     } finally {
       setBonusSending(false);
     }
@@ -646,9 +842,9 @@ export default function SurveyForm({
   const shortTitle = survey.shortTitle ?? survey.title;
   const masthead = (
     <>
-      <p className={styles.kicker}>Survey</p>
+      <p className={styles.kicker}>{ui.kicker}</p>
       <h1 className="page-title">
-        {phase === 'done' ? 'Thank you!' : shortTitle}
+        {phase === 'done' ? ui.done.title : shortTitle}
       </h1>
     </>
   );
@@ -657,6 +853,7 @@ export default function SurveyForm({
   if (phase === 'start') {
     return (
       <>
+        <LanguageLinks languages={languages} current={language.code} ui={ui} />
         {masthead}
         <div className={styles.startPanel}>
           {/* First child so the float has content to wrap. alt="" because
@@ -680,14 +877,12 @@ export default function SurveyForm({
           )}
           {/* What taking part involves — kept short, so the button is
             reachable without reading a privacy notice first. */}
-          <h2 className="section-label">Before you start</h2>
+          <h2 className="section-label">{ui.start.beforeYouStart}</h2>
           <ul className={styles.startFacts}>
-            <li>~{survey.minutes} minutes to complete</li>
-            <li>Answers are anonymous</li>
-            <li>You could win a free book (see below)</li>
-            <li>
-              Your progress saves in this browser, so you can stop and come back
-            </li>
+            <li>{fill(ui.start.minutes, { minutes: survey.minutes })}</li>
+            <li>{ui.start.anonymous}</li>
+            <li>{ui.start.book}</li>
+            <li>{ui.start.progress}</li>
           </ul>
           <button
             type="button"
@@ -702,7 +897,8 @@ export default function SurveyForm({
                 // return visit with saved progress).
                 resumed: Boolean(seed),
                 // Early-access testing, to filter out of the funnel.
-                internal_test: Boolean(accessCode)
+                internal_test: Boolean(accessCode),
+                language: language.code
               });
               if (!seed) setSeed(newSeed());
               setPhase('questions');
@@ -714,15 +910,14 @@ export default function SurveyForm({
             {/* The <span> is what the global `.black-button > span` rule
               slides right on hover. aria-hidden so the arrow is
               decoration, not something a screen reader reads out. */}
-            Start the survey <span aria-hidden="true">→</span>
+            {ui.start.button}{' '}
+            <span aria-hidden="true">{forward(language.dir)}</span>
           </button>
 
-          <PrizeDraw survey={survey} as="h2" large>
+          <PrizeDraw dates={dates} as="h2" large>
             <p>
-              Finish the survey, then join the Hard Problems newsletter, and you
-              could be one of {PRIZE.copies} people we send a copy of{' '}
-              <em>{PRIZE.title}</em> by {PRIZE.authors}.{' '}
-              <Link href={PRIZE.review}>Read our review of the book</Link>.
+              <PrizeText template={ui.prize.startBody} />{' '}
+              <Link href={PRIZE.review}>{ui.prize.reviewLink}</Link>
             </p>
           </PrizeDraw>
 
@@ -732,26 +927,22 @@ export default function SurveyForm({
             the <section> wrapper it used to have put it in a container
             of its own for no benefit. */}
           <h2 className={`section-label ${styles.privacyHeading}`}>
-            Your privacy
+            {ui.start.privacyHeading}
           </h2>
           <ul className={styles.startFacts}>
-            <li>
-              All answers are anonymous. We do not ask who you are, and we do
-              not record your IP address.
-            </li>
-            <li>
-              We never ask for your email address. The survey stores no way of
-              telling who sent an answer.
-            </li>
-            <li>
-              To get the results, join our newsletter at the end. We will know
-              you signed up from the survey, but your email is never linked to
-              what you answered.
-            </li>
+            {ui.start.privacy.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
           </ul>
           <p className={styles.privacyLine}>
-            See our <Link href="/privacy#survey">privacy notice</Link> for how
-            we handle this data.
+            <Rich
+              template={ui.start.privacyLine}
+              parts={{
+                link: (
+                  <Link href="/privacy#survey">{ui.start.privacyLinkText}</Link>
+                )
+              }}
+            />
           </p>
         </div>
       </>
@@ -778,7 +969,7 @@ export default function SurveyForm({
               title={shortTitle}
               step={total - 1}
               total={total}
-              stepLabel="Bonus round"
+              stepLabel={group?.title ?? ''}
               onExit={() => finishBonus('survey_bonus_skipped')}
             />,
             headerEl
@@ -801,7 +992,7 @@ export default function SurveyForm({
               tabIndex={-1}
               ref={headingRef}
             >
-              {group?.title ?? 'Bonus round'}
+              {group?.title}
             </h2>
             {group?.hint && <p className={styles.hint}>{group.hint}</p>}
             {bonus.map((q, i) => (
@@ -834,10 +1025,11 @@ export default function SurveyForm({
               {/* One button either way: with answers it adds them, with
                 none it simply moves on (see sendBonus). */}
               {bonusSending ? (
-                'Sending…'
+                ui.actions.sending
               ) : (
                 <>
-                  Done <span aria-hidden="true">→</span>
+                  {ui.actions.done}{' '}
+                  <span aria-hidden="true">{forward(language.dir)}</span>
                 </>
               )}
             </button>
@@ -851,14 +1043,13 @@ export default function SurveyForm({
   if (phase === 'done') {
     const prize = (
       <PrizeDraw
-        survey={survey}
+        dates={dates}
         as="h2"
         imageSizes="(max-width: 600px) calc(100vw - 72px), 218px"
       >
         <p>
-          Newsletter subscribers will be entered into a draw for one of{' '}
-          {PRIZE.copies} copies of <em>{PRIZE.title}</em> by {PRIZE.authors}.{' '}
-          <Link href={PRIZE.review}>Read our review of the book</Link>.
+          <PrizeText template={ui.prize.doneBody} />{' '}
+          <Link href={PRIZE.review}>{ui.prize.reviewLink}</Link>
         </p>
       </PrizeDraw>
     );
@@ -1036,11 +1227,11 @@ export default function SurveyForm({
                 disabled={sending}
               >
                 {sending ? (
-                  'Sending…'
+                  ui.actions.sending
                 ) : (
                   <>
-                    {step === total - 1 ? 'Send my answers' : 'Continue'}{' '}
-                    <span aria-hidden="true">→</span>
+                    {step === total - 1 ? ui.actions.send : ui.actions.continue}{' '}
+                    <span aria-hidden="true">{forward(language.dir)}</span>
                   </>
                 )}
               </button>
@@ -1051,7 +1242,7 @@ export default function SurveyForm({
                 className={styles.skipLink}
                 onClick={() => goTo(step + 1)}
               >
-                Skip this question
+                {ui.actions.skip}
               </button>
             )}
           </div>
@@ -1105,6 +1296,10 @@ function SurveyHeader({
    */
   onBack?: () => void;
 }) {
+  const { ui, language } = useI18n();
+  // Portalled into the site header, which is outside the <main> that
+  // carries the language — so each piece says its own.
+  const lang = { lang: language.htmlLang, dir: language.dir };
   // Counts the current step, so step 1 already shows some progress and
   // the last step fills the bar.
   const pct = Math.round(((step + 1) / total) * 100);
@@ -1112,26 +1307,46 @@ function SurveyHeader({
     <>
       {/* "Exit" here means step out of the questionnaire, not off the
           site — Start picks up where they left off. */}
-      <button type="button" className="survey-exit" onClick={onExit}>
+      <button type="button" className="survey-exit" onClick={onExit} {...lang}>
         {/* aria-hidden: the word beside it already says what this does. */}
         <DoorOpen className="survey-exit-icon" aria-hidden="true" />
         {/* The second word goes on a phone, along with the icon — see
             globals.css. Marked up rather than swapped in JS, so the
             server and the client render the same thing. */}
-        Exit<span className="survey-word-long"> survey</span>
+        {ui.header.exit}
+        {ui.header.exitRest && (
+          <span className="survey-word-long">{ui.header.exitRest}</span>
+        )}
       </button>
 
       {/* Not a heading: the page's <h1> is in the content (sr-only),
           and the question below is what someone is here to read. The
           site logo is hidden in focus mode, so this carries it — still
           linking home, still the logo's type and green full stop. */}
-      <p className="survey-header-title">
+      <p className="survey-header-title" {...lang}>
         <span className="survey-header-name">{title}</span>{' '}
         <span className="survey-header-by">
-          <span className="survey-header-muted">survey by</span>{' '}
-          <Link href="/" className="site-logo survey-header-logo">
-            Hard Problems<span className="hp-period">.</span>
-          </Link>
+          {/* "survey by {logo}", in whatever order the language puts
+              it: the words muted, the logo as the logo. */}
+          {splitTemplate(ui.header.surveyBy).map((part, i) =>
+            'key' in part ? (
+              <Link
+                key={i}
+                href="/"
+                className="site-logo survey-header-logo"
+                lang="en"
+                dir="ltr"
+              >
+                Hard Problems<span className="hp-period">.</span>
+              </Link>
+            ) : part.text.trim() ? (
+              <span key={i} className="survey-header-muted">
+                {part.text}
+              </span>
+            ) : (
+              <span key={i}> </span>
+            )
+          )}
         </span>
       </p>
 
@@ -1142,30 +1357,37 @@ function SurveyHeader({
         href="/privacy"
         target="_blank"
         rel="noopener"
+        {...lang}
       >
-        Privacy<span className="survey-word-long"> policy</span>
+        {ui.header.privacy}
+        {ui.header.privacyRest && (
+          <span className="survey-word-long">{ui.header.privacyRest}</span>
+        )}
       </a>
 
       {/* Decorative — the count below is the accessible version. */}
-      <div className="survey-progress" aria-hidden="true">
+      {/* `dir` so the bar fills from the right in a right-to-left
+          language, the way that language reads. */}
+      <div className="survey-progress" aria-hidden="true" dir={language.dir}>
         <div className="survey-progress-bar" style={{ width: `${pct}%` }} />
       </div>
 
-      <div className="survey-step-row">
+      <div className="survey-step-row" {...lang}>
         {onBack ? (
           <button
             type="button"
             className="black-button black-button--small survey-back"
             onClick={onBack}
           >
-            <span aria-hidden="true">←</span> Back
+            <span aria-hidden="true">{language.dir === 'rtl' ? '→' : '←'}</span>{' '}
+            {ui.header.back}
           </button>
         ) : (
           // Holds Back's grid cell, so the count stays where it was.
           <span aria-hidden="true" />
         )}
         <p className="survey-step-count">
-          {stepLabel ?? `Step ${step + 1} of ${total}`}
+          {stepLabel ?? fill(ui.header.step, { n: step + 1, total })}
         </p>
       </div>
     </>
@@ -1201,6 +1423,7 @@ function QuestionBody({
   onAnswer: (a: Answer) => void;
 }) {
   const narrow = useNarrow();
+  const { ui, countryLabels } = useI18n();
   const hint = question.hint ? (
     <p className={styles.hint} id={hintId}>
       {question.hint}
@@ -1268,7 +1491,7 @@ function QuestionBody({
                 })
               }
             >
-              <option value="">Choose one</option>
+              <option value="">{ui.fields.chooseOne}</option>
               {selectOptions.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.label}
@@ -1281,7 +1504,7 @@ function QuestionBody({
                   className={styles.label}
                   htmlFor={`${question.id}-other`}
                 >
-                  Please say more
+                  {ui.fields.sayMore}
                 </label>
                 <input
                   id={`${question.id}-other`}
@@ -1430,7 +1653,7 @@ function QuestionBody({
           {otherChosen && otherOption && (
             <div className={styles.otherWrap}>
               <label className={styles.label} htmlFor={`${question.id}-other`}>
-                Please say more
+                {ui.fields.sayMore}
               </label>
               <input
                 id={`${question.id}-other`}
@@ -1528,10 +1751,12 @@ function QuestionBody({
             value={typeof answer?.value === 'string' ? answer.value : ''}
             onChange={(e) => onAnswer({ value: e.target.value })}
           >
-            <option value="">Choose a country</option>
+            <option value="">{ui.fields.chooseCountry}</option>
             {countries.map((c) => (
+              // The value stays the English name the validator and the
+              // analysis use; only the words shown are translated.
               <option key={c} value={c}>
-                {c}
+                {countryLabels[c] ?? c}
               </option>
             ))}
           </select>
@@ -1586,7 +1811,7 @@ function QuestionBody({
             // Also how the stylesheet tells an empty box from one with
             // an answer (`:placeholder-shown`) — empty ones collapse to a
             // single line. Never empty, or that test stops working.
-            placeholder={question.optional ? 'Optional' : ' '}
+            placeholder={question.optional ? ui.fields.optional : ' '}
             maxLength={question.maxLength}
             aria-describedby={describedBy}
             value={typeof answer?.value === 'string' ? answer.value : ''}
@@ -1658,18 +1883,62 @@ function ConjointChoice({
     wasDone.current = done;
   }, [done]);
 
-  const lines = cardLines(question);
+  const { ui } = useI18n();
+  const lines = cardLines(question, ui);
   // Each job gets its own palette: round r shows jobs 2r and 2r+1, so
   // the two cards always differ, and so does each new pair from the
   // last — the colour change is what says "new jobs".
   const jobs = { a: rounds.length * 2, b: rounds.length * 2 + 1 };
   const palette = (n: number) => styles[`jobPalette${n % JOB_PALETTES}`];
 
+  // ---- timing ---------------------------------------------------------
+  //
+  // How long the whole run took, first pair on screen to last pick, so
+  // the analysis can set aside runs too fast to have been read. The
+  // start lives in the answer once the first pick is made, so it
+  // survives a refresh; before that, in this ref, set when the first
+  // pair appears. A run already under way without a saved start
+  // (progress from before timing existed) gets no duration rather than
+  // a too-short one, which would look exactly like a speeder.
+  const firstShownAt = useRef<number | null>(null);
+  useEffect(() => {
+    if (rounds.length === 0 && firstShownAt.current === null) {
+      firstShownAt.current = Date.now();
+    }
+  }, [rounds.length]);
+  const savedStart = parsed ? answer?.startedAt : undefined;
+
   function choose(pick: Side) {
     if (!pair) return;
+    const value = [...kept, encodeRound(question, { ...pair, pick })];
+    const startedAt =
+      savedStart ??
+      (rounds.length === 0 ? (firstShownAt.current ?? undefined) : undefined);
+    const durationMs =
+      startedAt !== undefined && value.length >= question.rounds
+        ? Date.now() - startedAt
+        : undefined;
     onAnswer({
-      value: [...kept, encodeRound(question, { ...pair, pick })]
+      value,
+      ...(startedAt !== undefined && { startedAt }),
+      ...(durationMs !== undefined && durationMs >= 0 && { durationMs })
     });
+  }
+
+  // Undo keeps the start (the clock runs on), and drops any duration,
+  // which the next last pick recomputes.
+  function undo() {
+    onAnswer({
+      value: kept.slice(0, -1),
+      ...(savedStart !== undefined && { startedAt: savedStart })
+    });
+  }
+
+  // Starting over starts the clock over: the new first pair is shown
+  // now, and the ref's effect picks that up.
+  function restart() {
+    firstShownAt.current = null;
+    onAnswer({ value: [] });
   }
 
   return (
@@ -1692,9 +1961,7 @@ function ConjointChoice({
               not), so each row's names are a header for screen readers
               only; sighted readers get the icon and the wording. */}
               <table className={styles.conjointTable}>
-                <caption className="sr-only">
-                  Two jobs. Choose the one you would take.
-                </caption>
+                <caption className="sr-only">{ui.jobs.caption}</caption>
                 {/* The first column holds only the screen-reader row
                 headers, so it takes no width. */}
                 <colgroup>
@@ -1716,7 +1983,7 @@ function ConjointChoice({
                     >
                       {/* No visible label — the card opens on its title.
                         Kept for screen readers as the column header. */}
-                      <span className="sr-only">First job</span>
+                      <span className="sr-only">{ui.jobs.firstJob}</span>
                     </th>
                     <th
                       key={`b-${jobs.b}`}
@@ -1724,7 +1991,7 @@ function ConjointChoice({
                       className={`${palette(jobs.b)} ${styles.conjointFresh}`}
                       style={rowStyle(0)}
                     >
-                      <span className="sr-only">Second job</span>
+                      <span className="sr-only">{ui.jobs.secondJob}</span>
                     </th>
                   </tr>
                 </thead>
@@ -1772,11 +2039,11 @@ function ConjointChoice({
                           // apart when read aloud.
                           aria-label={
                             side === 'a'
-                              ? 'Choose the first job'
-                              : 'Choose the second job'
+                              ? ui.jobs.chooseFirst
+                              : ui.jobs.chooseSecond
                           }
                         >
-                          Choose
+                          {ui.jobs.choose}
                         </button>
                       </td>
                     ))}
@@ -1784,23 +2051,26 @@ function ConjointChoice({
                 </tfoot>
               </table>
               <span className={styles.conjointVs} aria-hidden="true">
-                vs.
+                {ui.jobs.vs}
               </span>
             </div>
             {/* Under the cards. A polite live region: a screen reader
               hears the count move on after each pick, since the table
               itself only swaps its cell text. */}
             <p className={styles.conjointCount} aria-live="polite">
-              Round {rounds.length + 1} of {question.rounds}
+              {fill(ui.jobs.round, {
+                n: rounds.length + 1,
+                total: question.rounds
+              })}
             </p>
           </div>
           {rounds.length > 0 && (
             <button
               type="button"
               className={styles.conjointLink}
-              onClick={() => onAnswer({ value: kept.slice(0, -1) })}
+              onClick={undo}
             >
-              Undo last choice
+              {ui.jobs.undo}
             </button>
           )}
         </>
@@ -1811,15 +2081,15 @@ function ConjointChoice({
             tabIndex={-1}
             ref={doneRef}
           >
-            All {question.rounds} rounds done
+            {fill(ui.jobs.allDone, { n: question.rounds })}
           </h3>
           <button
             type="button"
             className={styles.conjointLink}
-            onClick={() => onAnswer({ value: [] })}
+            onClick={restart}
           >
             <RotateCcw className={styles.conjointLinkIcon} aria-hidden="true" />
-            Go back and choose jobs again
+            {ui.jobs.again}
           </button>
         </div>
       )}
@@ -1863,14 +2133,14 @@ type CardLineSpec = {
  * The card's lines, from the definition: the title first when there is
  * one, then the `card` layout.
  */
-function cardLines(q: ConjointQuestion): CardLineSpec[] {
+function cardLines(q: ConjointQuestion, ui: SurveyUi): CardLineSpec[] {
   const spec: NonNullable<ConjointQuestion['card']> =
     q.card ?? q.attributes.map((a) => ({ attributes: [a.id] }));
   const title: CardLineSpec[] = q.cardTitle
     ? [
         {
           key: 'title',
-          name: 'Type of job',
+          name: ui.jobs.typeOfJob,
           attributes: [],
           titles: q.cardTitle
         }
@@ -1884,7 +2154,7 @@ function cardLines(q: ConjointQuestion): CardLineSpec[] {
         .filter((a): a is ConjointQuestion['attributes'][number] => !!a);
       return {
         key: line.attributes.join('+'),
-        name: attributes.map((a) => a.label).join(' and '),
+        name: attributes.map((a) => a.label).join(ui.jobs.and),
         attributes,
         icon: line.icon,
         strong: line.strong,
@@ -1945,6 +2215,13 @@ function CardLine({
       ]
     : line.attributes.map((attr) => {
         const level = attr.levels.find((l) => l.id === card[attr.id]);
+        // A translation words this line out whole for each level of the
+        // attribute it names (see `shortBy`), so adjectives can agree.
+        if (level?.shortBy) {
+          return (
+            level.shortBy.values[card[level.shortBy.attribute]] ?? level.label
+          );
+        }
         return fillNouns(level?.short ?? level?.label ?? '', card, all);
       });
   return (
@@ -1994,10 +2271,11 @@ function OptionRow({
 }
 
 function CharCount({ used, max }: { used: number; max: number }) {
+  const { ui, language } = useI18n();
   const left = max - used;
   return (
     <p className={styles.charCount} aria-live="polite">
-      {left} character{left === 1 ? '' : 's'} remaining
+      {plural(ui.fields.charsRemaining, left, language.htmlLang)}
     </p>
   );
 }
@@ -2017,10 +2295,19 @@ function CharCount({ used, max }: { used: number; max: number }) {
 // we enforce. Making it enforceable would mean attaching an identity
 // to every response, which is the thing the survey promises not to do.
 
+/**
+ * The authors' names joined by the language's own "and" — the same
+ * joiner the job cards use (" et ", "、"…), since the names themselves
+ * stay as published.
+ */
+function authorsIn(ui: SurveyUi): string {
+  return PRIZE.authorNames.join(ui.jobs.and);
+}
+
 const PRIZE = {
   copies: 20,
   title: 'Why Design Is Hard',
-  authors: 'Scott Berkun and Bryan Zug',
+  authorNames: ['Scott Berkun', 'Bryan Zug'],
   review: '/articles/why-design-is-hard',
   image: '/images/content/illustration-book-why-design-is-hard-inline.jpg',
   imageWidth: 1246,
@@ -2028,33 +2315,34 @@ const PRIZE = {
 } as const;
 
 /**
- * The last day anyone can answer, and so the closing date of the draw.
- *
- * `closesAt` is exclusive, hence the day's subtraction — the same
- * arithmetic the closed notice on the page does. Locale and time zone
- * are both pinned so the server and the client render the same string
- * and hydration does not complain. `short` gives "30 Nov 2026" for
- * the card's summary line; the terms keep the month in full.
+ * A prize sentence with the book's details filled in: the title in
+ * italics (it stays in English, as published), the authors and the
+ * number of copies as text.
  */
-function closingDateLabel(closesAt: string, short = false): string {
-  const d = new Date(closesAt);
-  d.setUTCDate(d.getUTCDate() - 1);
-  return d.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: short ? 'short' : 'long',
-    year: 'numeric',
-    timeZone: 'UTC'
-  });
+function PrizeText({ template }: { template: string }) {
+  const { ui } = useI18n();
+  return (
+    <Rich
+      template={template}
+      params={{ copies: PRIZE.copies, authors: authorsIn(ui) }}
+      parts={{ title: <em lang="en">{PRIZE.title}</em> }}
+    />
+  );
 }
 
 function PrizeDraw({
-  survey,
+  dates,
   as: Heading,
   large = false,
   imageSizes,
   children
 }: {
-  survey: SurveyDefinition;
+  /**
+   * The draw's closing date — the last day anyone can answer — in the
+   * respondent's language, formatted on the server. `closesShort` is
+   * "30 Nov 2026" for the summary line; the terms keep the month whole.
+   */
+  dates: { closesLong: string; closesShort: string };
   /** h2 on both screens; h3 kept for a card nested under an h2. */
   as: 'h2' | 'h3';
   /** A bigger cover on the landing screen, where the prize is a reason
@@ -2064,8 +2352,12 @@ function PrizeDraw({
   imageSizes?: string;
   children: ReactNode;
 }) {
-  const closes = closingDateLabel(survey.closesAt);
-  const closesShort = closingDateLabel(survey.closesAt, true);
+  const { ui } = useI18n();
+  const params = {
+    copies: PRIZE.copies,
+    authors: authorsIn(ui),
+    date: dates.closesLong
+  };
 
   return (
     // A div, not a <section>: the site-wide `.container section` rule
@@ -2076,7 +2368,10 @@ function PrizeDraw({
           carries information rather than decorating the words. */}
       <Image
         src={PRIZE.image}
-        alt={`Cover of ${PRIZE.title} by ${PRIZE.authors}`}
+        alt={fill(ui.prize.coverAlt, {
+          title: PRIZE.title,
+          authors: authorsIn(ui)
+        })}
         width={PRIZE.imageWidth}
         height={PRIZE.imageHeight}
         className={`${styles.prizeImage} ${
@@ -2090,71 +2385,40 @@ function PrizeDraw({
         }
       />
       <div className={styles.prizeBody}>
-        <Heading className={styles.prizeHeading}>Win a free book</Heading>
+        <Heading className={styles.prizeHeading}>{ui.prize.heading}</Heading>
         {children}
         <p className={styles.prizeNote}>
-          We will draw {PRIZE.copies} newsletter subscribers randomly after the
-          survey closes on {closesShort}.
+          {fill(ui.prize.draw, {
+            copies: PRIZE.copies,
+            date: dates.closesShort
+          })}
         </p>
-        <p className={styles.prizeNote}>
-          Thank you to Scott and Bryan for gifting us the books to give out.
-        </p>
+        <p className={styles.prizeNote}>{ui.prize.thanks}</p>
         {/* A disclosure rather than a separate page: the terms are
             short, and a prize draw's terms should be readable where
             the prize is offered rather than one click away. */}
         <details className={styles.prizeTerms}>
-          <summary>Prize draw terms</summary>
+          <summary>{ui.prize.termsSummary}</summary>
+          {/* In a translation, a line saying the English terms are the
+              binding ones. Empty in English. */}
+          {ui.prize.termsNote && (
+            <p className={styles.prizeTermsNote}>{ui.prize.termsNote}</p>
+          )}
           <ol>
-            <li>
-              The promoter is Hard Problems, a nonprofit company limited by
-              guarantee registered in England and Wales, company number
-              16028166.
-            </li>
-            <li>No purchase is necessary. Entry is free.</li>
-            <li>
-              The draw is open to anyone aged 18 or over, except our directors,
-              staff and contractors and their immediate families. It is void
-              where prohibited by local law.
-            </li>
-            <li>
-              To enter, subscribe to the Hard Problems newsletter on or before{' '}
-              {closes}. We ask that you complete the survey first, but because
-              survey responses are anonymous we cannot check whether you have,
-              and we do not. Existing subscribers on that date are entered
-              automatically. One entry per person.
-            </li>
-            <li>
-              There are {PRIZE.copies} prizes. Each is one copy of{' '}
-              <em>{PRIZE.title}</em> by {PRIZE.authors}. There is no cash
-              alternative and prizes are not transferable.
-            </li>
-            <li>
-              Winners are selected at random from all eligible entries within 14
-              days of the closing date, and contacted at the email address they
-              subscribed with.
-            </li>
-            <li>
-              A winner has 28 days to reply with a postal address. If they do
-              not, we draw a replacement.
-            </li>
-            <li>
-              We post prizes worldwide at our own cost. Any import duty or local
-              tax is the winner&rsquo;s responsibility.
-            </li>
-            <li>
-              We use a winner&rsquo;s email and postal address only to send the
-              prize, and delete the postal address once it has been sent. See
-              our <Link href="/privacy">privacy notice</Link>.
-            </li>
-            <li>
-              {PRIZE.authors} kindly donated the books. The draw is run entirely
-              by Hard Problems; neither they nor their publisher administer it
-              or choose the winners.
-            </li>
-            <li>
-              Entering means accepting these terms. The draw is governed by the
-              law of England and Wales.
-            </li>
+            {ui.prize.terms.map((term) => (
+              <li key={term}>
+                <Rich
+                  template={term}
+                  params={params}
+                  parts={{
+                    title: <em lang="en">{PRIZE.title}</em>,
+                    link: (
+                      <Link href="/privacy">{ui.prize.privacyLinkText}</Link>
+                    )
+                  }}
+                />
+              </li>
+            ))}
           </ol>
         </details>
       </div>
@@ -2169,7 +2433,7 @@ function PrizeDraw({
 type ShareTarget = {
   name: string;
   source: string;
-  href: (url: string, text: string) => string;
+  href: (url: string, text: string, subject: string) => string;
 };
 const SHARE_TARGETS: ShareTarget[] = [
   {
@@ -2210,8 +2474,8 @@ const SHARE_TARGETS: ShareTarget[] = [
   {
     name: 'Email',
     source: 'share-email',
-    href: (_url, text) =>
-      `mailto:?subject=${encodeURIComponent('A survey about design and product careers')}&body=${encodeURIComponent(text)}`
+    href: (_url, text, subject) =>
+      `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`
   }
 ];
 
@@ -2223,10 +2487,10 @@ function ThankYou({
   /** The prize card, placed after the newsletter signup (phones only). */
   prize?: React.ReactNode;
 }) {
+  const { ui } = useI18n();
   const linkFor = (source: string) =>
     `https://www.hardproblems.com/survey/${survey.year}?source=${source}`;
-  const textWith = (url: string) =>
-    `I just took the Hard Problems survey about design and product careers. Let’s find out what we think makes a career satisfying. ${url} Please re-share.`;
+  const textWith = (url: string) => fill(ui.done.shareText, { url });
   const shareText = textWith(linkFor('share'));
   const [copied, setCopied] = useState(false);
   const posthog = usePostHog();
@@ -2240,24 +2504,28 @@ function ThankYou({
           double opt-in that goes with it, so this points at that
           instead — which also means nothing on this page can be joined
           back to the answers just submitted. */}
-      <h2 className={styles.thankYouHeading}>Get the results in December</h2>
+      <h2 className={styles.thankYouHeading}>{ui.done.resultsHeading}</h2>
       <p>
-        We did not ask for your email, so your answers stay anonymous. To hear
-        when the report is published, join our{' '}
-        <Link href="/newsletter">newsletter</Link>.
+        <Rich
+          template={ui.done.resultsBody}
+          parts={{
+            link: <Link href="/newsletter">{ui.done.newsletterLinkText}</Link>
+          }}
+        />
       </p>
 
       <div className={styles.newsletterBox}>
-        <NewsletterForm hideLabel campaign={`survey-${survey.year}`} />
+        <NewsletterForm
+          hideLabel
+          campaign={`survey-${survey.year}`}
+          labels={ui.newsletter}
+        />
       </div>
 
       {prize}
 
-      <h2 className={styles.thankYouHeading}>Help us reach more people</h2>
-      <p>
-        Please share this link on social media. The more people who answer this
-        survey, the better the report.
-      </p>
+      <h2 className={styles.thankYouHeading}>{ui.done.shareHeading}</h2>
+      <p>{ui.done.shareBody}</p>
       <div className={styles.shareBox}>
         <p className={styles.shareText}>{shareText}</p>
         <button
@@ -2280,18 +2548,18 @@ function ThankYou({
           ) : (
             <Copy size={16} strokeWidth={2} aria-hidden="true" />
           )}
-          {copied ? 'Copied' : 'Copy text'}
+          {copied ? ui.done.copied : ui.done.copy}
         </button>
-        <p className={styles.shareOr}>Or share it on</p>
+        <p className={styles.shareOr}>{ui.done.shareOr}</p>
         <ul className={styles.shareLinks}>
           {SHARE_TARGETS.map((t) => {
             const url = linkFor(t.source);
-            const isMail = t.href(url, '').startsWith('mailto:');
+            const isMail = t.href(url, '', '').startsWith('mailto:');
             return (
               <li key={t.name}>
                 <a
                   className={styles.shareLink}
-                  href={t.href(url, textWith(url))}
+                  href={t.href(url, textWith(url), ui.done.emailSubject)}
                   // A new tab for the networks, so this page — and the
                   // newsletter signup on it — is still here afterwards.
                   {...(isMail
@@ -2299,7 +2567,7 @@ function ThankYou({
                     : { target: '_blank', rel: 'noopener noreferrer' })}
                   // Icon only, so the name is given here for screen
                   // readers, and as a tooltip for everyone else.
-                  aria-label={`Share on ${t.name}`}
+                  aria-label={fill(ui.done.shareOn, { name: t.name })}
                   title={t.name}
                   onClick={() =>
                     posthog?.capture('survey_shared', {

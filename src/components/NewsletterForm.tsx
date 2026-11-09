@@ -7,6 +7,42 @@ import { Mail, X, Check, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
+/**
+ * The form's words, so a page in another language can pass its own —
+ * the survey does, in the respondent's language. English by default.
+ * Messages the subscribe route returns are English and are replaced by
+ * `errorBody` when labels are given.
+ */
+export type NewsletterLabels = {
+  placeholder: string;
+  emailLabel: string;
+  subscribe: string;
+  subscribing: string;
+  successTitle: string;
+  successBody: string;
+  errorTitle: string;
+  errorBody: string;
+  networkError: string;
+  done: string;
+  tryAgain: string;
+  close: string;
+};
+
+const ENGLISH: NewsletterLabels = {
+  placeholder: 'Your email...',
+  emailLabel: 'Your email address',
+  subscribe: 'Subscribe',
+  subscribing: 'Subscribing',
+  successTitle: 'Thank you',
+  successBody: 'You are now subscribed.',
+  errorTitle: 'Something went wrong',
+  errorBody: "Couldn't subscribe you. Please try again.",
+  networkError: "Couldn't reach the newsletter service. Please try again.",
+  done: 'Done',
+  tryAgain: 'Try again',
+  close: 'Close'
+};
+
 type Props = {
   // Trailing text that appears after "Join our newsletter" in the
   // label. Defaults to a colon for the compact header pill; the footer
@@ -20,13 +56,17 @@ type Props = {
   // in Beehiiv as its UTM campaign (e.g. 'survey-2026'). Must be one
   // the subscribe route allows — see ALLOWED_CAMPAIGNS there.
   campaign?: string;
+  /** Translated words; see NewsletterLabels. */
+  labels?: NewsletterLabels;
 };
 
 export default function NewsletterForm({
   labelSuffix = ':',
   hideLabel = false,
-  campaign
+  campaign,
+  labels
 }: Props = {}) {
+  const t = labels ?? ENGLISH;
   const [email, setEmail] = useState('');
   const [honeypot, setHoneypot] = useState('');
   const [status, setStatus] = useState<Status>('idle');
@@ -72,15 +112,16 @@ export default function NewsletterForm({
       };
       if (res.ok && data.ok) {
         setStatus('success');
-        setMessage('You are now subscribed.');
+        setMessage(t.successBody);
         setEmail('');
       } else {
         setStatus('error');
-        setMessage(data.error ?? "Couldn't subscribe you. Please try again.");
+        // The route's own message is English: shown only on English pages.
+        setMessage((labels ? null : data.error) ?? t.errorBody);
       }
     } catch {
       setStatus('error');
-      setMessage("Couldn't reach the newsletter service. Please try again.");
+      setMessage(t.networkError);
     }
   }
 
@@ -101,7 +142,7 @@ export default function NewsletterForm({
           type="button"
           ref={closeButtonRef}
           className="newsletter-modal-close"
-          aria-label="Close"
+          aria-label={t.close}
           onClick={dismissModal}
         >
           <X size={18} aria-hidden="true" />
@@ -114,7 +155,7 @@ export default function NewsletterForm({
           )}
         </div>
         <h2 id="newsletter-modal-title" className="newsletter-modal-title">
-          {status === 'success' ? 'Thank you' : 'Something went wrong'}
+          {status === 'success' ? t.successTitle : t.errorTitle}
         </h2>
         <p className="newsletter-modal-body">{message}</p>
         <button
@@ -122,7 +163,7 @@ export default function NewsletterForm({
           className="newsletter-modal-cta"
           onClick={dismissModal}
         >
-          {status === 'success' ? 'Done' : 'Try again'}
+          {status === 'success' ? t.done : t.tryAgain}
         </button>
       </div>
     </div>
@@ -161,8 +202,8 @@ export default function NewsletterForm({
             type="email"
             name="email"
             required
-            placeholder="Your email..."
-            aria-label="Your email address"
+            placeholder={t.placeholder}
+            aria-label={t.emailLabel}
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -172,7 +213,7 @@ export default function NewsletterForm({
             type="submit"
             className="newsletter-form-submit"
             disabled={status === 'loading'}
-            aria-label={status === 'loading' ? 'Subscribing' : 'Subscribe'}
+            aria-label={status === 'loading' ? t.subscribing : t.subscribe}
             aria-busy={status === 'loading'}
           >
             {status === 'loading' ? (
