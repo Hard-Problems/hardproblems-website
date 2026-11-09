@@ -23,12 +23,20 @@ create table if not exists public.survey_responses (
   -- src/lib/survey/i18n/languages.ts). The answers themselves are ids,
   -- the same in every language.
   language text not null default 'en',
+  -- Whole-survey time in ms, first question shown to send (breaks
+  -- included), for dropping impossibly fast responses. Null when the
+  -- form could not time it (progress saved before timing existed).
+  duration_ms bigint,
   submitted_at timestamptz not null default now()
 );
 
 -- For a table created before translations existed:
 alter table public.survey_responses
   add column if not exists language text not null default 'en';
+
+-- For a table created before whole-survey timing existed:
+alter table public.survey_responses
+  add column if not exists duration_ms bigint;
 
 create index if not exists survey_responses_year_idx
   on public.survey_responses (survey_year);

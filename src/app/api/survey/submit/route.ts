@@ -21,17 +21,21 @@ import {
   findLanguage
 } from '../../../../lib/survey/i18n/languages';
 import {
+  isValidDuration,
   normalizeAnswers,
   validateSubmission,
   type Answers
 } from '../../../../lib/survey/validate';
 
 // POST /api/survey/submit
-// Body: { year, answers, source?, language?, hp? }
+// Body: { year, answers, source?, language?, durationMs?, hp? }
 //
 // `language` is the code of the language the respondent was reading
 // (lib/survey/i18n/languages.ts). Only a known code is stored; anything
 // else is stored as English, the language the form falls back to.
+//
+// `durationMs` is the whole-survey time, first question shown to send.
+// Stored as `duration_ms` when it is a plausible whole number, else null.
 //
 // Stores one anonymous response in `survey_responses` and returns its
 // token, the row's random key.
@@ -57,6 +61,10 @@ import {
 //     the thank-you screen is the ordinary one, kept separate.
 
 export const dynamic = 'force-dynamic';
+
+// Columns added after the table was first created. A database that
+// lacks one still takes the response, without that column.
+const OPTIONAL_COLUMNS = ['language', 'duration_ms'] as const;
 
 export async function POST(request: Request) {
   if (!isAllowedOrigin(request)) {
@@ -174,6 +182,11 @@ export async function POST(request: Request) {
       ? ''
       : linkSource;
   const language = findLanguage(payload.language)?.code ?? DEFAULT_LANGUAGE;
+  // Anything but a plausible whole number of ms is dropped, never a
+  // reason to refuse the response.
+  const durationMs = isValidDuration(payload.durationMs)
+    ? payload.durationMs
+    : null;
   const token = randomUUID();
 
   // alertsDb() THROWS when Supabase is unconfigured rather than
@@ -181,30 +194,29 @@ export async function POST(request: Request) {
   // here would be a bare 500, and the respondent has just spent five
   // minutes answering.
   try {
-    const row = {
+    const row: Record<string, unknown> = {
       token,
       survey_year: survey.year,
       answers: clean,
       source: source || null,
       language,
+      duration_ms: durationMs,
       submitted_at: new Date().toISOString()
     };
     let { error } = await alertsDb().from('survey_responses').insert(row);
-    // A database without the `language` column yet (supabase/survey.sql
-    // adds it). Losing a response over a missing column would be far
-    // worse than losing its language, so store it without, and log
-    // loudly so the column gets added.
-    if (error && /language/i.test(error.message)) {
+    // A database without one of the later columns yet (supabase/survey.sql
+    // adds them). Losing a response over a missing column would be far
+    // worse than losing its language or time, so store it without, and
+    // log loudly so the column gets added.
+    for (const column of OPTIONAL_COLUMNS) {
+      if (!error || !error.message.includes(column)) continue;
       logError(
-        'survey/submit: no language column, stored without it',
+        `survey/submit: no ${column} column, stored without it`,
         new Error(error.message),
         { year: survey.year }
       );
-      const { language: _dropped, ...withoutLanguage } = row;
-      void _dropped;
-      ({ error } = await alertsDb()
-        .from('survey_responses')
-        .insert(withoutLanguage));
+      delete row[column];
+      ({ error } = await alertsDb().from('survey_responses').insert(row));
     }
     if (error) throw new Error(error.message);
   } catch (err) {

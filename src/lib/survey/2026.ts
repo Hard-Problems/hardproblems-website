@@ -334,11 +334,6 @@ export const SURVEY_2026: SurveyDefinition = {
           ]
         }
       ],
-      // Jobs that do not exist, so are never shown.
-      exclude: [
-        { organisation: 'nonprofit', mission: 'commercial' },
-        { organisation: 'startup', brand: 'household' }
-      ],
       // Laid out like a job ad: the kind of job as the title, what the
       // work is as its subtitle, the offer in bold, then the brand and
       // why it matters.

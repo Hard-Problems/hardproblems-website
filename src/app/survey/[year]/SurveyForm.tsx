@@ -91,7 +91,13 @@ import { SHARE_ICON_PATHS } from './shareIcons';
 // 'bonus' is the optional bonus round, after the answers are sent.
 type Phase = 'start' | 'questions' | 'sending' | 'bonus' | 'done';
 
-type Saved = { seed: string; answers: Answers; step: number };
+type Saved = {
+  seed: string;
+  answers: Answers;
+  step: number;
+  /** When the first question was shown (ms since epoch), for the whole-survey time. */
+  startedAt?: number;
+};
 
 // Keeps password managers off the survey's text fields. 1Password,
 // LastPass and Bitwarden all ignore autocomplete="off" and decide for
@@ -312,6 +318,12 @@ function SurveyFormInner({
   const posthog = usePostHog();
   const [answers, setAnswers] = useState<Answers>({});
   const [seed, setSeed] = useState('');
+  // When this run's first question was shown. Set with the seed, saved
+  // with the progress so a reload keeps the clock running, and sent as
+  // the whole-survey time so impossibly fast responses can be dropped.
+  // Progress saved before this existed has none, and sends no time
+  // rather than one counted from the reload.
+  const startedAt = useRef<number | undefined>(undefined);
   const [errors, setErrors] = useState<Record<string, string>>({});
   // Which way the last move went, so the incoming step animates from
   // the side it came from — forward slides in from the right, Back from
@@ -355,6 +367,8 @@ function SurveyFormInner({
       if (saved && typeof saved.seed === 'string' && saved.answers) {
         const restored = Math.min(Math.max(saved.step ?? 0, 0), total - 1);
         setSeed(saved.seed);
+        startedAt.current =
+          typeof saved.startedAt === 'number' ? saved.startedAt : undefined;
         setAnswers(saved.answers);
         setStep(restored);
         setPhase('questions');
@@ -432,7 +446,12 @@ function SurveyFormInner({
     try {
       window.localStorage.setItem(
         storageKey(survey.year),
-        JSON.stringify({ seed, answers, step } satisfies Saved)
+        JSON.stringify({
+          seed,
+          answers,
+          step,
+          startedAt: startedAt.current
+        } satisfies Saved)
       );
     } catch {
       // Private browsing, or storage full. Answers stay in memory.
@@ -669,6 +688,12 @@ function SurveyFormInner({
           // The language the respondent was reading. Stored beside the
           // answers, which are ids and so the same in every language.
           language: language.code,
+          // First question shown to send, breaks included. The server
+          // keeps it only if it is a plausible whole number.
+          durationMs:
+            startedAt.current === undefined
+              ? undefined
+              : Date.now() - startedAt.current,
           access: accessCode,
           hp: honeypot
         })
@@ -900,7 +925,10 @@ function SurveyFormInner({
                 internal_test: Boolean(accessCode),
                 language: language.code
               });
-              if (!seed) setSeed(newSeed());
+              if (!seed) {
+                setSeed(newSeed());
+                startedAt.current = Date.now();
+              }
               setPhase('questions');
               // An entry for the questions, so Back from step 1 comes
               // straight back here.
