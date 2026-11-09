@@ -57,12 +57,13 @@ export type Answer = {
 };
 
 /**
- * Longest conjoint duration kept: 30 days. Anything longer, negative or
- * not a whole number did not come from our form's clock.
+ * Longest duration kept, for the conjoint and for the whole survey: 30
+ * days. Anything longer, negative or not a whole number did not come
+ * from our form's clock.
  */
 export const MAX_CONJOINT_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 
-function isValidDuration(ms: unknown): ms is number {
+export function isValidDuration(ms: unknown): ms is number {
   return (
     typeof ms === 'number' &&
     Number.isInteger(ms) &&
