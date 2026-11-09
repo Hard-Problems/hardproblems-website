@@ -80,33 +80,28 @@ export function isExcluded(q: ConjointQuestion, card: Card): boolean {
 }
 
 /**
- * One random card.
+ * One random card: every attribute takes one of its levels, each
+ * equally likely, independently of the others.
  *
- * With `rival`, every attribute takes a DIFFERENT level from the
- * rival's where it has more than one ("minimal overlap"). Each choice
- * then says something about every attribute at once — an attribute
- * that is the same on both cards cannot have decided anything — which
- * is the most information a single choice can carry.
- *
- * If the exclusions make a minimal-overlap card impossible after a
- * few tries, the overlap rule is relaxed rather than the exclusions:
- * a card that matches its rival on one row is a weaker question, a
- * card describing a job that cannot exist is a bad one.
+ * It is redrawn only if it comes out identical to a card in `seen` —
+ * the rival in this round and every card from earlier rounds — so no
+ * respondent sees the same job twice. Cards may still share levels on
+ * some attributes; a shared attribute simply plays no part in that
+ * choice, and the analysis handles it.
  */
-function drawCard(q: ConjointQuestion, rand: () => number, rival?: Card): Card {
+function drawCard(
+  q: ConjointQuestion,
+  rand: () => number,
+  seen: readonly Card[]
+): Card {
   const pick = <T>(xs: T[]): T => xs[Math.floor(rand() * xs.length)];
   for (let attempt = 0; attempt < 200; attempt++) {
-    const strict = rival && attempt < 50;
     const card: Card = {};
     for (const attr of q.attributes) {
-      let levels = attr.levels.map((l) => l.id);
-      if (strict && levels.length > 1) {
-        levels = levels.filter((l) => l !== rival[attr.id]);
-      }
-      card[attr.id] = pick(levels);
+      card[attr.id] = pick(attr.levels.map((l) => l.id));
     }
     if (isExcluded(q, card)) continue;
-    if (rival && sameCard(card, rival)) continue;
+    if (seen.some((c) => sameCard(card, c))) continue;
     return card;
   }
   // Unreachable with any sensible definition; fail loudly in testing
@@ -119,7 +114,8 @@ function drawCard(q: ConjointQuestion, rand: () => number, rival?: Card): Card {
  *
  * Deterministic from the seed and the round number, so going back and
  * forward through the survey shows the same cards. Every round is two
- * fresh cards, independent of earlier picks.
+ * fresh cards, independent of earlier picks, and never a job already
+ * shown in an earlier round.
  *
  * This used to be "winner stays on": the pick stayed and met a new
  * challenger. That halved the reading, but people tend to stick with
@@ -136,8 +132,9 @@ export function nextPair(
   rounds: readonly Round[]
 ): { a: Card; b: Card } {
   const rand = seededRandom(`${seed}:${q.id}:${rounds.length}`);
-  const a = drawCard(q, rand);
-  return { a, b: drawCard(q, rand, a) };
+  const seen = rounds.flatMap((r) => [r.a, r.b]);
+  const a = drawCard(q, rand, seen);
+  return { a, b: drawCard(q, rand, [...seen, a]) };
 }
 
 /** The stored strings, parsed. Null if any round is malformed. */
@@ -173,6 +170,9 @@ export function validateConjoint(
   if (value.length > q.rounds) return invalid;
   const rounds = parseRounds(q, value);
   if (!rounds) return invalid;
+  // Two different cards per round. Repeats ACROSS rounds are not
+  // rejected: the form never makes them (see nextPair), but progress
+  // saved under the old winner-stays-on form has them by design.
   for (const r of rounds) {
     if (sameCard(r.a, r.b)) return invalid;
     if (isExcluded(q, r.a) || isExcluded(q, r.b)) return invalid;

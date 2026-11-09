@@ -685,20 +685,23 @@ check(
       ok = false;
       break;
     }
+    const cards = rounds.flatMap((r) => [r.a, r.b]);
+    if (cards.some((c, j) => cards.slice(0, j).some((d) => sameCard(c, d))))
+      ok = false;
     for (const r of rounds) {
-      if (sameCard(r.a, r.b) || isExcluded(jobQ, r.a) || isExcluded(jobQ, r.b))
-        ok = false;
+      if (isExcluded(jobQ, r.a) || isExcluded(jobQ, r.b)) ok = false;
       for (const attr of jobQ.attributes) {
         rows++;
         if (r.a[attr.id] === r.b[attr.id]) overlapRows++;
       }
     }
   }
-  check('conjoint cards valid, distinct and never excluded', ok);
-  // Minimal overlap: the two cards should differ on nearly every row.
+  check('conjoint cards valid, never repeated and never excluded', ok);
+  // Independent draws: the two cards share a level on some rows (about
+  // one in three with these attributes), rather than being forced apart.
   check(
-    'conjoint cards differ on almost every attribute',
-    overlapRows / rows < 0.02,
+    'conjoint cards are drawn independently',
+    overlapRows / rows > 0.15 && overlapRows / rows < 0.6,
     `${((overlapRows / rows) * 100).toFixed(1)}% rows matched`
   );
 }
