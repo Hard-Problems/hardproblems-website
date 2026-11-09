@@ -1,3 +1,5 @@
+@use 'sass:list';
+
 // Survey styling. Follows the GDS form patterns the brief asks for —
 // large hit areas, a visible focus ring, generous spacing, one question
 // filling the view — while using the site's own tokens so it still reads
@@ -62,6 +64,54 @@
   margin: 0 0 0.5rem 0;
 }
 
+// The language picker at the top of the start page: every language
+// named in itself, in a wrapping row. Each is a pill; the current one is
+// filled dark green, so which language you are reading is obvious at a
+// glance (and marked for screen readers with aria-current).
+.languages {
+  margin: 0 0 1.75rem 0;
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    margin: 0;
+    font-size: var(--font-size-xs);
+    line-height: 1.4;
+  }
+
+  a,
+  [aria-current] {
+    display: inline-block;
+    padding: 0.3rem 0.7rem;
+    border: 1px solid #d3e4d9;
+    border-radius: 999px;
+  }
+
+  a {
+    color: var(--color-dark-green);
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--color-dark-green);
+    }
+  }
+
+  [aria-current] {
+    background: var(--color-dark-green);
+    border-color: var(--color-dark-green);
+    color: #fff;
+    font-weight: 600;
+  }
+}
+
 // ---------------------------------------------------------------- start
 
 // The intro sits close under the title on the start screen. The gap is
@@ -90,7 +140,7 @@
 // Illustration on the landing screen, with the intro and the
 // "Before you start" list wrapping around it.
 .startImage {
-  float: right;
+  float: inline-end;
   // Portrait (119 × 185), so narrower than the column's usual 288px
   // illustrations: at that width it would stand about 450px tall.
   width: 246px;
@@ -105,7 +155,7 @@
 @media only screen and (max-width: 600px) {
   .startImage {
     width: 120px;
-    margin-left: 1.25rem;
+    margin-inline-start: 1.25rem;
   }
 }
 
@@ -117,7 +167,7 @@
 
 .startFacts {
   margin: 0 0 1.5rem 0;
-  padding-left: 1.15rem;
+  padding-inline-start: 1.15rem;
   font-size: var(--font-size-sm);
 
   li {
@@ -275,8 +325,8 @@
 
 .otherWrap {
   margin-top: 0.85rem;
-  padding-left: 1rem;
-  border-left: 2px solid var(--color-dark-green);
+  padding-inline-start: 1rem;
+  border-inline-start: 2px solid var(--color-dark-green);
 }
 
 // --------------------------------------------------------------- scale
@@ -441,12 +491,16 @@
 .select {
   appearance: none;
   -webkit-appearance: none;
-  padding-right: 2.5rem;
+  padding-inline-end: 2.5rem;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' stroke='%23444' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.9rem center;
   background-size: 12px 8px;
   cursor: pointer;
+
+  [dir='rtl'] & {
+    background-position: left 0.9rem center;
+  }
   // Lighter than the shared field border, to sit with the borderless
   // radios around it rather than against them. Hover takes it back to
   // the darker grey, so the control still answers the pointer, and
@@ -518,7 +572,7 @@
 // Several failures at once, which only a grouped step can produce.
 .errorList {
   margin: 0;
-  padding-left: 1.15rem;
+  padding-inline-start: 1.15rem;
 
   li {
     margin: 0 0 0.25rem 0;
@@ -528,7 +582,7 @@
 .errorSummary {
   margin: 0 0 1.25rem 0;
   padding: 0.85rem 1rem;
-  border-left: 4px solid var(--color-error);
+  border-inline-start: 4px solid var(--color-error);
   background: var(--color-error-bg);
   // The darker token, not --color-error: the bright red falls under
   // 4.5:1 against the tint. The border carries the brightness.
@@ -579,11 +633,11 @@ $job-palettes: (
 );
 
 @each $palette in $job-palettes {
-  $i: index($job-palettes, $palette) - 1;
+  $i: list.index($job-palettes, $palette) - 1;
   .jobPalette#{$i} {
-    --job-ink: #{nth($palette, 1)};
-    --job-accent: #{nth($palette, 2)};
-    --job-glow: #{rgba(nth($palette, 2), 0.25)};
+    --job-ink: #{list.nth($palette, 1)};
+    --job-accent: #{list.nth($palette, 2)};
+    --job-glow: #{rgba(list.nth($palette, 2), 0.25)};
   }
 }
 
@@ -656,14 +710,15 @@ $job-palettes: (
   // column, so the left edge needs pulling back by two gaps, the right
   // by one, for the cards to line up with the text above.
   width: calc(100% + 3 * var(--gap));
-  margin: 0 calc(-1 * var(--gap)) 0 calc(-2 * var(--gap));
+  margin-block: 0;
+  margin-inline: calc(-2 * var(--gap)) calc(-1 * var(--gap));
   border-collapse: separate;
   border-spacing: var(--gap) 0;
   table-layout: fixed;
 
   th,
   td {
-    text-align: left;
+    text-align: start;
     vertical-align: top;
     background: #fff;
     border-left: 1px solid #e2e2e2;
@@ -864,7 +919,7 @@ $job-palettes: (
   display: inline-block;
   width: 1em;
   height: 1em;
-  margin-right: 0.35em;
+  margin-inline-end: 0.35em;
   vertical-align: -0.15em;
 }
 
@@ -925,7 +980,7 @@ $job-palettes: (
 // thank-you screen — beside the title and the text below it — and
 // stacked, cover above words, to fit the narrow column.
 .donePrize {
-  float: right;
+  float: inline-end;
   width: 260px;
   margin: 0 0 1.5rem 2rem;
 
@@ -1143,6 +1198,12 @@ $job-palettes: (
   font-size: var(--font-size-xs);
   color: #4a5c50;
 
+  // "This is a translation; the English terms apply."
+  .prizeTermsNote {
+    margin: 0.75rem 0 0 0;
+    font-style: italic;
+  }
+
   summary {
     cursor: pointer;
     font-weight: 600;
@@ -1150,7 +1211,7 @@ $job-palettes: (
 
   ol {
     margin: 0.75rem 0 0 0;
-    padding-left: 1.15rem;
+    padding-inline-start: 1.15rem;
   }
 
   li {
@@ -1189,7 +1250,7 @@ $job-palettes: (
   margin-top: 2rem;
   padding: 1.25rem 1.5rem;
   background: lemonchiffon;
-  border-left: 1px solid #e8c200;
+  border-inline-start: 1px solid #e8c200;
   color: #746100;
 
   p:first-child {
@@ -1291,7 +1352,7 @@ $job-palettes: (
     justify-content: flex-start;
     gap: 0.75rem;
     padding: 0.7rem 0.9rem;
-    text-align: left;
+    text-align: start;
     font-size: var(--font-size-sm);
   }
 }
@@ -1332,7 +1393,7 @@ $job-palettes: (
     justify-content: flex-start;
     gap: 0.75rem;
     padding: 0.7rem 0.9rem;
-    text-align: left;
+    text-align: start;
     font-size: var(--font-size-sm);
   }
 

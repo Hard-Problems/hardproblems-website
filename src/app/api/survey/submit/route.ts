@@ -17,13 +17,21 @@ import { COUNTRY_NAMES } from '../../../../lib/countries';
 import { getSurvey, isOpen, normalizeSource } from '../../../../lib/survey';
 import { PREVIEW_SOURCE, hasEarlyAccess } from '../../../../lib/survey/preview';
 import {
+  DEFAULT_LANGUAGE,
+  findLanguage
+} from '../../../../lib/survey/i18n/languages';
+import {
   normalizeAnswers,
   validateSubmission,
   type Answers
 } from '../../../../lib/survey/validate';
 
 // POST /api/survey/submit
-// Body: { year, answers, source?, hp? }
+// Body: { year, answers, source?, language?, hp? }
+//
+// `language` is the code of the language the respondent was reading
+// (lib/survey/i18n/languages.ts). Only a known code is stored; anything
+// else is stored as English, the language the form falls back to.
 //
 // Stores one anonymous response in `survey_responses` and returns its
 // token, the row's random key.
@@ -165,6 +173,7 @@ export async function POST(request: Request) {
     : linkSource === PREVIEW_SOURCE
       ? ''
       : linkSource;
+  const language = findLanguage(payload.language)?.code ?? DEFAULT_LANGUAGE;
   const token = randomUUID();
 
   // alertsDb() THROWS when Supabase is unconfigured rather than
@@ -172,15 +181,31 @@ export async function POST(request: Request) {
   // here would be a bare 500, and the respondent has just spent five
   // minutes answering.
   try {
-    const { error } = await alertsDb()
-      .from('survey_responses')
-      .insert({
-        token,
-        survey_year: survey.year,
-        answers: clean,
-        source: source || null,
-        submitted_at: new Date().toISOString()
-      });
+    const row = {
+      token,
+      survey_year: survey.year,
+      answers: clean,
+      source: source || null,
+      language,
+      submitted_at: new Date().toISOString()
+    };
+    let { error } = await alertsDb().from('survey_responses').insert(row);
+    // A database without the `language` column yet (supabase/survey.sql
+    // adds it). Losing a response over a missing column would be far
+    // worse than losing its language, so store it without, and log
+    // loudly so the column gets added.
+    if (error && /language/i.test(error.message)) {
+      logError(
+        'survey/submit: no language column, stored without it',
+        new Error(error.message),
+        { year: survey.year }
+      );
+      const { language: _dropped, ...withoutLanguage } = row;
+      void _dropped;
+      ({ error } = await alertsDb()
+        .from('survey_responses')
+        .insert(withoutLanguage));
+    }
     if (error) throw new Error(error.message);
   } catch (err) {
     logError('survey/submit: could not store response', err, {

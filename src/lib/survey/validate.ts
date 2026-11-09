@@ -18,6 +18,16 @@ import type { SurveyDefinition, SurveyQuestion } from './types';
 import { LIKERT_MIN, LIKERT_MAX, OTHER_MAX_LENGTH } from './types';
 import { validateConjoint } from './conjoint';
 import { isBonusQuestion } from './bonus';
+import { EN_UI } from './i18n/ui-en';
+import { fill } from './i18n/format';
+
+/**
+ * The messages validation returns, in the respondent's language. The
+ * client passes its translation's; the server keeps the English
+ * default — the form shows its own wording for any field the server
+ * rejects, so the server's words are never what a respondent reads.
+ */
+export type ValidationMessages = Record<keyof typeof EN_UI.validation, string>;
 
 /**
  * One question's answer.
@@ -30,7 +40,36 @@ import { isBonusQuestion } from './bonus';
 export type Answer = {
   value: string | string[];
   otherText?: string;
+  /**
+   * Conjoint only, in the browser: when the first pair was shown
+   * (epoch ms). Kept in saved progress so a refresh mid-run keeps
+   * timing from the real start. Never stored on the server.
+   */
+  startedAt?: number;
+  /**
+   * Conjoint only: milliseconds from the first pair appearing to the
+   * last pick, so the analysis can drop runs too fast to have been
+   * read. Absent when the start is unknown (progress saved before this
+   * existed). Metadata, not an answer — a bad value is dropped by
+   * normalizeAnswers, never a reason to reject the submission.
+   */
+  durationMs?: number;
 };
+
+/**
+ * Longest conjoint duration kept: 30 days. Anything longer, negative or
+ * not a whole number did not come from our form's clock.
+ */
+export const MAX_CONJOINT_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
+
+function isValidDuration(ms: unknown): ms is number {
+  return (
+    typeof ms === 'number' &&
+    Number.isInteger(ms) &&
+    ms >= 0 &&
+    ms <= MAX_CONJOINT_DURATION_MS
+  );
+}
 
 export type Answers = Record<string, Answer>;
 
@@ -47,7 +86,6 @@ const CONTROL_CHARS = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/;
 // get round it; tab and carriage return, the other two triggers, are
 // already refused as control characters.
 const FORMULA_START = /^[=+\-@]/;
-const FORMULA_MESSAGE = 'Please don’t start your answer with =, +, - or @.';
 
 function cleanLine(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
@@ -85,10 +123,11 @@ export function validateAnswer(
   question: SurveyQuestion,
   answer: Answer | undefined,
   countryNames: readonly string[] = [],
-  label?: string
+  label?: string,
+  m: ValidationMessages = EN_UI.validation
 ): string | null {
   if (answer !== undefined && answer !== null && !isWellFormed(answer)) {
-    return 'Please answer this question again.';
+    return m.answerAgain;
   }
   if (isBlank(answer)) {
     if (question.optional) return null;
@@ -100,94 +139,99 @@ export function validateAnswer(
     //
     // The caller passes the question as DISPLAYED, with `{term}`
     // already substituted; this module has no way to resolve those.
-    return label ? `Please answer “${label}”` : 'Please answer this question.';
+    return label ? fill(m.answerNamed, { question: label }) : m.answer;
   }
   const a = answer as Answer;
 
   switch (question.kind) {
     case 'single': {
-      if (typeof a.value !== 'string') return 'Please choose one option.';
+      if (typeof a.value !== 'string') return m.chooseOne;
       const option = question.options.find((o) => o.id === a.value);
-      if (!option) return 'Please choose one of the options.';
-      if (option.isOther) return validateOtherText(a.otherText);
+      if (!option) return m.chooseFromOptions;
+      if (option.isOther) return validateOtherText(a.otherText, m);
       return null;
     }
 
     case 'multi': {
-      if (!Array.isArray(a.value)) return 'Please choose at least one option.';
+      if (!Array.isArray(a.value)) return m.chooseAtLeastOne;
       if (new Set(a.value).size !== a.value.length) {
-        return 'Please choose each option only once.';
+        return m.chooseOnce;
       }
       const known = new Set(question.options.map((o) => o.id));
       if (!a.value.every((v) => typeof v === 'string' && known.has(v))) {
-        return 'Please choose from the options listed.';
+        return m.chooseListed;
       }
       const otherChosen = question.options.some(
         (o) => o.isOther && a.value.includes(o.id)
       );
-      if (otherChosen) return validateOtherText(a.otherText);
+      if (otherChosen) return validateOtherText(a.otherText, m);
       return null;
     }
 
     case 'likert': {
-      if (typeof a.value !== 'string') return 'Please choose a rating.';
+      if (typeof a.value !== 'string') return m.chooseRating;
       // Strict integer parse — "3abc" and "3.5" are both rejected rather
       // than silently coerced by Number().
-      if (!/^\d+$/.test(a.value)) return 'Please choose a rating.';
+      if (!/^\d+$/.test(a.value)) return m.chooseRating;
       const n = Number(a.value);
-      if (n < LIKERT_MIN || n > LIKERT_MAX) return 'Please choose a rating.';
+      if (n < LIKERT_MIN || n > LIKERT_MAX) return m.chooseRating;
       return null;
     }
 
     case 'conjoint': {
-      if (!Array.isArray(a.value)) {
-        return `Please make all ${question.rounds} choices.`;
-      }
-      return validateConjoint(question, a.value);
+      const all = fill(m.makeAllChoices, { n: question.rounds });
+      if (!Array.isArray(a.value)) return all;
+      // validateConjoint's own wording is English; only whether it
+      // failed, and how, is used here.
+      if (!validateConjoint(question, a.value)) return null;
+      return a.value.length < question.rounds ? all : m.chooseJobsShown;
     }
 
     case 'country': {
-      if (typeof a.value !== 'string') return 'Please choose a country.';
+      if (typeof a.value !== 'string') return m.chooseCountry;
       if (!countryNames.includes(a.value)) {
-        return 'Please choose a country from the list.';
+        return m.chooseCountryFromList;
       }
       return null;
     }
 
     case 'text': {
-      if (typeof a.value !== 'string') return 'Please write an answer.';
+      if (typeof a.value !== 'string') return m.write;
       const v = cleanLine(a.value);
-      if (!v) return question.optional ? null : 'Please write an answer.';
-      if (CONTROL_CHARS.test(v)) return 'Please remove any special characters.';
-      if (FORMULA_START.test(v)) return FORMULA_MESSAGE;
+      if (!v) return question.optional ? null : m.write;
+      if (CONTROL_CHARS.test(v)) return m.specialCharacters;
+      if (FORMULA_START.test(v)) return m.formulaStart;
       if (v.length > question.maxLength) {
-        return `Please keep this under ${question.maxLength} characters.`;
+        return fill(m.tooLong, { n: question.maxLength });
       }
       return null;
     }
 
     case 'textarea': {
-      if (typeof a.value !== 'string') return 'Please write an answer.';
+      if (typeof a.value !== 'string') return m.write;
       // Newlines are meaningful here, so only collapse trailing space.
       const v = a.value.trim();
-      if (!v) return question.optional ? null : 'Please write an answer.';
-      if (CONTROL_CHARS.test(v)) return 'Please remove any special characters.';
-      if (FORMULA_START.test(v)) return FORMULA_MESSAGE;
+      if (!v) return question.optional ? null : m.write;
+      if (CONTROL_CHARS.test(v)) return m.specialCharacters;
+      if (FORMULA_START.test(v)) return m.formulaStart;
       if (v.length > question.maxLength) {
-        return `Please keep this under ${question.maxLength} characters.`;
+        return fill(m.tooLong, { n: question.maxLength });
       }
       return null;
     }
   }
 }
 
-function validateOtherText(text: string | undefined): string | null {
+function validateOtherText(
+  text: string | undefined,
+  m: ValidationMessages
+): string | null {
   const v = cleanLine(text ?? '');
-  if (!v) return 'Please say what you mean by “Other”.';
-  if (CONTROL_CHARS.test(v)) return 'Please remove any special characters.';
-  if (FORMULA_START.test(v)) return FORMULA_MESSAGE;
+  if (!v) return m.sayOther;
+  if (CONTROL_CHARS.test(v)) return m.specialCharacters;
+  if (FORMULA_START.test(v)) return m.formulaStart;
   if (v.length > OTHER_MAX_LENGTH) {
-    return `Please keep this under ${OTHER_MAX_LENGTH} characters.`;
+    return fill(m.tooLong, { n: OTHER_MAX_LENGTH });
   }
   return null;
 }
@@ -283,6 +327,15 @@ export function normalizeAnswers(
       );
     const otherText =
       otherChosen && a.otherText ? cleanLine(a.otherText) : undefined;
+    // The conjoint run's timing rides along when it is plausible.
+    // `startedAt` is dropped: an absolute client clock reading adds
+    // nothing the duration does not already say.
+    if (question.kind === 'conjoint') {
+      out[question.id] = isValidDuration(a.durationMs)
+        ? { value, durationMs: a.durationMs }
+        : { value };
+      continue;
+    }
     out[question.id] = otherText ? { value, otherText } : { value };
   }
   return out;

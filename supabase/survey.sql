@@ -19,8 +19,16 @@ create table if not exists public.survey_responses (
   -- Normalised ?source= slug, e.g. 'smashing-magazine'. Null when the
   -- link carried no source.
   source text,
+  -- The language the respondent was reading: 'en', 'fr', 'zh'… (see
+  -- src/lib/survey/i18n/languages.ts). The answers themselves are ids,
+  -- the same in every language.
+  language text not null default 'en',
   submitted_at timestamptz not null default now()
 );
+
+-- For a table created before translations existed:
+alter table public.survey_responses
+  add column if not exists language text not null default 'en';
 
 create index if not exists survey_responses_year_idx
   on public.survey_responses (survey_year);

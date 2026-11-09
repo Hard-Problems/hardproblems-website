@@ -31,6 +31,12 @@ import {
 import { analyseConjoint, choicesFrom } from './conjoint-analysis';
 import { hasEarlyAccess, isValidPreviewCode } from './preview';
 import { bonusQuestions, mainQuestions } from './bonus';
+import { translate, translationsFor } from './i18n';
+import { checkTranslation, roleIds, roleWordedQuestions } from './i18n/check';
+import { extractContent, localizeSurvey } from './i18n/content';
+import { fill, plural, splitTemplate } from './i18n/format';
+import { SURVEY_LANGUAGES, findLanguage } from './i18n/languages';
+import { EN_UI } from './i18n/ui-en';
 
 let pass = 0,
   fail = 0;
@@ -437,6 +443,43 @@ for (const [name, bad] of [
   );
 }
 
+// The conjoint run's duration is stored when plausible and dropped
+// otherwise; the browser-only start time never reaches storage, and a
+// bad duration never blocks a submission.
+{
+  const timed = (extra: Record<string, unknown>) => {
+    const a = goodAnswers();
+    a['job-choice'] = { ...a['job-choice'], ...extra };
+    return a;
+  };
+  const ok = normalizeAnswers(
+    SURVEY_2026,
+    timed({ durationMs: 74_250, startedAt: 1_700_000_000_000 })
+  )['job-choice'];
+  check(
+    'conjoint duration stored, start time dropped',
+    ok.durationMs === 74_250 && ok.startedAt === undefined
+  );
+  for (const bad of [-1, 1.5, Number.NaN, 31 * 24 * 3600 * 1000, '9000']) {
+    const a = timed({ durationMs: bad });
+    check(
+      `conjoint duration ${String(bad)} dropped, submission still valid`,
+      validateSubmission(SURVEY_2026, a, COUNTRIES).length === 0 &&
+        !('durationMs' in normalizeAnswers(SURVEY_2026, a)['job-choice'])
+    );
+  }
+  check(
+    'durationMs ignored on non-conjoint questions',
+    !(
+      'durationMs' in
+      normalizeAnswers(SURVEY_2026, {
+        ...goodAnswers(),
+        role: { value: 'product-designer', durationMs: 5 }
+      })['role']
+    )
+  );
+}
+
 // "=", "+", "-" and "@" at the start of a cell run as a formula in a
 // spreadsheet export.
 for (const start of ['+', '-', '@']) {
@@ -752,9 +795,15 @@ check(
 // noise. If the fit is right, it should hand those utilities back.
 {
   const truth: Record<string, Record<string, number>> = {
-    pay: { 'less-10': -0.8, same: -0.2, 'more-15': 0.3, 'more-30': 0.7 },
-    level: { same: -0.25, promotion: 0.25 },
-    mission: { commercial: -0.5, 'some-good': 0, 'for-good': 0.5 },
+    // Pay is linear (0.025 per point), so its one-number fit is exact.
+    pay: {
+      'less-30': -0.75,
+      'less-15': -0.375,
+      same: 0,
+      'more-15': 0.375,
+      'more-30': 0.75
+    },
+    mission: { commercial: -0.3, 'some-good': 0, 'for-good': 0.3 },
     organisation: {
       startup: 0.1,
       established: 0.2,
@@ -762,7 +811,7 @@ check(
       nonprofit: -0.1
     },
     brand: { household: 0.15, industry: 0.05, unknown: -0.2 },
-    work: { ai: 0, established: 0 }
+    work: { ai: 0, established: 0, new: 0 }
   };
   const appeal = (c: Card) =>
     Object.entries(c).reduce((s, [attr, level]) => s + truth[attr][level], 0);
@@ -812,16 +861,118 @@ check(
     byId['work'].importance < 3,
     `${byId['work'].importance.toFixed(1)}%`
   );
-  // Truth: promotion is +0.5 over same; pay is ~0.0375 per point over
-  // the 40-point range → roughly 13% of pay.
-  const promo = byId['level'].levels.find((l) => l.id === 'promotion');
+  // Truth: "directly does good" is +0.6 over "helps businesses grow";
+  // pay is 0.025 per point → worth 24% of pay.
+  const good = byId['mission'].levels.find((l) => l.id === 'for-good');
   check(
-    'analysis prices a promotion in pay',
-    promo?.moneyEquivalent !== undefined &&
-      promo.moneyEquivalent > 8 &&
-      promo.moneyEquivalent < 20,
-    `${promo?.moneyEquivalent?.toFixed(1)}%`
+    'analysis prices a mission in pay',
+    good?.moneyEquivalent !== undefined &&
+      good.moneyEquivalent > 18 &&
+      good.moneyEquivalent < 30,
+    `${good?.moneyEquivalent?.toFixed(1)}%`
   );
+}
+
+// ---- translations ------------------------------------------------------
+{
+  // English round trip: the definition's own words put back in change
+  // nothing a respondent sees.
+  const back = localizeSurvey(SURVEY_2026, extractContent(SURVEY_2026));
+  check(
+    'i18n: English round trip keeps every question',
+    back.questions.length === SURVEY_2026.questions.length &&
+      back.questions.every(
+        (q, i) =>
+          q.id === SURVEY_2026.questions[i].id &&
+          q.text === SURVEY_2026.questions[i].text
+      )
+  );
+
+  check(
+    'i18n: language codes unique',
+    new Set(SURVEY_LANGUAGES.map((l) => l.code)).size ===
+      SURVEY_LANGUAGES.length
+  );
+  check('i18n: Urdu is right-to-left', findLanguage('ur')?.dir === 'rtl');
+  check('i18n: unknown code is not a language', findLanguage('xx') === null);
+  check(
+    'i18n: unknown ?lang= falls back to English',
+    translate(SURVEY_2026, 'xx').language.code === 'en' &&
+      translate(SURVEY_2026, undefined).ui === translate(SURVEY_2026, 'en').ui
+  );
+
+  check(
+    'i18n: fill',
+    fill('Step {n} of {total}', { n: 2, total: 9 }) === 'Step 2 of 9'
+  );
+  check(
+    'i18n: fill leaves unknown placeholders',
+    fill('{a} {b}', { a: 1 }) === '1 {b}'
+  );
+  check(
+    'i18n: splitTemplate',
+    JSON.stringify(splitTemplate('See our {link}.')) ===
+      JSON.stringify([{ text: 'See our ' }, { key: 'link' }, { text: '.' }])
+  );
+  check(
+    'i18n: plural',
+    plural(EN_UI.fields.charsRemaining, 1, 'en') === '1 character remaining' &&
+      plural(EN_UI.fields.charsRemaining, 5, 'en') === '5 characters remaining'
+  );
+
+  // Validation speaks the respondent's language when given its messages.
+  const role = SURVEY_2026.questions.find((q) => q.id === 'role')!;
+  const msgs = { ...EN_UI.validation, chooseFromOptions: 'XX' };
+  check(
+    'i18n: validation uses the messages it is given',
+    validateAnswer(role, { value: 'nope' }, [], undefined, msgs) === 'XX'
+  );
+
+  const all = translationsFor(2026);
+  check(
+    'i18n: English is registered',
+    all.some((t) => t.code === 'en')
+  );
+  for (const t of all) {
+    check(`i18n: ${t.code} is a known language`, findLanguage(t.code) !== null);
+    const problems = checkTranslation(t, SURVEY_2026);
+    check(
+      `i18n: ${t.code} complete and placeholders intact`,
+      problems.length === 0,
+      problems.slice(0, 5).join('; ')
+    );
+    // The translated survey is the same survey: same ids, same options,
+    // so its answers validate and store exactly like English ones.
+    const { survey: tr } = translate(SURVEY_2026, t.code);
+    const sameIds = tr.questions.every((q, i) => {
+      const o = SURVEY_2026.questions[i];
+      if (q.id !== o.id || q.kind !== o.kind) return false;
+      if ('options' in q && 'options' in o) {
+        const a = q.options
+          .map((x) => x.id)
+          .sort()
+          .join();
+        const b = o.options
+          .map((x) => x.id)
+          .sort()
+          .join();
+        return a === b;
+      }
+      return true;
+    });
+    check(`i18n: ${t.code} keeps every id`, sameIds);
+    // Every role reads its role-worded questions with no {placeholder}
+    // left showing.
+    let leftover = '';
+    for (const r of roleIds(SURVEY_2026)) {
+      for (const qid of roleWordedQuestions(SURVEY_2026)) {
+        const q = tr.questions.find((x) => x.id === qid)!;
+        const text = questionTextFor(tr, q, { role: r });
+        if (/\{\w+\}/.test(text)) leftover = `${r}/${qid}: ${text}`;
+      }
+    }
+    check(`i18n: ${t.code} role wording complete`, leftover === '', leftover);
+  }
 }
 
 console.log(`\n  ${pass} passed, ${fail} failed`);

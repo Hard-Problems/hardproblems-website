@@ -80,7 +80,6 @@ const TRUTH = {
   payPerPercent: 0.04,
   payCutPenalty: 0.3,
   levels: {
-    level: { same: 0, promotion: 0.5 },
     mission: { commercial: 0, 'some-good': 0.35, 'for-good': 0.7 },
     organisation: {
       startup: 0,
@@ -89,7 +88,7 @@ const TRUTH = {
       nonprofit: 0.05
     },
     brand: { household: 0.2, industry: 0.15, unknown: 0 },
-    work: { ai: 0.1, established: 0 }
+    work: { ai: 0.1, established: 0, new: 0.15 }
   } as Record<string, Record<string, number>>,
   positionBias: 0.1,
   heterogeneity: 0.3,
@@ -333,7 +332,11 @@ function respondent(index: number): Respondent {
     },
     pay: { value: onScale('pay', payFair) },
     'benefit-to-world': { value: onScale('benefit-to-world', purpose) },
-    'job-choice': { value: rounds.map((r) => encodeRound(jobChoice, r)) },
+    // A careful read of eight pairs: about 75 seconds, give or take.
+    'job-choice': {
+      value: rounds.map((r) => encodeRound(jobChoice, r)),
+      durationMs: Math.round(75_000 * Math.exp(0.4 * normal()))
+    },
     'what-matters': {
       value: sample(optionIds(q('what-matters')), 2 + Math.floor(rand() * 2))
     },
@@ -452,8 +455,10 @@ function straightLine(r: Respondent): Respondent {
         const { a, b } = nextPair(question, `${SEED}:sl:${rand()}`, rounds);
         rounds.push({ a, b, pick: 'a' });
       }
+      // Clicking through: a second or two a pair.
       answers[question.id] = {
-        value: rounds.map((x) => encodeRound(question, x))
+        value: rounds.map((x) => encodeRound(question, x)),
+        durationMs: Math.round(6_000 + rand() * 10_000)
       };
     }
   }
@@ -599,7 +604,7 @@ say();
 const priced = [
   ['mission', 'for-good'],
   ['mission', 'some-good'],
-  ['level', 'promotion'],
+  ['organisation', 'established'],
   ['brand', 'household']
 ] as const;
 say(`| Level | Planted | ${sizes.map((n) => `n=${n}`).join(' | ')} |`);
@@ -729,6 +734,11 @@ const allSameSide = rows.filter((row) => {
   const picks = v.map((s) => s.slice(-1));
   return picks.every((p) => p === picks[0]);
 }).length;
+const SPEEDER_SECONDS = 20;
+const speeders = rows.filter((row) => {
+  const ms = row.answers['job-choice']?.durationMs;
+  return typeof ms === 'number' && ms < SPEEDER_SECONDS * 1000;
+}).length;
 const junk = rows.filter((row) =>
   /^(asdf|n\/a|idk|x)$/i.test(String(row.answers.metaphor?.value ?? ''))
 ).length;
@@ -739,6 +749,9 @@ say(
 );
 say(
   `| Straight-liners | ${planted('straight-liner')} | all 8 job picks on the same side | ${allSameSide} |`
+);
+say(
+  `| Straight-liners | ${planted('straight-liner')} | all 8 job picks in under ${SPEEDER_SECONDS}s | ${speeders} |`
 );
 say(
   `| Junk text | ${planted('junk-text')} | metaphor is asdf / n/a / idk / x | ${junk} |`

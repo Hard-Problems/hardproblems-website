@@ -202,6 +202,14 @@ button.black-button:hover > span {
   transform: translateX(3px);
 }
 
+/* Right-to-left (the survey in Urdu): onward is leftward, so the arrow
+   is ← and slides that way. */
+[dir='rtl'] a.black-button:hover > span,
+[dir='rtl'] a.black-button:focus > span,
+[dir='rtl'] button.black-button:hover > span {
+  transform: translateX(-3px);
+}
+
 blockquote {
   line-height: 1.5;
   font-size: var(--font-size-lg);
@@ -2008,8 +2016,10 @@ body.survey-focus .site-header {
   /* Three tracks again, now that the exit link occupies the left one.
      Both items are placed EXPLICITLY by grid-column below rather than
      by source order — the exit link is portalled in after the logo, so
-     relying on DOM order would put it on the wrong side. */
-  grid-template-columns: 1fr auto 1fr;
+     relying on DOM order would put it on the wrong side.
+     minmax(0, …) so a long label in another language wraps inside its
+     track instead of widening the header past the screen. */
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   /* Focus mode owns this header's spacing outright, because the base
      stylesheet gives it two different ones: `margin: 1rem 0 2rem` at
@@ -2166,6 +2176,11 @@ body.survey-focus button.survey-back:focus-visible > span {
   transform: translateX(-3px);
 }
 
+body.survey-focus [dir='rtl'] button.survey-back:hover:not(:disabled) > span,
+body.survey-focus [dir='rtl'] button.survey-back:focus-visible > span {
+  transform: translateX(3px);
+}
+
 body.survey-focus .survey-step-count {
   grid-column: 2;
   margin: 0;
@@ -2224,6 +2239,18 @@ body.survey-focus .survey-privacy {
   justify-self: end;
 }
 
+/* Right-to-left (Arabic, Urdu): mirrored, so Exit sits where reading
+   starts. Each piece carries the survey's `dir` (see SurveyHeader). */
+body.survey-focus .survey-exit[dir='rtl'] {
+  grid-column: 3;
+  justify-self: end;
+}
+
+body.survey-focus .survey-privacy[dir='rtl'] {
+  grid-column: 1;
+  justify-self: start;
+}
+
 body.survey-focus .survey-exit,
 body.survey-focus .survey-privacy {
   grid-row: 1;
@@ -2264,6 +2291,26 @@ body.survey-focus .survey-privacy {
   body.survey-focus .survey-exit,
   body.survey-focus .survey-privacy {
     white-space: nowrap;
+  }
+
+  /* In translations the phone label is often the whole phrase ("Exit
+     survey" does not split in Tamil, German, Japanese…), too long for
+     one line beside the title. There it wraps — at a space where it
+     can, anywhere as a last resort — rather than pushing Privacy off
+     the screen. */
+  body.survey-focus .survey-exit:not(:lang(en)),
+  body.survey-focus .survey-privacy:not(:lang(en)) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    min-width: 0;
+    /* Not a flex row here: the words would be an anonymous flex item,
+       which cannot shrink below its longest line. The icon is hidden
+       on phones anyway. */
+    display: block;
+  }
+
+  body.survey-focus .survey-header-title:not(:lang(en)) {
+    max-width: 44vw;
   }
 }
 

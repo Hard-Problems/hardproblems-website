@@ -31,6 +31,19 @@ import { parseRounds, type Card, type Round } from './conjoint';
 
 export type Choice = Round & { respondent: number };
 
+/**
+ * How long one response took over the whole conjoint run, in ms, or
+ * undefined when it was not recorded (see `durationMs` in validate.ts).
+ * For setting aside runs too fast to have been read.
+ */
+export function durationOf(
+  q: ConjointQuestion,
+  row: { answers: Record<string, unknown> }
+): number | undefined {
+  const a = row.answers?.[q.id] as { durationMs?: unknown } | undefined;
+  return typeof a?.durationMs === 'number' ? a.durationMs : undefined;
+}
+
 /** Every valid choice in a set of responses. Malformed answers are skipped. */
 export function choicesFrom(
   q: ConjointQuestion,
