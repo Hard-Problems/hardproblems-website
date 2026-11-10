@@ -686,8 +686,9 @@ export default function ScreeningForm({
                 disabled={disabled}
               />
               <span>
-                I agree to be contacted about user research. I understand this
-                doesn&rsquo;t guarantee selection.
+                I agree to be contacted by the Hard Problems team about
+                participating in future user research. I understand that
+                providing my contact details does not guarantee selection.
                 <Required />
               </span>
             </label>
