@@ -331,13 +331,21 @@ export default function ScreeningForm({
       );
     if (tookAction === 'Yes' && actions.length === 0)
       return fail('Please tell us what you did with the opportunity.');
-    if (tookAction === 'Yes' && actions.includes('Other') && !actionOther.trim())
+    if (
+      tookAction === 'Yes' &&
+      actions.includes('Other') &&
+      !actionOther.trim()
+    )
       return fail('Please specify what else you did.');
     if (!interest)
-      return fail('Please tell us whether you’d like to join a research session.');
+      return fail(
+        'Please tell us whether you’d like to join a research session.'
+      );
     if (interested) {
       if (!EMAIL_RE.test(email.trim()))
-        return fail('Please enter a valid email address so we can get in touch.');
+        return fail(
+          'Please enter a valid email address so we can get in touch.'
+        );
       if (hasDates) {
         if (!date) return fail('Please choose a date for your session.');
         if (!time) return fail('Please choose a start time for your session.');
@@ -393,18 +401,14 @@ export default function ScreeningForm({
             aria-hidden="true"
           />
           <h1 className={styles.thanksTitle}>Thank you!</h1>
-          <p>Thank you for taking the time to complete this questionnaire!</p>
           <p>
-            If you&rsquo;ve expressed interest in participating in our
-            research, we&rsquo;ll be in touch with more details about the
-            session.
+            Your answers are in. If you signed up for a session, we&rsquo;ll
+            email you to confirm the time.
           </p>
           <p>
-            As a small thank-you, selected research participants will receive
-            a free book of their choice for their time and contribution.
-            We&rsquo;ll email you after your session to arrange it.
+            Selected participants get a book of their choice. We&rsquo;ll sort
+            that out after your session.
           </p>
-          <p>We appreciate your help!</p>
         </div>
       </div>
     );
@@ -417,31 +421,20 @@ export default function ScreeningForm({
       </h1>
       <div className={styles.intro}>
         <p>
-          We&rsquo;re looking to better understand how people discover,
-          explore and evaluate career opportunities, and how we can make the
-          Hard Problems job board more useful.
+          We&rsquo;re learning how people find and evaluate career
+          opportunities, so we can make the Hard Problems job board more useful.
         </p>
         <p>
-          This short questionnaire will help us understand your experience and
-          identify people who might be interested in participating in a
-          follow-up user research session.
+          This takes 2–3 minutes. Your answers are used only for our research
+          and to invite people to a follow-up session.
         </p>
-        <p>
-          The questionnaire should take approximately 2–3 minutes. Your
-          responses will be used for internal research and participant
-          recruitment purposes.
-        </p>
-        <p>Thank you for helping us make Hard Problems better!</p>
       </div>
 
       <aside className={styles.incentive} aria-labelledby="incentive-title">
         <h2 id="incentive-title" className={styles.incentiveTitle}>
           A small thank-you
         </h2>
-        <p>
-          If you&rsquo;re selected for a research session, we&rsquo;d love to
-          send you a book of your choice for your time:
-        </p>
+        <p>Selected participants get a book of their choice:</p>
         <ul className={styles.books}>
           {BOOKS.map((b) => (
             <li key={b.title} className={styles.book}>
@@ -463,7 +456,7 @@ export default function ScreeningForm({
 
       <form className={styles.form} onSubmit={onSubmit} noValidate>
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Section 1: About you</h2>
+          <h2 className={styles.sectionTitle}>About you</h2>
 
           <Question
             number={1}
@@ -504,7 +497,7 @@ export default function ScreeningForm({
 
           <Question
             number={3}
-            label="How many years of professional experience do you have in design, product management or a related field?"
+            label="How many years have you worked in design, product or a related field?"
             required
           >
             <Options
@@ -541,13 +534,11 @@ export default function ScreeningForm({
         </div>
 
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>
-            Section 2: Your job-search experience
-          </h2>
+          <h2 className={styles.sectionTitle}>Your job search</h2>
 
           <Question
             number={5}
-            label="When was the last time you actively looked for a job?"
+            label="When did you last actively look for a job?"
             required
           >
             <Options
@@ -561,7 +552,7 @@ export default function ScreeningForm({
 
           <Question
             number={6}
-            label="Have you ever taken any action on an opportunity you found through Hard Problems?"
+            label="Have you acted on an opportunity you found through Hard Problems?"
             required
           >
             <Options
@@ -599,13 +590,11 @@ export default function ScreeningForm({
         </div>
 
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>
-            Section 3: Participate in our research
-          </h2>
+          <h2 className={styles.sectionTitle}>Join our research</h2>
 
           <Question
             number={7}
-            label="Would you be interested in being contacted for a follow-up user research session about your experience with job searching and the Hard Problems job board?"
+            label="Would you like to join a follow-up research session about job searching and the Hard Problems job board?"
             required
           >
             <Options
@@ -620,8 +609,8 @@ export default function ScreeningForm({
           {interested && (
             <Question
               number={8}
-              label="Please leave your preferred email address so we can get in touch."
-              hint="If you’re selected, we’ll send a calendar invite with a video call link to this address."
+              label="What’s the best email to reach you?"
+              hint="We’ll send your calendar invite here."
               required
             >
               <span className={formStyles.field}>
@@ -642,7 +631,7 @@ export default function ScreeningForm({
 
           <Question
             number={9}
-            label="Is there anything else you’d like to share about your job-search experience or what you look for in a job platform?"
+            label="Anything else you’d like to share about job searching or what you want from a job platform?"
           >
             <span className={formStyles.field}>
               <textarea
@@ -665,8 +654,8 @@ export default function ScreeningForm({
 
             <Question
               number={10}
-              label="Choose a time that works for a 60-minute research session."
-              hint="Any weekday in November. We’ll confirm by email with a calendar invite."
+              label="Pick a time for a 60-minute session."
+              hint="Any weekday in November."
               required
             >
               {hasDates ? (
@@ -683,8 +672,8 @@ export default function ScreeningForm({
                 />
               ) : (
                 <p className={styles.hint}>
-                  There are no session dates open right now — we&rsquo;ll
-                  email you when new ones are available.
+                  There are no session dates open right now — we&rsquo;ll email
+                  you when new ones are available.
                 </p>
               )}
             </Question>
@@ -697,9 +686,8 @@ export default function ScreeningForm({
                 disabled={disabled}
               />
               <span>
-                I agree to be contacted by the Hard Problems team about
-                participating in future user research. I understand that
-                providing my contact details does not guarantee selection.
+                I agree to be contacted about user research. I understand this
+                doesn&rsquo;t guarantee selection.
                 <Required />
               </span>
             </label>
