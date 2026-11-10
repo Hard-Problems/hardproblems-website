@@ -55,48 +55,130 @@ export const INTEREST = [
   'No, not at the moment.'
 ] as const;
 
-export const TIMES = [
-  'Morning (9:00 AM–12:00 PM)',
-  'Afternoon (12:00 PM–3:00 PM)',
-  'Late afternoon (3:00 PM–6:00 PM)',
-  'Evening (6:00 PM–9:00 PM)'
+// Start times offered for the 60-minute session, every 30 minutes from
+// 8:00 AM to 7:00 PM in the participant's own time zone.
+export const SESSION_TIMES: string[] = Array.from({ length: 23 }, (_, i) => {
+  const mins = 8 * 60 + i * 30;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${m === 0 ? '00' : '30'} ${h < 12 ? 'AM' : 'PM'}`;
+});
+
+// Thank-you books offered to participants who take part in a session.
+// Covers are the publishers' front covers, saved in public/images/content.
+export const BOOKS = [
+  {
+    title: 'Sprint',
+    author: 'Jake Knapp, John Zeratsky & Braden Kowitz',
+    cover: '/images/content/book-cover-sprint.jpg'
+  },
+  {
+    title: 'Factfulness',
+    author: 'Hans Rosling',
+    cover: '/images/content/book-cover-factfulness.jpg'
+  },
+  {
+    title: 'Incorruptible',
+    author: 'Eric Ries',
+    cover: '/images/content/book-cover-incorruptible.jpg'
+  },
+  {
+    title: 'Why Design Is Hard',
+    author: 'Scott Berkun & Bryan Zug',
+    cover: '/images/content/book-cover-why-design-is-hard.jpg'
+  }
 ] as const;
 
-export const WEEKDAYS = [
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday'
-] as const;
+// Last day participants can pick for a session (inclusive, UTC). Move
+// this to open the form up to more dates.
+export const LAST_SESSION_DATE = '2026-11-30';
 
 /** Yes or Maybe on the interest question: the follow-up fields apply. */
 export function isInterested(interest: string): boolean {
   return interest === INTEREST[0] || interest === INTEREST[1];
 }
 
+export type SessionDate = {
+  /** What is shown and stored, e.g. "Tuesday 10 November". */
+  label: string;
+};
+
 /**
- * Monday–Friday of the week the form is filled in, labelled with their
- * dates ("Monday 9 November"). On a Saturday or Sunday this week's
- * weekdays are already past, so it offers next week's instead.
- * Computed in UTC on the server, so the labels the page renders and the
- * labels the API accepts always agree.
+ * Every weekday from tomorrow up to LAST_SESSION_DATE. Starts tomorrow
+ * so nobody offers a slot that is already under way. Computed in UTC on
+ * the server, so the labels the page renders and the labels the API
+ * accepts always agree. Empty once the last date has passed.
  */
-export function sessionDays(now: Date = new Date()): string[] {
+export function sessionDates(now: Date = new Date()): SessionDate[] {
+  const end = Date.parse(`${LAST_SESSION_DATE}T00:00:00Z`);
   const d = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1)
   );
-  const dow = d.getUTCDay(); // 0 = Sunday … 6 = Saturday
-  const offset = dow === 0 ? 1 : dow === 6 ? 2 : 1 - dow;
-  d.setUTCDate(d.getUTCDate() + offset);
-  return WEEKDAYS.map((name, i) => {
-    const day = new Date(d);
-    day.setUTCDate(d.getUTCDate() + i);
-    const date = day.toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'long',
-      timeZone: 'UTC'
+  const out: SessionDate[] = [];
+  for (; d.getTime() <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+    const dow = d.getUTCDay(); // 0 = Sunday … 6 = Saturday
+    if (dow === 0 || dow === 6) continue;
+    out.push({
+      label: d.toLocaleDateString('en-GB', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        timeZone: 'UTC'
+      })
     });
-    return `${name} ${date}`;
-  });
+  }
+  return out;
+}
+
+/** The stored slot, e.g. "Tuesday 10 November · 2:00 PM". */
+export function slotLabel(date: string, time: string): string {
+  return `${date} · ${time}`;
+}
+
+/** True when `tz` is an IANA time zone this runtime understands. */
+export function isValidTimeZone(tz: string): boolean {
+  if (!tz) return false;
+  try {
+    new Intl.DateTimeFormat('en-GB', { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export type TimeZoneOption = { value: string; label: string };
+
+function gmtOffset(tz: string, at: Date): string {
+  const part = new Intl.DateTimeFormat('en-GB', {
+    timeZone: tz,
+    timeZoneName: 'longOffset'
+  })
+    .formatToParts(at)
+    .find((p) => p.type === 'timeZoneName');
+  return part?.value === 'GMT' ? 'GMT+00:00' : (part?.value ?? 'GMT+00:00');
+}
+
+function offsetMinutes(offset: string): number {
+  const m = /GMT([+-])(\d{2}):(\d{2})/.exec(offset);
+  if (!m) return 0;
+  return (m[1] === '-' ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3]));
+}
+
+/**
+ * Every IANA time zone, labelled with its current GMT offset, e.g.
+ * "(GMT+01:00) Europe/Paris", sorted west to east.
+ */
+export function timeZoneOptions(at: Date = new Date()): TimeZoneOption[] {
+  return Intl.supportedValuesOf('timeZone')
+    .map((tz) => {
+      const offset = gmtOffset(tz, at);
+      return {
+        value: tz,
+        label: `(${offset}) ${tz.replace(/_/g, ' ')}`,
+        minutes: offsetMinutes(offset)
+      };
+    })
+    .sort((a, b) => a.minutes - b.minutes || a.value.localeCompare(b.value))
+    .map(({ value, label }) => ({ value, label }));
 }

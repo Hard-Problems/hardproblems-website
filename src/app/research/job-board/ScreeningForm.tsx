@@ -1,19 +1,23 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import Image from 'next/image';
 import { Check, Loader2 } from 'lucide-react';
 import formStyles from '../../jobs/jobSubmit.module.scss';
 import styles from './page.module.scss';
 import {
   ACTIONS,
+  BOOKS,
   EXPERIENCE,
   INTEREST,
   LAST_JOB_SEARCH,
   ROLES,
-  TIMES,
+  SESSION_TIMES,
   TOOK_ACTION,
   YES_NO,
-  isInterested
+  isInterested,
+  type SessionDate,
+  type TimeZoneOption
 } from '../../../lib/research/screening';
 
 // The participant screening form. Client-side checks catch obvious
@@ -162,12 +166,104 @@ function OtherInput({
   );
 }
 
+/**
+ * Q10: one weekday in November, a start time and the time zone that
+ * time is in, as three dropdowns side by side.
+ */
+function TimePicker({
+  dates,
+  timeZones,
+  date,
+  time,
+  timeZone,
+  onDate,
+  onTime,
+  onTimeZone,
+  disabled
+}: {
+  dates: SessionDate[];
+  timeZones: TimeZoneOption[];
+  date: string;
+  time: string;
+  timeZone: string;
+  onDate: (v: string) => void;
+  onTime: (v: string) => void;
+  onTimeZone: (v: string) => void;
+  disabled: boolean;
+}) {
+  // The browser's zone may be an alias missing from the server's list.
+  const zones =
+    timeZone && !timeZones.some((z) => z.value === timeZone)
+      ? [{ value: timeZone, label: timeZone.replace(/_/g, ' ') }, ...timeZones]
+      : timeZones;
+  return (
+    <div className={styles.timePicker}>
+      <label className={styles.pickerField}>
+        <span className={styles.pickerLabel}>Date</span>
+        <span className={`${formStyles.field} ${styles.selectField}`}>
+          <select
+            value={date}
+            onChange={(e) => onDate(e.target.value)}
+            disabled={disabled}
+            className={formStyles.input}
+          >
+            <option value="">Choose a date</option>
+            {dates.map((d) => (
+              <option key={d.label} value={d.label}>
+                {d.label}
+              </option>
+            ))}
+          </select>
+        </span>
+      </label>
+      <label className={styles.pickerField}>
+        <span className={styles.pickerLabel}>Start time</span>
+        <span className={`${formStyles.field} ${styles.selectField}`}>
+          <select
+            value={time}
+            onChange={(e) => onTime(e.target.value)}
+            disabled={disabled}
+            className={formStyles.input}
+          >
+            <option value="">Choose a time</option>
+            {SESSION_TIMES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </span>
+      </label>
+      <label className={`${styles.pickerField} ${styles.pickerZone}`}>
+        <span className={styles.pickerLabel}>Time zone</span>
+        <span className={`${formStyles.field} ${styles.selectField}`}>
+          <select
+            value={timeZone}
+            onChange={(e) => onTimeZone(e.target.value)}
+            disabled={disabled}
+            className={formStyles.input}
+          >
+            <option value="">Choose a time zone</option>
+            {zones.map((z) => (
+              <option key={z.value} value={z.value}>
+                {z.label}
+              </option>
+            ))}
+          </select>
+        </span>
+      </label>
+    </div>
+  );
+}
+
 export default function ScreeningForm({
   countries,
-  days
+  dates,
+  timeZones
 }: {
   countries: string[];
-  days: string[];
+  dates: SessionDate[];
+  timeZones: TimeZoneOption[];
 }) {
   const [visited, setVisited] = useState('');
   const [role, setRole] = useState('');
@@ -181,8 +277,8 @@ export default function ScreeningForm({
   const [interest, setInterest] = useState('');
   const [email, setEmail] = useState('');
   const [comments, setComments] = useState('');
-  const [availableDays, setAvailableDays] = useState<string[]>([]);
-  const [availableTimes, setAvailableTimes] = useState<string[]>([]);
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
   const [timeZone, setTimeZone] = useState('');
   const [consent, setConsent] = useState(false);
   const [honeypot, setHoneypot] = useState('');
@@ -196,7 +292,7 @@ export default function ScreeningForm({
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       if (tz) setTimeZone((current) => current || tz);
     } catch {
-      // Leave it blank — they can type it.
+      // Leave it blank — they can pick it.
     }
   }, []);
 
@@ -207,6 +303,7 @@ export default function ScreeningForm({
 
   const disabled = status === 'submitting';
   const interested = isInterested(interest);
+  const hasDates = dates.length > 0;
 
   function fail(msg: string) {
     setError(msg);
@@ -241,11 +338,11 @@ export default function ScreeningForm({
     if (interested) {
       if (!EMAIL_RE.test(email.trim()))
         return fail('Please enter a valid email address so we can get in touch.');
-      if (availableDays.length === 0)
-        return fail('Please choose at least one day that works for you.');
-      if (availableTimes.length === 0)
-        return fail('Please choose at least one time that works for you.');
-      if (!timeZone.trim()) return fail('Please tell us your local time zone.');
+      if (hasDates) {
+        if (!date) return fail('Please choose a date for your session.');
+        if (!time) return fail('Please choose a start time for your session.');
+        if (!timeZone) return fail('Please choose your time zone.');
+      }
       if (!consent)
         return fail('Please tick the box to agree to be contacted.');
     }
@@ -268,8 +365,8 @@ export default function ScreeningForm({
           interest,
           email: interested ? email : '',
           comments,
-          availableDays: interested ? availableDays : [],
-          availableTimes: interested ? availableTimes : [],
+          date: interested ? date : '',
+          time: interested ? time : '',
           timeZone: interested ? timeZone : '',
           consent: interested ? consent : false,
           hp: honeypot
@@ -304,7 +401,8 @@ export default function ScreeningForm({
           </p>
           <p>
             As a small thank-you, selected research participants will receive
-            a free book for their time and contribution.
+            a free book of their choice for their time and contribution.
+            We&rsquo;ll email you after your session to arrange it.
           </p>
           <p>We appreciate your help!</p>
         </div>
@@ -335,6 +433,33 @@ export default function ScreeningForm({
         </p>
         <p>Thank you for helping us make Hard Problems better!</p>
       </div>
+
+      <aside className={styles.incentive} aria-labelledby="incentive-title">
+        <h2 id="incentive-title" className={styles.incentiveTitle}>
+          A small thank-you
+        </h2>
+        <p>
+          If you&rsquo;re selected for a research session, we&rsquo;d love to
+          send you a book of your choice for your time:
+        </p>
+        <ul className={styles.books}>
+          {BOOKS.map((b) => (
+            <li key={b.title} className={styles.book}>
+              <Image
+                className={styles.cover}
+                src={b.cover}
+                alt=""
+                width={32}
+                height={48}
+              />
+              <span className={styles.bookText}>
+                <span className={styles.bookTitle}>{b.title}</span>
+                <span className={styles.bookAuthor}>{b.author}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </aside>
 
       <form className={styles.form} onSubmit={onSubmit} noValidate>
         <div className={styles.section}>
@@ -496,6 +621,7 @@ export default function ScreeningForm({
             <Question
               number={8}
               label="Please leave your preferred email address so we can get in touch."
+              hint="If you’re selected, we’ll send a calendar invite with a video call link to this address."
               required
             >
               <span className={formStyles.field}>
@@ -539,37 +665,28 @@ export default function ScreeningForm({
 
             <Question
               number={10}
-              label="What days and times would generally work best for you for a 60-minute research session?"
+              label="Choose a time that works for a 60-minute research session."
+              hint="Any weekday in November. We’ll confirm by email with a calendar invite."
               required
             >
-              <p className={styles.subLabel}>Days</p>
-              <Checkboxes
-                options={days}
-                value={availableDays}
-                onChange={setAvailableDays}
-                disabled={disabled}
-              />
-              <p className={styles.subLabel}>Time</p>
-              <Checkboxes
-                options={TIMES}
-                value={availableTimes}
-                onChange={setAvailableTimes}
-                disabled={disabled}
-              />
-              <label className={styles.timeZone}>
-                <span className={styles.subLabel}>Your local time zone</span>
-                <span className={formStyles.field}>
-                  <input
-                    type="text"
-                    placeholder="e.g. Europe/London"
-                    value={timeZone}
-                    maxLength={100}
-                    onChange={(e) => setTimeZone(e.target.value)}
-                    disabled={disabled}
-                    className={formStyles.input}
-                  />
-                </span>
-              </label>
+              {hasDates ? (
+                <TimePicker
+                  dates={dates}
+                  timeZones={timeZones}
+                  date={date}
+                  time={time}
+                  timeZone={timeZone}
+                  onDate={setDate}
+                  onTime={setTime}
+                  onTimeZone={setTimeZone}
+                  disabled={disabled}
+                />
+              ) : (
+                <p className={styles.hint}>
+                  There are no session dates open right now — we&rsquo;ll
+                  email you when new ones are available.
+                </p>
+              )}
             </Question>
 
             <label className={`${styles.option} ${styles.consent}`}>

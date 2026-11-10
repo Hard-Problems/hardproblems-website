@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { COUNTRY_NAMES } from '../../../lib/countries';
-import { sessionDays } from '../../../lib/research/screening';
+import { sessionDates, timeZoneOptions } from '../../../lib/research/screening';
 import ScreeningForm from './ScreeningForm';
 
 // Hidden participant-screening page for the job-board user research.
@@ -14,15 +14,19 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false }
 };
 
-// The session days are "this week's" dates, so render per request
-// rather than freezing them at build time.
+// The session dates start from tomorrow, so render per request rather
+// than freezing them at build time.
 export const dynamic = 'force-dynamic';
 
 export default function Page() {
   return (
     // `ph-no-capture` keeps PostHog autocapture from recording answers.
     <section className="page-narrow ph-no-capture">
-      <ScreeningForm countries={[...COUNTRY_NAMES]} days={sessionDays()} />
+      <ScreeningForm
+        countries={[...COUNTRY_NAMES]}
+        dates={sessionDates()}
+        timeZones={timeZoneOptions()}
+      />
     </section>
   );
 }

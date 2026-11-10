@@ -18,11 +18,13 @@ import {
   INTEREST,
   LAST_JOB_SEARCH,
   ROLES,
-  TIMES,
+  SESSION_TIMES,
   TOOK_ACTION,
   YES_NO,
   isInterested,
-  sessionDays
+  isValidTimeZone,
+  sessionDates,
+  slotLabel
 } from '../../../../lib/research/screening';
 
 // POST /api/research/screening
@@ -102,8 +104,8 @@ export async function POST(request: Request) {
   const interest = pick(rec, 'interest');
   const email = pick(rec, 'email');
   const comments = pick(rec, 'comments').slice(0, MAX_LONG);
-  const availableDays = pickList(rec, 'availableDays');
-  const availableTimes = pickList(rec, 'availableTimes');
+  const date = pick(rec, 'date');
+  const time = pick(rec, 'time');
   const timeZone = pick(rec, 'timeZone').slice(0, 100);
   const consent = rec.consent === true;
 
@@ -133,20 +135,29 @@ export async function POST(request: Request) {
     return bad('Please tell us whether you’d like to join a research session.');
 
   const interested = isInterested(interest);
+  // Dates offered as of yesterday too, so someone who loaded the page
+  // just before midnight UTC isn't rejected when "tomorrow" moves on.
+  const now = new Date();
+  const offered = new Set(
+    [
+      ...sessionDates(new Date(now.getTime() - 24 * 60 * 60 * 1000)),
+      ...sessionDates(now)
+    ].map((d) => d.label)
+  );
+  const hasSlot = interested && date !== '';
   if (interested) {
     if (email.length > MAX_EMAIL_LENGTH || !EMAIL_RE.test(email))
       return bad('Please enter a valid email address so we can get in touch.');
-    // Accept this week's days and the previous week's, so someone who
-    // loaded the page just before midnight on Friday/Sunday isn't
-    // rejected when the server's "this week" moves on.
-    const now = new Date();
-    const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const validDays = [...sessionDays(now), ...sessionDays(lastWeek)];
-    if (availableDays.length === 0 || !allOf(availableDays, validDays))
-      return bad('Please choose at least one day that works for you.');
-    if (availableTimes.length === 0 || !allOf(availableTimes, TIMES))
-      return bad('Please choose at least one time that works for you.');
-    if (!timeZone) return bad('Please tell us your local time zone.');
+    if (date && !offered.has(date))
+      return bad('That date is no longer available. Please choose another.');
+    if (sessionDates(now).length > 0 && !date)
+      return bad('Please choose a date for your session.');
+    if (hasSlot) {
+      if (!oneOf(time, SESSION_TIMES))
+        return bad('Please choose a start time for your session.');
+      if (!isValidTimeZone(timeZone))
+        return bad('Please choose your time zone.');
+    }
     if (!consent) return bad('Please tick the box to agree to be contacted.');
   }
 
@@ -164,9 +175,9 @@ export async function POST(request: Request) {
     research_interest: interest,
     email: interested ? email : null,
     contact_consent: interested ? consent : false,
-    available_days: interested ? availableDays : [],
-    available_times: interested ? availableTimes : [],
-    time_zone: interested ? timeZone : null,
+    available_days: hasSlot ? [date] : [],
+    available_times: hasSlot ? [slotLabel(date, time)] : [],
+    time_zone: hasSlot ? timeZone : null,
     comments: comments || null
   };
 
@@ -197,9 +208,7 @@ export async function POST(request: Request) {
     ];
     if (interested) {
       lines.push(`*Email:* ${email}`);
-      lines.push(
-        `*Availability:* ${availableDays.join(', ')} — ${availableTimes.join(', ')} (${timeZone})`
-      );
+      if (hasSlot) lines.push(`*Session:* ${date}, ${time} (${timeZone})`);
     }
     if (comments) lines.push(`*Comments:* ${comments}`);
     await postToSlackForms({ text: lines.join('\n'), unfurl_links: false });

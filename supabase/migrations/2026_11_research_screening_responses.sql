@@ -29,9 +29,10 @@ create table if not exists research_screening_responses (
   research_interest  text not null,
   email              text,              -- only when interest is Yes / Maybe
   contact_consent    boolean not null default false,
-  available_days     text[] not null default '{}',  -- e.g. 'Monday 9 November'
-  available_times    text[] not null default '{}',
-  time_zone          text,
+  -- The chosen session slot (one entry), in the participant's time zone:
+  available_days     text[] not null default '{}',  -- e.g. 'Tuesday 10 November'
+  available_times    text[] not null default '{}',  -- e.g. 'Tuesday 10 November · 2:00 PM'
+  time_zone          text,                          -- IANA, e.g. 'Europe/London'
   comments           text
 );
 
