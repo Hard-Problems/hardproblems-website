@@ -96,6 +96,26 @@
   text-decoration-color: currentColor;
 }
 
+// Desktop: all four books in one row, cover on top with the title and
+// author underneath.
+@media only screen and (min-width: 768px) {
+  .books {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .books .book {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .cover {
+    width: 48px;
+    height: 72px;
+  }
+}
+
 .bookAuthor {
   font-size: var(--font-size-xs);
   line-height: 1.3;

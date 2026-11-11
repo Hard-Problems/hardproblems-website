@@ -443,8 +443,8 @@ export default function ScreeningForm({
                 className={styles.cover}
                 src={b.cover}
                 alt=""
-                width={32}
-                height={48}
+                width={48}
+                height={72}
               />
               <span className={styles.bookText}>
                 <a
