@@ -424,8 +424,8 @@ export default function ScreeningForm({
         </p>
         <p>
           This short form helps us find the right people to invite to a
-          research session. It takes 2–3 minutes, and your answers are only
-          used for this research.
+          research session. It takes 2–3 minutes. Your answers are kept
+          confidential and only used for this research.
         </p>
       </div>
 
