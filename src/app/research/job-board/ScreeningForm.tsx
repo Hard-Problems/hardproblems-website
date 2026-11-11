@@ -416,9 +416,7 @@ export default function ScreeningForm({
 
   return (
     <div ref={topRef} className={styles.wrap}>
-      <h1 className="page-title">
-        Participant screening &amp; research interest form
-      </h1>
+      <h1 className="page-title">User Research Form</h1>
       <div className={styles.intro}>
         <p>
           We&rsquo;re learning how people find and evaluate career
