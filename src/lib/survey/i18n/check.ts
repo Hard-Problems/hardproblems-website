@@ -166,6 +166,7 @@ export function checkTranslation(
   compare('content.roleSubjects', en.roleSubjects ?? {}, tc.roleSubjects ?? {});
   compare('content.defaultTerm', en.defaultTerm, tc.defaultTerm);
   compare('content.groups', en.groups ?? {}, tc.groups ?? {});
+  compare('content.notWorking', en.notWorking ?? {}, tc.notWorking ?? {});
 
   if (!isEnglish) {
     // Every role, every role-worded question, as a whole sentence.

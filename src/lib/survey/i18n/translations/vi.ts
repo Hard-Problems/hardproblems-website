@@ -142,6 +142,61 @@ export const vi: SurveyTranslation = {
         hint: 'Câu trả lời của bạn đã được lưu.'
       }
     },
+    notWorking: {
+      questions: {
+        'career-satisfaction': {
+          text: 'Bạn đã hài lòng đến mức nào với công việc gần đây nhất của mình?',
+          hint: 'Nếu bạn chưa từng có việc làm, hãy nghĩ đến điều gần giống nhất mà bạn đã làm, chẳng hạn như một kỳ thực tập hoặc một dự án lớn.'
+        },
+        'role-security': {
+          text: 'Bạn đã cảm thấy vị trí gần đây nhất của mình vững vàng đến mức nào?'
+        },
+        skill: {
+          text: 'Theo tôi, tôi đã làm tốt công việc gần đây nhất của mình'
+        },
+        passion: {
+          text: 'Bạn đã nhiệt huyết với công việc gần đây nhất của mình'
+        },
+        pay: {
+          text: 'Xét đến mọi nỗ lực và thành tích trong công việc gần đây nhất, tôi đã cảm thấy mình được trả lương thỏa đáng'
+        },
+        'benefit-to-world': {
+          text: 'Công việc gần đây nhất của tôi đã có ích cho xã hội'
+        },
+        'job-choice': {
+          levels: {
+            pay: {
+              'less-30': 'Thấp hơn lương gần nhất 30%',
+              'less-15': 'Thấp hơn lương gần nhất 15%',
+              same: 'Bằng lương gần nhất',
+              'more-15': 'Cao hơn lương gần nhất 15%',
+              'more-30': 'Cao hơn lương gần nhất 30%'
+            }
+          }
+        },
+        burnout: {
+          text: 'Bạn đã cảm thấy kiệt sức (burnout) vì công việc gần đây nhất thường xuyên đến mức nào?'
+        },
+        'manages-people': {
+          text: 'Trong công việc gần đây nhất, bạn có quản lý nhân sự không?'
+        },
+        'org-size': {
+          text: 'Công ty hoặc tổ chức nơi bạn làm việc gần đây nhất có quy mô bao nhiêu người?'
+        },
+        'designer-pm-count': {
+          text: 'Có bao nhiêu nhà thiết kế và PM làm việc tại công ty hoặc tổ chức nơi bạn làm việc gần đây nhất?'
+        },
+        'org-type': {
+          text: 'Gần đây nhất, bạn đã làm việc tại loại hình tổ chức nào?'
+        },
+        sectors: {
+          text: 'Gần đây nhất, bạn đã chủ yếu làm việc trong những lĩnh vực nào?'
+        }
+      },
+      groups: {
+        'about-you': { title: 'Về bạn và nơi bạn làm việc gần đây nhất' }
+      }
+    },
     questions: {
       role: {
         text: 'Vai trò của bạn thuộc loại nào?',
@@ -162,6 +217,11 @@ export const vi: SurveyTranslation = {
           founder: 'Nhà sáng lập/chủ doanh nghiệp',
           other: 'Khác…'
         }
+      },
+      'has-job': {
+        text: 'Tôi hiện đang làm việc (làm công ăn lương hoặc làm tự do)',
+        hint: 'Hãy bỏ chọn nếu bạn đang trong khoảng thời gian giữa hai công việc.',
+        options: { yes: 'Hiện đang làm việc', no: 'Hiện không làm việc' }
       },
       'career-satisfaction': {
         text: 'Bạn hài lòng đến mức nào với công việc (chính) của mình?',

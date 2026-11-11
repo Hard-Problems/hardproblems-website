@@ -142,6 +142,55 @@ export const id: SurveyTranslation = {
         hint: 'Jawaban Anda sudah tersimpan.'
       }
     },
+    notWorking: {
+      questions: {
+        'career-satisfaction': {
+          text: 'Seberapa puas Anda dengan pekerjaan terakhir Anda?',
+          hint: 'Jika Anda belum pernah memiliki pekerjaan, pikirkan hal paling mirip yang pernah Anda lakukan, seperti magang atau proyek besar.'
+        },
+        'role-security': {
+          text: 'Seberapa aman perasaan Anda tentang posisi terakhir Anda?'
+        },
+        skill: {
+          text: 'Menurut saya, saya cakap dalam pekerjaan terakhir saya'
+        },
+        passion: { text: 'Anda antusias dengan pekerjaan terakhir Anda' },
+        pay: {
+          text: 'Dengan mempertimbangkan semua usaha dan pencapaian saya dalam pekerjaan terakhir saya, saya merasa dibayar dengan layak'
+        },
+        'benefit-to-world': {
+          text: 'Pekerjaan terakhir saya bermanfaat bagi masyarakat'
+        },
+        'job-choice': {
+          levels: {
+            pay: {
+              'less-30': '30% di bawah gaji terakhir',
+              'less-15': '15% di bawah gaji terakhir',
+              same: 'Sama dengan gaji terakhir',
+              'more-15': '15% di atas gaji terakhir',
+              'more-30': '30% di atas gaji terakhir'
+            }
+          }
+        },
+        burnout: {
+          text: 'Seberapa sering Anda merasa burnout karena pekerjaan terakhir Anda?'
+        },
+        'manages-people': {
+          text: 'Apakah Anda membawahi orang lain di pekerjaan terakhir Anda?'
+        },
+        'org-size': {
+          text: 'Seberapa besar perusahaan atau organisasi terakhir Anda?'
+        },
+        'designer-pm-count': {
+          text: 'Berapa banyak desainer dan PM yang bekerja di perusahaan atau organisasi terakhir Anda?'
+        },
+        'org-type': { text: 'Di jenis organisasi apa Anda terakhir bekerja?' },
+        sectors: { text: 'Apa saja sektor utama tempat Anda terakhir bekerja?' }
+      },
+      groups: {
+        'about-you': { title: 'Tentang Anda dan tempat Anda terakhir bekerja' }
+      }
+    },
     questions: {
       role: {
         text: 'Apa jenis peran Anda?',
@@ -161,6 +210,14 @@ export const id: SurveyTranslation = {
           'product-manager': 'Product Manager',
           founder: 'Pendiri/pemilik usaha',
           other: 'Lainnya…'
+        }
+      },
+      'has-job': {
+        text: 'Saya sedang bekerja saat ini (sebagai karyawan atau freelancer)',
+        hint: 'Hapus centang jika Anda sedang berada di antara dua pekerjaan.',
+        options: {
+          yes: 'Sedang bekerja saat ini',
+          no: 'Tidak sedang bekerja saat ini'
         }
       },
       'career-satisfaction': {

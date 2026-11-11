@@ -143,6 +143,59 @@ export const de: SurveyTranslation = {
         hint: 'Ihre Antworten sind gespeichert.'
       }
     },
+    notWorking: {
+      questions: {
+        'career-satisfaction': {
+          text: 'Wie zufrieden waren Sie mit Ihrem letzten Job?',
+          hint: 'Falls Sie noch keinen Job hatten, denken Sie an das, was dem am nächsten kommt, zum Beispiel ein Praktikum oder ein großes Projekt.'
+        },
+        'role-security': {
+          text: 'Wie sicher fühlten Sie sich in Ihrer letzten Position?'
+        },
+        skill: {
+          text: 'Meiner Meinung nach war ich gut in meinem letzten Job'
+        },
+        passion: { text: 'Sie waren begeistert von Ihrem letzten Job' },
+        pay: {
+          text: 'Wenn ich all meine Anstrengungen und Leistungen in meinem letzten Job berücksichtige, hatte ich das Gefühl, angemessen bezahlt zu werden'
+        },
+        'benefit-to-world': {
+          text: 'Mein letzter Job war nützlich für die Gesellschaft'
+        },
+        'job-choice': {
+          levels: {
+            pay: {
+              'less-30': '30 % unter Ihrem letzten Gehalt',
+              'less-15': '15 % unter Ihrem letzten Gehalt',
+              same: 'Wie Ihr letztes Gehalt',
+              'more-15': '15 % über Ihrem letzten Gehalt',
+              'more-30': '30 % über Ihrem letzten Gehalt'
+            }
+          }
+        },
+        burnout: {
+          text: 'Wie oft fühlten Sie sich durch Ihren letzten Job ausgebrannt?'
+        },
+        'manages-people': {
+          text: 'Hatten Sie in Ihrem letzten Job Personalverantwortung?'
+        },
+        'org-size': {
+          text: 'Wie groß war Ihr letztes Unternehmen oder Ihre letzte Organisation?'
+        },
+        'designer-pm-count': {
+          text: 'Wie viele Designer:innen und PMs arbeiteten in Ihrem letzten Unternehmen oder Ihrer letzten Organisation?'
+        },
+        'org-type': {
+          text: 'In welcher Art von Organisation haben Sie zuletzt gearbeitet?'
+        },
+        sectors: {
+          text: 'In welchen Branchen haben Sie zuletzt hauptsächlich gearbeitet?'
+        }
+      },
+      groups: {
+        'about-you': { title: 'Über Sie und Ihren letzten Arbeitsplatz' }
+      }
+    },
     questions: {
       role: {
         text: 'Welche Art von Rolle haben Sie?',
@@ -163,6 +216,11 @@ export const de: SurveyTranslation = {
           founder: 'Gründer:in/Unternehmen',
           other: 'Sonstiges …'
         }
+      },
+      'has-job': {
+        text: 'Ich arbeite derzeit (angestellt oder freiberuflich)',
+        hint: 'Entfernen Sie das Häkchen, wenn Sie gerade zwischen zwei Jobs sind.',
+        options: { yes: 'Derzeit berufstätig', no: 'Derzeit nicht berufstätig' }
       },
       'career-satisfaction': {
         text: 'Wie zufrieden sind Sie mit Ihrem (Haupt-)Job?',

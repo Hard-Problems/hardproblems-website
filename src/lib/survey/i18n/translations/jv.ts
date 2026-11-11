@@ -143,6 +143,64 @@ export const jv: SurveyTranslation = {
         hint: 'Wangsulan panjenengan sampun kasimpen.'
       }
     },
+    notWorking: {
+      questions: {
+        'career-satisfaction': {
+          text: 'Sepinten maremipun panjenengan kaliyan pakaryan panjenengan ingkang pungkasan?',
+          hint: 'Menawi panjenengan dereng nate gadhah pakaryan, mangga penggalih bab ingkang paling celak ingkang nate panjenengan tindakaken, kados ta magang utawi proyek ageng.'
+        },
+        'role-security': {
+          text: 'Sepinten aman raosipun panjenengan ing kalenggahan panjenengan ingkang pungkasan?'
+        },
+        skill: {
+          text: 'Miturut pamanggih kula, kula mumpuni ing pakaryan kula ingkang pungkasan'
+        },
+        passion: {
+          text: 'Panjenengan semangat dhateng pakaryan panjenengan ingkang pungkasan'
+        },
+        pay: {
+          text: 'Menawi ngengeti sedaya usaha lan prestasi kula ing pakaryan kula ingkang pungkasan, kula rumaos pikantuk bayaran ingkang pantes'
+        },
+        'benefit-to-world': {
+          text: 'Pakaryan kula ingkang pungkasan migunani tumrap masyarakat'
+        },
+        'job-choice': {
+          levels: {
+            pay: {
+              'less-30': '30% langkung andhap saking bayaran pungkasan',
+              'less-15': '15% langkung andhap saking bayaran pungkasan',
+              same: 'Sami kaliyan bayaran pungkasan',
+              'more-15': '15% langkung inggil saking bayaran pungkasan',
+              'more-30': '30% langkung inggil saking bayaran pungkasan'
+            }
+          }
+        },
+        burnout: {
+          text: 'Sepinten asring panjenengan ngraosaken burnout (sayah lair batin) amargi pakaryan panjenengan ingkang pungkasan?'
+        },
+        'manages-people': {
+          text: 'Menapa panjenengan mimpin tiyang sanes (gadhah bawahan) ing pakaryan panjenengan ingkang pungkasan?'
+        },
+        'org-size': {
+          text: 'Sepinten agengipun perusahaan utawi organisasi panjenengan ingkang pungkasan?'
+        },
+        'designer-pm-count': {
+          text: 'Pinten desainer lan PM ingkang nyambut damel ing perusahaan utawi organisasi panjenengan ingkang pungkasan?'
+        },
+        'org-type': {
+          text: 'Panjenengan pungkasan nyambut damel ing jinis organisasi menapa?'
+        },
+        sectors: {
+          text: 'Menapa kemawon sektor utami ingkang pungkasan panjenengan geluti?'
+        }
+      },
+      groups: {
+        'about-you': {
+          title:
+            'Babagan panjenengan lan papan pungkasan panjenengan nyambut damel'
+        }
+      }
+    },
     questions: {
       role: {
         text: 'Menapa jinis peran panjenengan?',
@@ -162,6 +220,14 @@ export const jv: SurveyTranslation = {
           'product-manager': 'Product Manager',
           founder: 'Pendiri/pamilik usaha',
           other: 'Sanesipun…'
+        }
+      },
+      'has-job': {
+        text: 'Kula saweg nyambut damel sapunika (dados karyawan utawi freelance)',
+        hint: 'Mangga busak centhangipun menawi panjenengan saweg wonten ing antawis kalih pakaryan.',
+        options: {
+          yes: 'Saweg nyambut damel sapunika',
+          no: 'Mboten saweg nyambut damel sapunika'
         }
       },
       'career-satisfaction': {

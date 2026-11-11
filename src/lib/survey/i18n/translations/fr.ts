@@ -142,6 +142,63 @@ export const fr: SurveyTranslation = {
         hint: 'Vos réponses sont enregistrées.'
       }
     },
+    notWorking: {
+      questions: {
+        'career-satisfaction': {
+          text: 'Dans quelle mesure étiez-vous satisfait(e) de votre dernier emploi ?',
+          hint: 'Si vous n’avez pas encore eu d’emploi, pensez à ce que vous avez fait de plus proche, comme un stage ou un projet important.'
+        },
+        'role-security': {
+          text: 'Dans quelle mesure votre dernier poste vous semblait-il stable ?'
+        },
+        skill: {
+          text: 'À mon avis, j’étais compétent(e) dans mon dernier emploi'
+        },
+        passion: {
+          text: 'Vous étiez enthousiaste vis-à-vis de votre dernier emploi'
+        },
+        pay: {
+          text: 'Compte tenu de tous mes efforts et de mes réalisations dans mon dernier emploi, j’estimais être payé(e) de façon appropriée'
+        },
+        'benefit-to-world': {
+          text: 'Mon dernier emploi était utile à la société'
+        },
+        'job-choice': {
+          levels: {
+            pay: {
+              'less-30': '30 % de moins que votre dernier salaire',
+              'less-15': '15 % de moins que votre dernier salaire',
+              same: 'Identique à votre dernier salaire',
+              'more-15': '15 % de plus que votre dernier salaire',
+              'more-30': '30 % de plus que votre dernier salaire'
+            }
+          }
+        },
+        burnout: {
+          text: 'À quelle fréquence vous sentiez-vous vidé(e) par votre dernier emploi ?'
+        },
+        'manages-people': {
+          text: 'Encadriez-vous des personnes dans votre dernier emploi ?'
+        },
+        'org-size': {
+          text: 'Quelle était la taille de votre dernière entreprise ou organisation ?'
+        },
+        'designer-pm-count': {
+          text: 'Combien de designers et de PM travaillaient dans votre dernière entreprise ou organisation ?'
+        },
+        'org-type': {
+          text: 'Dans quel type d’organisation avez-vous travaillé en dernier ?'
+        },
+        sectors: {
+          text: 'Quels ont été les principaux secteurs dans lesquels vous avez travaillé en dernier ?'
+        }
+      },
+      groups: {
+        'about-you': {
+          title: 'À propos de vous et de votre dernier lieu de travail'
+        }
+      }
+    },
     questions: {
       role: {
         text: 'Quel type de poste occupez-vous ?',
@@ -161,6 +218,14 @@ export const fr: SurveyTranslation = {
           'product-manager': 'Product manager',
           founder: 'Fondateur/trice ou chef(fe) d’entreprise',
           other: 'Autre…'
+        }
+      },
+      'has-job': {
+        text: 'Je travaille en ce moment (salarié(e) ou freelance)',
+        hint: 'Décochez la case si vous êtes entre deux emplois.',
+        options: {
+          yes: 'Travaille en ce moment',
+          no: 'Ne travaille pas en ce moment'
         }
       },
       'career-satisfaction': {

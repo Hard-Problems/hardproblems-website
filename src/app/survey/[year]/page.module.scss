@@ -323,6 +323,25 @@
   }
 }
 
+// A yes/no statement as one checkbox ("I'm working at the moment"),
+// under the step's main question. The rule above it says it is a
+// separate statement, not one more option of the question above.
+.checkboxQuestion {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e3ece6;
+
+  .option {
+    font-weight: 500;
+  }
+
+  // Lined up with the label's text, past the box.
+  .hint {
+    margin: 0.15rem 0 0;
+    padding-inline-start: calc(1rem + 20px + 0.75rem);
+  }
+}
+
 .otherWrap {
   margin-top: 0.85rem;
   padding-inline-start: 1rem;
