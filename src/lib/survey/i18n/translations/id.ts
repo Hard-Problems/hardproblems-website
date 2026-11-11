@@ -427,7 +427,7 @@ export const id: SurveyTranslation = {
         }
       },
       'proud-of-shipping': {
-        text: 'Apakah Anda bangga dengan sesuatu yang Anda rilis tahun ini?',
+        text: 'Apakah Anda bangga dengan sesuatu yang Anda buat tahun ini?',
         options: {
           yes: 'Ya',
           no: 'Tidak'

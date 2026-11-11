@@ -475,7 +475,7 @@ export const SURVEY_2026: SurveyDefinition = {
     {
       kind: 'single',
       id: 'proud-of-shipping',
-      text: 'Are you proud of something you shipped this year?',
+      text: 'Are you proud of something you created this year?',
       options: [
         { id: 'yes', label: 'Yes' },
         { id: 'no', label: 'No' }

@@ -428,7 +428,7 @@ export const ha: SurveyTranslation = {
         }
       },
       'proud-of-shipping': {
-        text: 'Shin kuna alfahari da wani abu da kuka fitar a wannan shekara?',
+        text: 'Shin kuna alfahari da wani abu da kuka ƙirƙira a wannan shekara?',
         options: {
           yes: 'Eh',
           no: 'A’a'

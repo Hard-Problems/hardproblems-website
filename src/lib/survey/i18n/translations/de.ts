@@ -429,7 +429,7 @@ export const de: SurveyTranslation = {
         }
       },
       'proud-of-shipping': {
-        text: 'Sind Sie stolz auf etwas, das Sie dieses Jahr veröffentlicht haben?',
+        text: 'Sind Sie stolz auf etwas, das Sie dieses Jahr geschaffen haben?',
         options: {
           yes: 'Ja',
           no: 'Nein'

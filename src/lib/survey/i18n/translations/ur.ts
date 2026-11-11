@@ -427,7 +427,7 @@ export const ur: SurveyTranslation = {
         }
       },
       'proud-of-shipping': {
-        text: 'کیا آپ کو کسی ایسی چیز پر فخر ہے جو آپ نے اس سال لانچ کی؟',
+        text: 'کیا آپ کو کسی ایسی چیز پر فخر ہے جو آپ نے اس سال بنائی؟',
         options: {
           yes: 'ہاں',
           no: 'نہیں'

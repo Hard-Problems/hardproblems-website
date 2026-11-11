@@ -427,7 +427,7 @@ export const ko: SurveyTranslation = {
         }
       },
       'proud-of-shipping': {
-        text: '올해 세상에 내놓은 것 중에 자랑스러운 것이 있나요?',
+        text: '올해 만든 것 중에 자랑스러운 것이 있나요?',
         options: {
           yes: '예',
           no: '아니요'

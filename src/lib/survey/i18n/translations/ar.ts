@@ -417,7 +417,7 @@ export const ar: SurveyTranslation = {
         }
       },
       'proud-of-shipping': {
-        text: 'هل تشعر بالفخر بشيء أطلقته هذا العام؟',
+        text: 'هل تشعر بالفخر بشيء أنشأته هذا العام؟',
         options: {
           yes: 'نعم',
           no: 'لا'
