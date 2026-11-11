@@ -427,7 +427,7 @@ export const vi: SurveyTranslation = {
         }
       },
       'proud-of-shipping': {
-        text: 'Bạn có tự hào về điều gì đó mình đã ra mắt trong năm nay không?',
+        text: 'Bạn có tự hào về điều gì đó mình đã tạo ra trong năm nay không?',
         options: {
           yes: 'Có',
           no: 'Không'

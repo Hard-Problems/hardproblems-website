@@ -427,7 +427,7 @@ export const tr: SurveyTranslation = {
         }
       },
       'proud-of-shipping': {
-        text: 'Bu yıl hayata geçirdiğiniz bir şeyle gurur duyuyor musunuz?',
+        text: 'Bu yıl yarattığınız bir şeyle gurur duyuyor musunuz?',
         options: {
           yes: 'Evet',
           no: 'Hayır'

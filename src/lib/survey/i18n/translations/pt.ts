@@ -427,7 +427,7 @@ export const pt: SurveyTranslation = {
         }
       },
       'proud-of-shipping': {
-        text: 'Você tem orgulho de algo que lançou este ano?',
+        text: 'Você tem orgulho de algo que criou este ano?',
         options: {
           yes: 'Sim',
           no: 'Não'

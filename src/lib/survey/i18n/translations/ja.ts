@@ -426,7 +426,7 @@ export const ja: SurveyTranslation = {
         }
       },
       'proud-of-shipping': {
-        text: '今年リリースしたもので、誇りに思えるものはありますか？',
+        text: '今年つくったもので、誇りに思えるものはありますか？',
         options: {
           yes: 'はい',
           no: 'いいえ'

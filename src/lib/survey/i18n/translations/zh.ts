@@ -399,7 +399,7 @@ export const zh: SurveyTranslation = {
         }
       },
       'proud-of-shipping': {
-        text: '您今年推出的成果中，有让您感到自豪的吗？',
+        text: '您今年创造的成果中，有让您感到自豪的吗？',
         options: {
           yes: '有',
           no: '没有'

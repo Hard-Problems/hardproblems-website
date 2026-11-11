@@ -428,7 +428,7 @@ export const jv: SurveyTranslation = {
         }
       },
       'proud-of-shipping': {
-        text: 'Menapa panjenengan bangga kaliyan setunggal bab ingkang panjenengan rilis taun menika?',
+        text: 'Menapa panjenengan bangga kaliyan setunggal bab ingkang panjenengan damel taun menika?',
         options: {
           yes: 'Inggih',
           no: 'Mboten'

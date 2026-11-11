@@ -427,7 +427,7 @@ export const fr: SurveyTranslation = {
         }
       },
       'proud-of-shipping': {
-        text: 'Êtes-vous fier ou fière de quelque chose que vous avez livré cette année ?',
+        text: 'Êtes-vous fier ou fière de quelque chose que vous avez créé cette année ?',
         options: {
           yes: 'Oui',
           no: 'Non'
