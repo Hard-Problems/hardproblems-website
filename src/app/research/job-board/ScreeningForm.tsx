@@ -447,7 +447,14 @@ export default function ScreeningForm({
                 height={48}
               />
               <span className={styles.bookText}>
-                <span className={styles.bookTitle}>{b.title}</span>
+                <a
+                  className={styles.bookTitle}
+                  href={b.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {b.title}
+                </a>
                 <span className={styles.bookAuthor}>{b.author}</span>
               </span>
             </li>

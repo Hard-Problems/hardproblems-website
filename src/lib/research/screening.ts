@@ -66,27 +66,32 @@ export const SESSION_TIMES: string[] = Array.from({ length: 23 }, (_, i) => {
 });
 
 // Thank-you books offered to participants who take part in a session.
-// Covers are the publishers' front covers, saved in public/images/content.
+// Covers are the publishers' front covers, saved in public/images/content;
+// `url` is each book's official site.
 export const BOOKS = [
   {
     title: 'Sprint',
     author: 'Jake Knapp, John Zeratsky & Braden Kowitz',
-    cover: '/images/content/book-cover-sprint.jpg'
+    cover: '/images/content/book-cover-sprint.jpg',
+    url: 'https://www.character.vc/sprint'
   },
   {
     title: 'Factfulness',
     author: 'Hans Rosling',
-    cover: '/images/content/book-cover-factfulness.jpg'
+    cover: '/images/content/book-cover-factfulness.jpg',
+    url: 'https://www.gapminder.org/factfulness-book/'
   },
   {
     title: 'Incorruptible',
     author: 'Eric Ries',
-    cover: '/images/content/book-cover-incorruptible.jpg'
+    cover: '/images/content/book-cover-incorruptible.jpg',
+    url: 'https://www.incorruptible.co/'
   },
   {
     title: 'Why Design Is Hard',
     author: 'Scott Berkun & Bryan Zug',
-    cover: '/images/content/book-cover-why-design-is-hard.jpg'
+    cover: '/images/content/book-cover-why-design-is-hard.jpg',
+    url: 'https://scottberkun.com/why-design-is-hard/'
   }
 ] as const;
 

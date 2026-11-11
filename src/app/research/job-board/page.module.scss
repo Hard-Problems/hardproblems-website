@@ -81,11 +81,19 @@
 }
 
 .bookTitle {
+  align-self: flex-start;
+  text-decoration: underline;
+  text-decoration-color: rgba(35, 83, 55, 0.35);
+  text-underline-offset: 2px;
   font-size: var(--font-size-sm);
   font-weight: 600;
   font-style: italic;
   line-height: 1.25;
   color: var(--color-dark-green);
+}
+
+.bookTitle:hover {
+  text-decoration-color: currentColor;
 }
 
 .bookAuthor {
