@@ -132,6 +132,10 @@ export function validateAnswer(
   }
   if (isBlank(answer)) {
     if (question.optional) return null;
+    // A checkbox left alone is ticked — see `as: 'checkbox'` in
+    // types.ts. Also lets through a page loaded before the checkbox
+    // existed, which never sends it.
+    if (question.kind === 'single' && question.as === 'checkbox') return null;
     // Named when the caller can supply the wording. A step holding
     // five questions produces five identical "Please answer this
     // question" lines otherwise, which says nothing about which one —
@@ -309,6 +313,17 @@ export function normalizeAnswers(
   for (const question of survey.questions) {
     const a = answers[question.id];
     if (isBlank(a)) continue;
+    // A ticked checkbox is the default, and is stored as nothing at
+    // all, so a response from someone who left it ticked is stored
+    // exactly as it was before the checkbox existed. Only the unticked
+    // answer is kept. See `as: 'checkbox'` in types.ts.
+    if (
+      question.kind === 'single' &&
+      question.as === 'checkbox' &&
+      a.value === question.options[0].id
+    ) {
+      continue;
+    }
     const value = Array.isArray(a.value)
       ? a.value.map((v) => v.trim())
       : question.kind === 'textarea'

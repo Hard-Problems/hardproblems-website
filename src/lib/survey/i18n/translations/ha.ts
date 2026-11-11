@@ -142,6 +142,61 @@ export const ha: SurveyTranslation = {
         hint: 'An adana amsoshinku.'
       }
     },
+    notWorking: {
+      questions: {
+        'career-satisfaction': {
+          text: 'Yaya kuka gamsu da aikinku na baya-bayan nan?',
+          hint: 'Idan ba ku taɓa yin aiki ba tukuna, ku yi tunanin abin da ya fi kusa da hakan da kuka taɓa yi, kamar horon aiki (internship) ko wani babban project.'
+        },
+        'role-security': {
+          text: 'Yaya kuka ji tabbacin matsayinku na baya-bayan nan?'
+        },
+        skill: { text: 'A ra’ayina, na ƙware a aikina na baya-bayan nan' },
+        passion: {
+          text: 'Kun kasance kuna jin ɗoki game da aikinku na baya-bayan nan'
+        },
+        pay: {
+          text: 'Idan na yi la’akari da dukkan ƙoƙarina da nasarorina a aikina na baya-bayan nan, na ji cewa an biya ni yadda ya dace'
+        },
+        'benefit-to-world': {
+          text: 'Aikina na baya-bayan nan ya kasance mai amfani ga al’umma'
+        },
+        'job-choice': {
+          levels: {
+            pay: {
+              'less-30': 'Ƙasa da albashinku na ƙarshe da 30%',
+              'less-15': 'Ƙasa da albashinku na ƙarshe da 15%',
+              same: 'Daidai da albashinku na ƙarshe',
+              'more-15': 'Sama da albashinku na ƙarshe da 15%',
+              'more-30': 'Sama da albashinku na ƙarshe da 30%'
+            }
+          }
+        },
+        burnout: {
+          text: 'Sau nawa kuka ji aikinku na baya-bayan nan ya gajiyar da ku matuƙa (burnout)?'
+        },
+        'manages-people': {
+          text: 'Shin kun jagoranci wasu ma’aikata a aikinku na baya-bayan nan?'
+        },
+        'org-size': {
+          text: 'Yaya girman kamfani ko ƙungiyar da kuka yi wa aiki a baya-bayan nan yake?'
+        },
+        'designer-pm-count': {
+          text: 'Masu ƙira da manajojin samfura (PM) nawa ne suka yi aiki a kamfani ko ƙungiyar da kuka yi wa aiki a baya-bayan nan?'
+        },
+        'org-type': {
+          text: 'A wane irin kamfani ko ƙungiya kuka yi aiki a baya-bayan nan?'
+        },
+        sectors: {
+          text: 'Waɗanne manyan fannoni kuka yi aiki a cikinsu a baya-bayan nan?'
+        }
+      },
+      groups: {
+        'about-you': {
+          title: 'Game da ku da wurin da kuka yi aiki a baya-bayan nan'
+        }
+      }
+    },
     questions: {
       role: {
         text: 'Wane irin matsayin aiki kuke da shi?',
@@ -162,6 +217,14 @@ export const ha: SurveyTranslation = {
           'product-manager': 'Manajan Samfura (Product Manager)',
           founder: 'Mai kafa kamfani/mai kasuwanci',
           other: 'Wani daban…'
+        }
+      },
+      'has-job': {
+        text: 'Ina aiki a halin yanzu (a matsayin ma’aikaci ko a matsayin freelancer)',
+        hint: 'Ku cire alamar idan kuna tsakanin wani aiki da wani.',
+        options: {
+          yes: 'Mai aiki a halin yanzu',
+          no: 'Ba mai aiki ba a halin yanzu'
         }
       },
       'career-satisfaction': {

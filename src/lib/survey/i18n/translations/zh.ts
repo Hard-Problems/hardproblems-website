@@ -114,6 +114,43 @@ export const zh: SurveyTranslation = {
         hint: '您的回答已保存。'
       }
     },
+    notWorking: {
+      questions: {
+        'career-satisfaction': {
+          text: '您对您最近一份工作的满意程度如何？',
+          hint: '如果您还没有过工作，请想想您做过的最接近的事情，例如实习或大型项目。'
+        },
+        'role-security': { text: '您当时觉得自己最近一份工作的职位有多稳定？' },
+        skill: { text: '我认为，我当时能胜任我最近一份工作' },
+        passion: { text: '您当时对您最近一份工作充满热情' },
+        pay: {
+          text: '考虑到我在最近一份工作中的所有付出和成就，我觉得我当时得到的报酬是合理的'
+        },
+        'benefit-to-world': { text: '我最近一份工作对社会有用' },
+        'job-choice': {
+          levels: {
+            pay: {
+              'less-30': '比上份薪酬低 30%',
+              'less-15': '比上份薪酬低 15%',
+              same: '与上份薪酬相同',
+              'more-15': '比上份薪酬高 15%',
+              'more-30': '比上份薪酬高 30%'
+            }
+          }
+        },
+        burnout: {
+          text: '您当时有多经常因最近一份工作而感到倦怠（burnout）？'
+        },
+        'manages-people': { text: '您在最近一份工作中是否管理他人？' },
+        'org-size': { text: '您最近工作过的公司或组织规模有多大？' },
+        'designer-pm-count': {
+          text: '您最近工作过的公司或组织有多少设计师和产品经理？'
+        },
+        'org-type': { text: '您最近在哪种类型的组织工作过？' },
+        sectors: { text: '您最近主要在哪些行业工作过？' }
+      },
+      groups: { 'about-you': { title: '关于您和您最近的工作单位' } }
+    },
     questions: {
       role: {
         text: '您的职位属于哪一类？',
@@ -134,6 +171,11 @@ export const zh: SurveyTranslation = {
           founder: '创始人／企业主',
           other: '其他……'
         }
+      },
+      'has-job': {
+        text: '我目前在工作（受雇或自由职业）',
+        hint: '如果您正处于两份工作之间的空档期，请取消勾选。',
+        options: { yes: '目前在工作', no: '目前没有工作' }
       },
       'career-satisfaction': {
         text: '您对您的（主要）工作满意程度如何？',

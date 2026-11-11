@@ -9,7 +9,9 @@ import {
   orderedOptions,
   normalizeSource,
   buildSteps,
-  questionTextFor
+  questionTextFor,
+  isNotWorking,
+  situate
 } from './index';
 import {
   normalizeAnswers,
@@ -51,7 +53,7 @@ function check(name: string, cond: boolean, extra = '') {
 
 // ---- definition integrity -------------------------------------------
 const qs = SURVEY_2026.questions;
-check('28 questions', qs.length === 28, `got ${qs.length}`);
+check('29 questions', qs.length === 29, `got ${qs.length}`);
 check('question ids unique', new Set(qs.map((q) => q.id)).size === qs.length);
 for (const q of qs) {
   if ('options' in q) {
@@ -874,6 +876,168 @@ check(
       good.moneyEquivalent < 30,
     `${good?.moneyEquivalent?.toFixed(1)}%`
   );
+}
+
+// ---- between jobs: the "I'm working at the moment" checkbox -------------
+{
+  const hasJob = qs.find((q) => q.id === 'has-job');
+  check(
+    'has-job is a two-option checkbox, ticked = yes',
+    hasJob?.kind === 'single' &&
+      hasJob.as === 'checkbox' &&
+      hasJob.options.map((o) => o.id).join() === 'yes,no'
+  );
+  const steps = buildSteps(mainQuestions(SURVEY_2026));
+  check(
+    'has-job shares the first step with role, no group heading',
+    steps[0].map((q) => q.id).join() === 'role,has-job' &&
+      !SURVEY_2026.groups?.start
+  );
+  // Every checkbox in the definition is well formed.
+  check(
+    'every checkbox question has exactly two options',
+    qs.every(
+      (q) =>
+        !(q.kind === 'single' && q.as === 'checkbox') || q.options.length === 2
+    )
+  );
+
+  // Missing = ticked: responses (and pages) from before it existed pass.
+  const without = goodAnswers();
+  delete without['has-job'];
+  check(
+    'a submission without has-job still passes',
+    validateSubmission(SURVEY_2026, without, COUNTRIES).length === 0
+  );
+  check(
+    'has-job rejects anything but yes/no',
+    inject((a) => (a['has-job'] = { value: 'maybe' })).length > 0
+  );
+  // Only the unticked answer is stored: a working respondent's row is
+  // identical to one from before the checkbox existed.
+  const base = goodAnswers();
+  delete base['has-job'];
+  const stored = normalizeAnswers(SURVEY_2026, base);
+  check(
+    'ticked has-job is not stored',
+    JSON.stringify(
+      normalizeAnswers(SURVEY_2026, {
+        ...base,
+        'has-job': { value: 'yes' }
+      })
+    ) === JSON.stringify(stored) && !('has-job' in stored)
+  );
+  check(
+    'unticked has-job is stored',
+    normalizeAnswers(SURVEY_2026, {
+      ...base,
+      'has-job': { value: 'no' }
+    })['has-job']?.value === 'no'
+  );
+
+  // The wording switches only when unticked.
+  check(
+    'not working only on an explicit no',
+    !isNotWorking(SURVEY_2026, {}) &&
+      !isNotWorking(SURVEY_2026, { 'has-job': 'yes' }) &&
+      isNotWorking(SURVEY_2026, { 'has-job': 'no' })
+  );
+  check(
+    'working: survey unchanged',
+    situate(SURVEY_2026, { 'has-job': 'yes' }) === SURVEY_2026
+  );
+  const nw = situate(SURVEY_2026, { 'has-job': 'no' });
+  const text = (s: typeof SURVEY_2026, id: string) =>
+    s.questions.find((q) => q.id === id)?.text;
+  check(
+    'not working: job questions reworded',
+    text(nw, 'career-satisfaction') ===
+      'How satisfied were you in your most recent job?' &&
+      text(nw, 'manages-people') ===
+        'Did you manage people in your most recent job?'
+  );
+  check(
+    'not working: Q2 gains a hint',
+    nw.questions.find((q) => q.id === 'career-satisfaction')?.hint !== undefined
+  );
+  check(
+    'not working: questions without new wording unchanged',
+    text(nw, 'what-matters') === text(SURVEY_2026, 'what-matters') &&
+      text(nw, 'metaphor') === text(SURVEY_2026, 'metaphor')
+  );
+  check(
+    'not working: group heading reworded',
+    nw.groups?.['about-you']?.title ===
+      'About you and where you worked most recently'
+  );
+  const pay = (s: typeof SURVEY_2026) =>
+    (
+      s.questions.find((q) => q.id === 'job-choice') as ConjointQuestion
+    ).attributes.find((a) => a.id === 'pay')!;
+  check(
+    'not working: card pay wording relative to last pay, ids unchanged',
+    pay(nw).levels.find((l) => l.id === 'less-30')?.short ===
+      '30% below your last pay' &&
+      pay(nw)
+        .levels.map((l) => l.id)
+        .join() ===
+        pay(SURVEY_2026)
+          .levels.map((l) => l.id)
+          .join()
+  );
+  check(
+    'not working: ids, options and order identical',
+    JSON.stringify(
+      nw.questions.map((q) => [
+        q.id,
+        q.kind,
+        'options' in q ? q.options.map((o) => o.id) : null
+      ])
+    ) ===
+      JSON.stringify(
+        SURVEY_2026.questions.map((q) => [
+          q.id,
+          q.kind,
+          'options' in q ? q.options.map((o) => o.id) : null
+        ])
+      )
+  );
+  // Every reworded id is a real question (and every pay level a level).
+  const nwDef = SURVEY_2026.notWorking!;
+  check(
+    'notWorking names real questions, groups and levels',
+    Object.entries(nwDef.questions).every(([id, w]) => {
+      const q = qs.find((x) => x.id === id);
+      if (!q) return false;
+      return Object.entries(w.levels ?? {}).every(
+        ([attr, levels]) =>
+          q.kind === 'conjoint' &&
+          Object.keys(levels).every((l) =>
+            q.attributes
+              .find((a) => a.id === attr)
+              ?.levels.some((x) => x.id === l)
+          )
+      );
+    }) &&
+      Object.keys(nwDef.groups ?? {}).every((g) => SURVEY_2026.groups?.[g]) &&
+      qs.some(
+        (q) =>
+          q.id === nwDef.when.question &&
+          'options' in q &&
+          q.options.some((o) => o.id === nwDef.when.answer)
+      )
+  );
+  // In every language: translated wording, and the switch still works.
+  for (const t of translationsFor(SURVEY_2026.year)) {
+    const { survey } = translate(SURVEY_2026, t.code);
+    const reworded = situate(survey, { 'has-job': 'no' });
+    check(
+      `i18n: ${t.code} not-working wording differs from working wording`,
+      text(reworded, 'career-satisfaction') !==
+        text(survey, 'career-satisfaction') &&
+        text(reworded, 'org-size') !== text(survey, 'org-size')
+    );
+  }
 }
 
 // ---- translations ------------------------------------------------------

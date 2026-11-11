@@ -62,6 +62,12 @@ export function extractContent(survey: SurveyDefinition): SurveyContent {
       roleQuestionText: structuredClone(survey.roleQuestionText)
     }),
     defaultTerm: survey.defaultTerm,
+    ...(survey.notWorking && {
+      notWorking: structuredClone({
+        questions: survey.notWorking.questions,
+        ...(survey.notWorking.groups && { groups: survey.notWorking.groups })
+      })
+    }),
     ...(survey.groups && {
       groups: Object.fromEntries(
         Object.entries(survey.groups).map(([id, g]) => [
@@ -98,6 +104,13 @@ export function localizeSurvey(
     // role must not fall back to an English sentence.
     roleQuestionText: content.roleQuestionText ?? survey.roleQuestionText,
     defaultTerm: content.defaultTerm,
+    // Replaced, not merged, like roleQuestionText: half-translated
+    // wording would mix languages within one survey. `when` is not
+    // words, so it always comes from the definition.
+    notWorking:
+      survey.notWorking && content.notWorking
+        ? { ...content.notWorking, when: survey.notWorking.when }
+        : survey.notWorking,
     groups: survey.groups
       ? Object.fromEntries(
           Object.entries(survey.groups).map(([id, g]) => [

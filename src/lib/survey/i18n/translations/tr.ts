@@ -142,6 +142,49 @@ export const tr: SurveyTranslation = {
         hint: 'Yanıtlarınız kaydedildi.'
       }
     },
+    notWorking: {
+      questions: {
+        'career-satisfaction': {
+          text: 'En son işinizden ne kadar memnundunuz?',
+          hint: 'Henüz bir işiniz olmadıysa, staj veya büyük bir proje gibi yaptığınız en yakın şeyi düşünün.'
+        },
+        'role-security': {
+          text: 'En son rolünüzde kendinizi ne kadar güvende hissediyordunuz?'
+        },
+        skill: { text: 'Bence en son işimde iyiydim' },
+        passion: { text: 'En son işiniz konusunda hevesliydiniz' },
+        pay: {
+          text: 'En son işimdeki tüm çabalarımı ve başarılarımı göz önünde bulundurduğumda, uygun bir ücret aldığımı düşünüyordum'
+        },
+        'benefit-to-world': { text: 'En son işim topluma faydalıydı' },
+        'job-choice': {
+          levels: {
+            pay: {
+              'less-30': 'Son maaşınızdan %30 düşük',
+              'less-15': 'Son maaşınızdan %15 düşük',
+              same: 'Son maaşınızla aynı',
+              'more-15': 'Son maaşınızdan %15 yüksek',
+              'more-30': 'Son maaşınızdan %30 yüksek'
+            }
+          }
+        },
+        burnout: {
+          text: 'En son işiniz yüzünden kendinizi ne sıklıkla tükenmiş hissediyordunuz?'
+        },
+        'manages-people': { text: 'En son işinizde insan yönetiyor muydunuz?' },
+        'org-size': {
+          text: 'En son çalıştığınız şirket veya kuruluş ne kadar büyüktü?'
+        },
+        'designer-pm-count': {
+          text: 'En son çalıştığınız şirkette veya kuruluşta kaç tasarımcı ve ürün yöneticisi çalışıyordu?'
+        },
+        'org-type': { text: 'En son ne tür bir kuruluşta çalıştınız?' },
+        sectors: { text: 'En son başlıca hangi sektörlerde çalıştınız?' }
+      },
+      groups: {
+        'about-you': { title: 'Siz ve en son çalıştığınız yer hakkında' }
+      }
+    },
     questions: {
       role: {
         text: 'Ne tür bir rolünüz var?',
@@ -162,6 +205,11 @@ export const tr: SurveyTranslation = {
           founder: 'Kurucu/işletme sahibi',
           other: 'Diğer…'
         }
+      },
+      'has-job': {
+        text: 'Şu anda çalışıyorum (bir işverene bağlı veya serbest olarak)',
+        hint: 'İki iş arasındaysanız işareti kaldırın.',
+        options: { yes: 'Şu anda çalışıyor', no: 'Şu anda çalışmıyor' }
       },
       'career-satisfaction': {
         text: '(Ana) işinizden ne kadar memnunsunuz?',

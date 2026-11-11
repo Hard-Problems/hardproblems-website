@@ -92,8 +92,18 @@ export type SingleQuestion = BaseQuestion & {
    *
    * Presentation only: the answer is still one option id, validated by
    * exactly the same rule.
+   *
+   * `checkbox` is for a yes/no statement the respondent confirms
+   * rather than chooses: one box, with the question's text as its
+   * label. It needs exactly two options — the first is the ticked
+   * answer, the second the unticked one — and starts ticked.
+   *
+   * Ticked is the default and is never stored: only the unticked answer
+   * is (see normalizeAnswers). So a response that leaves it ticked is
+   * stored exactly as one from before the checkbox existed, and a
+   * missing answer always means ticked.
    */
-  as?: 'radio' | 'select';
+  as?: 'radio' | 'select' | 'checkbox';
   /**
    * The options are a scale, best first: coloured green through to
    * red, in the given order, like a likert. For a scale the 0–5 likert
@@ -388,5 +398,33 @@ export type SurveyDefinition = {
   roleQuestionText?: Record<string, Record<string, string>>;
   /** Fallback when the role question is somehow unanswered. */
   defaultTerm: string;
+  /**
+   * Different wording for respondents who are not working at the
+   * moment, switched on by one answer to one question (the "I'm
+   * working at the moment" checkbox). Only words change — question
+   * ids, options and the stored answers are the same either way, so
+   * the two groups are analysed together and told apart by that one
+   * answer.
+   *
+   * `questions` replaces a question's text and/or hint; `levels`
+   * replaces conjoint card wording (`short`), keyed attribute id →
+   * level id. `groups` replaces a group's heading.
+   */
+  notWorking?: NotWorkingWording & {
+    /** The question, and the answer to it, that switches the wording. */
+    when: { question: string; answer: string };
+  };
   questions: SurveyQuestion[];
+};
+
+export type NotWorkingWording = {
+  questions: Record<
+    string,
+    {
+      text?: string;
+      hint?: string;
+      levels?: Record<string, Record<string, string>>;
+    }
+  >;
+  groups?: Record<string, { title: string }>;
 };

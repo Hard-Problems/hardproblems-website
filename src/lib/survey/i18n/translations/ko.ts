@@ -142,6 +142,47 @@ export const ko: SurveyTranslation = {
         hint: '답변이 저장되었어요.'
       }
     },
+    notWorking: {
+      questions: {
+        'career-satisfaction': {
+          text: '가장 최근 직업에 얼마나 만족하셨나요?',
+          hint: '아직 일자리를 가져 본 적이 없다면, 인턴십이나 큰 프로젝트처럼 그와 가장 가까운 경험을 떠올려 보세요.'
+        },
+        'role-security': {
+          text: '가장 최근 직무가 얼마나 안정적이라고 느끼셨나요?'
+        },
+        skill: { text: '제 생각에 저는 가장 최근의 제 일을 잘했어요' },
+        passion: { text: '당신은 가장 최근 자신의 일에 열정이 있었어요' },
+        pay: {
+          text: '가장 최근 일에서 들인 모든 노력과 성과를 고려할 때, 저는 적절한 보수를 받았다고 느꼈어요'
+        },
+        'benefit-to-world': { text: '가장 최근의 제 일은 사회에 유용했어요' },
+        'job-choice': {
+          levels: {
+            pay: {
+              'less-30': '직전 급여보다 30% 적음',
+              'less-15': '직전 급여보다 15% 적음',
+              same: '직전 급여와 같음',
+              'more-15': '직전 급여보다 15% 많음',
+              'more-30': '직전 급여보다 30% 많음'
+            }
+          }
+        },
+        burnout: {
+          text: '가장 최근 일 때문에 번아웃을 얼마나 자주 느끼셨나요?'
+        },
+        'manages-people': {
+          text: '가장 최근 직장에서 다른 사람을 관리하셨나요?'
+        },
+        'org-size': { text: '가장 최근 회사나 조직의 규모는 어느 정도였나요?' },
+        'designer-pm-count': {
+          text: '가장 최근 회사나 조직에 디자이너와 PM이 몇 명 있었나요?'
+        },
+        'org-type': { text: '가장 최근에 어떤 유형의 조직에서 일하셨나요?' },
+        sectors: { text: '가장 최근에 주로 어떤 분야에서 일하셨나요?' }
+      },
+      groups: { 'about-you': { title: '나와 가장 최근 직장에 대하여' } }
+    },
     questions: {
       role: {
         text: '어떤 직무를 맡고 계신가요?',
@@ -162,6 +203,11 @@ export const ko: SurveyTranslation = {
           founder: '창업자/사업가',
           other: '기타…'
         }
+      },
+      'has-job': {
+        text: '현재 일하고 있어요 (직장인 또는 프리랜서)',
+        hint: '일자리 사이의 공백기라면 체크를 해제해 주세요.',
+        options: { yes: '현재 일하는 중', no: '현재 일하지 않는 중' }
       },
       'career-satisfaction': {
         text: '현재 (주된) 직업에 얼마나 만족하시나요?',

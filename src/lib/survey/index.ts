@@ -105,6 +105,72 @@ export function questionTextFor(
   );
 }
 
+/** Whether this respondent unticked "I'm working at the moment". */
+export function isNotWorking(
+  survey: SurveyDefinition,
+  answers: Record<string, unknown>
+): boolean {
+  const when = survey.notWorking?.when;
+  return Boolean(when && answers[when.question] === when.answer);
+}
+
+/**
+ * The survey as this respondent sees it: for someone not working at the
+ * moment, the job questions worded about their most recent job (see
+ * `notWorking` on SurveyDefinition). Otherwise the survey unchanged.
+ *
+ * Words only — ids, options and order are untouched, so steps,
+ * validation and the stored answers are the same either way.
+ */
+export function situate(
+  survey: SurveyDefinition,
+  answers: Record<string, unknown>
+): SurveyDefinition {
+  return isNotWorking(survey, answers) ? notWorkingSurvey(survey) : survey;
+}
+
+/** The survey with every `notWorking` wording in place. */
+export function notWorkingSurvey(survey: SurveyDefinition): SurveyDefinition {
+  const nw = survey.notWorking;
+  if (!nw) return survey;
+  return {
+    ...survey,
+    groups: survey.groups
+      ? Object.fromEntries(
+          Object.entries(survey.groups).map(([id, g]) => [
+            id,
+            nw.groups?.[id] ? { ...g, title: nw.groups[id].title } : g
+          ])
+        )
+      : undefined,
+    questions: survey.questions.map((q) => {
+      const w = nw.questions[q.id];
+      if (!w) return q;
+      const words = {
+        ...q,
+        text: w.text ?? q.text,
+        hint: w.hint ?? q.hint
+      } as SurveyQuestion;
+      if (words.kind !== 'conjoint' || !w.levels) return words;
+      return {
+        ...words,
+        attributes: words.attributes.map((a) => {
+          const levels = w.levels?.[a.id];
+          if (!levels) return a;
+          return {
+            ...a,
+            levels: a.levels.map((l) =>
+              levels[l.id]
+                ? { ...l, short: levels[l.id], shortBy: undefined }
+                : l
+            )
+          };
+        })
+      };
+    })
+  };
+}
+
 /**
  * Group the flat question list into steps.
  *

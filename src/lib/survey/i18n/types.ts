@@ -17,6 +17,7 @@
 // by the form and must survive translation unchanged (the test checks).
 
 import type { EN_UI } from './ui-en';
+import type { NotWorkingWording } from '../types';
 
 export type LevelContent = {
   label: string;
@@ -61,6 +62,11 @@ export type SurveyContent = {
   roleQuestionText?: Record<string, Record<string, string>>;
   defaultTerm: string;
   groups?: Record<string, { title: string; hint?: string }>;
+  /**
+   * The wording for someone not working at the moment, keyed like the
+   * definition's `notWorking` (without its `when`, which is not words).
+   */
+  notWorking?: NotWorkingWording;
   questions: Record<string, QuestionContent>;
 };
 

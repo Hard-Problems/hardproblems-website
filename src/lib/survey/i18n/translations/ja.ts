@@ -141,6 +141,51 @@ export const ja: SurveyTranslation = {
         hint: '回答は保存されています。'
       }
     },
+    notWorking: {
+      questions: {
+        'career-satisfaction': {
+          text: '直近の仕事に、どのくらい満足していましたか？',
+          hint: 'まだ仕事に就いたことがない場合は、インターンシップや大きなプロジェクトなど、それに最も近い経験について考えてください。'
+        },
+        'role-security': {
+          text: '直近の職に、どのくらい安定性を感じていましたか？'
+        },
+        skill: { text: '私は、直近の仕事が得意だったと思う' },
+        passion: { text: 'あなたは直近の仕事に熱意を持っていた' },
+        pay: {
+          text: '直近の仕事での自分の努力と成果をすべて考えると、私は適切な報酬を得ていたと思う'
+        },
+        'benefit-to-world': { text: '私の直近の仕事は社会の役に立っていた' },
+        'job-choice': {
+          levels: {
+            pay: {
+              'less-30': '直近の給与から30%減',
+              'less-15': '直近の給与から15%減',
+              same: '直近の給与と同額',
+              'more-15': '直近の給与から15%増',
+              'more-30': '直近の給与から30%増'
+            }
+          }
+        },
+        burnout: {
+          text: '直近の仕事のせいで燃え尽きたと感じることは、どのくらいありましたか？'
+        },
+        'manages-people': {
+          text: '直近の仕事で、部下やメンバーのマネジメントをしていましたか？'
+        },
+        'org-size': {
+          text: '直近の勤務先の会社または組織の規模はどのくらいでしたか？'
+        },
+        'designer-pm-count': {
+          text: '直近の勤務先の会社または組織には、デザイナーとPMが何人いましたか？'
+        },
+        'org-type': {
+          text: '直近では、どのような種類の組織で働いていましたか？'
+        },
+        sectors: { text: '直近では、主にどの業界で仕事をしていましたか？' }
+      },
+      groups: { 'about-you': { title: 'あなたご自身と直近の勤務先について' } }
+    },
     questions: {
       role: {
         text: 'あなたの職種は何ですか？',
@@ -161,6 +206,11 @@ export const ja: SurveyTranslation = {
           founder: '創業者／経営者',
           other: 'その他…'
         }
+      },
+      'has-job': {
+        text: '現在、働いています（雇用されている、またはフリーランス）',
+        hint: '仕事と仕事の合間にある場合は、チェックを外してください。',
+        options: { yes: '現在働いている', no: '現在働いていない' }
       },
       'career-satisfaction': {
         text: 'あなたの（主な）仕事にどのくらい満足していますか？',

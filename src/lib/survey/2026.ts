@@ -93,10 +93,69 @@ export const SURVEY_2026: SurveyDefinition = {
   },
   defaultTerm: 'design',
 
+  // For people between jobs: unticking "I'm working at the moment" on
+  // the first step turns the questions about a current job into ones
+  // about their most recent job. Responses sent before the checkbox
+  // existed have no answer to it and are taken as working.
+  notWorking: {
+    when: { question: 'has-job', answer: 'no' },
+    groups: {
+      'about-you': { title: 'About you and where you worked most recently' }
+    },
+    questions: {
+      'career-satisfaction': {
+        text: 'How satisfied were you in your most recent job?',
+        hint: 'If you haven’t had a job yet, think about the closest thing you’ve done, such as an internship or a big project.'
+      },
+      'role-security': {
+        text: 'How secure did you feel in your most recent role?'
+      },
+      skill: { text: 'In my opinion, I was good at my most recent job' },
+      passion: { text: 'You were enthusiastic about your most recent job' },
+      pay: {
+        text: 'Considering all my efforts and achievements in my most recent job, I felt I got paid appropriately'
+      },
+      'benefit-to-world': { text: 'My most recent job was useful to society' },
+      'job-choice': {
+        levels: {
+          pay: {
+            'less-30': '30% below your last pay',
+            'less-15': '15% below your last pay',
+            same: 'Same as your last pay',
+            'more-15': '15% above your last pay',
+            'more-30': '30% above your last pay'
+          }
+        }
+      },
+      burnout: {
+        text: 'How often did you feel burnt out by your most recent job?'
+      },
+      'manages-people': {
+        text: 'Did you manage people in your most recent job?'
+      },
+      'org-size': {
+        text: 'How big was your most recent company or organisation?'
+      },
+      'designer-pm-count': {
+        text: 'How many designers and PMs worked at your most recent company or organisation?'
+      },
+      'org-type': {
+        text: 'What type of organisation did you most recently work at?'
+      },
+      sectors: {
+        text: 'What were the main sectors you most recently worked in?'
+      }
+    }
+  },
+
   questions: [
     {
       kind: 'single',
       id: 'role',
+      // Shares the first step with 'has-job' below. No entry in
+      // `groups`, so the step has no heading of its own: the role
+      // question stays the step's heading, with the checkbox under it.
+      group: 'start',
       text: 'What type of role do you have?',
       hint: 'Choose the one that fits you best.',
       // Alphabetical so a long list is scannable; "Other…" stays last.
@@ -116,6 +175,24 @@ export const SURVEY_2026: SurveyDefinition = {
         { id: 'product-manager', label: 'Product Manager' },
         { id: 'founder', label: 'Founder/business' },
         { id: 'other', label: 'Other…', isOther: true }
+      ]
+    },
+
+    {
+      // Added on 11 November 2026, after the survey opened, for people
+      // between jobs. Starts ticked; unticking it rewords the job
+      // questions (see `notWorking` above). Only 'no' is ever stored:
+      // a response with no answer here is someone working, whether it
+      // was sent before or after the checkbox existed.
+      kind: 'single',
+      id: 'has-job',
+      group: 'start',
+      as: 'checkbox',
+      text: 'I’m working at the moment (employed or freelance)',
+      hint: 'Untick if you’re between jobs.',
+      options: [
+        { id: 'yes', label: 'Working at the moment' },
+        { id: 'no', label: 'Not working at the moment' }
       ]
     },
 

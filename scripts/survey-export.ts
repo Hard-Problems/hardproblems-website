@@ -75,7 +75,14 @@ async function loadRows(year: number): Promise<Row[]> {
   });
   // Columns added after the table was created (supabase/survey.sql). A
   // database without one still exports, with that column left blank.
-  let fields = ['token', 'source', 'submitted_at', 'answers', 'language', 'duration_ms'];
+  let fields = [
+    'token',
+    'source',
+    'submitted_at',
+    'answers',
+    'language',
+    'duration_ms'
+  ];
   const rows: Row[] = [];
   const page = 1000;
   for (let from = 0; ; from += page) {
@@ -85,9 +92,15 @@ async function loadRows(year: number): Promise<Row[]> {
       .eq('survey_year', year)
       .order('submitted_at', { ascending: true })
       .range(from, from + page - 1);
-    const missing = error && ['language', 'duration_ms'].find((c) => fields.includes(c) && error.message.includes(c));
+    const missing =
+      error &&
+      ['language', 'duration_ms'].find(
+        (c) => fields.includes(c) && error.message.includes(c)
+      );
     if (missing) {
-      console.warn(`No ${missing} column in the database; exporting without it (run supabase/survey.sql).`);
+      console.warn(
+        `No ${missing} column in the database; exporting without it (run supabase/survey.sql).`
+      );
       fields = fields.filter((f) => f !== missing);
       from -= page;
       continue;
@@ -143,11 +156,13 @@ function columnsFor(survey: SurveyDefinition): Column[] {
           name: col(q.id),
           question: q,
           describe:
-            q.kind === 'single'
-              ? 'option id (see codebook)'
-              : q.kind === 'country'
-                ? 'country name'
-                : 'free text',
+            q.kind === 'single' && q.as === 'checkbox'
+              ? `${q.options[1].id} if unticked; blank if ticked (only the unticked answer is stored, so blank also covers responses from before this question existed)`
+              : q.kind === 'single'
+                ? 'option id (see codebook)'
+                : q.kind === 'country'
+                  ? 'country name'
+                  : 'free text',
           get: (r) => {
             const v = a(r)?.value;
             return typeof v === 'string' ? v : null;
@@ -222,12 +237,19 @@ async function main() {
   const testCount = all.filter((r) => TEST_SOURCES.has(r.source ?? '')).length;
 
   const date = new Date().toISOString().slice(0, 10);
-  const out = arg('out') ?? join('survey-exports', `${survey.year}-exported-${date}`);
+  const out =
+    arg('out') ?? join('survey-exports', `${survey.year}-exported-${date}`);
   mkdirSync(out, { recursive: true });
 
   // responses.csv
   const cols = columnsFor(survey);
-  const base = ['respondent_id', 'submitted_at', 'source', 'language', 'survey_seconds'];
+  const base = [
+    'respondent_id',
+    'submitted_at',
+    'source',
+    'language',
+    'survey_seconds'
+  ];
   writeFileSync(
     join(out, 'responses.csv'),
     csv(
@@ -237,7 +259,9 @@ async function main() {
         r.submitted_at,
         r.source,
         r.language,
-        typeof r.duration_ms === 'number' ? Math.round(r.duration_ms / 100) / 10 : null,
+        typeof r.duration_ms === 'number'
+          ? Math.round(r.duration_ms / 100) / 10
+          : null,
         ...cols.map((c) => c.get(r))
       ])
     )
@@ -286,18 +310,60 @@ async function main() {
 
   // codebook.csv — every column, then every coded value under it.
   const book: Cell[][] = [
-    ['respondent_id', '', 'id', 'Random id for the response. Not linked to a person.', '', ''],
-    ['submitted_at', '', 'timestamp', 'When the response was saved (UTC).', '', ''],
-    ['source', '', 'text', 'The ?source= tag on the link the respondent followed; blank if none. internal-preview = test data.', '', ''],
-    ['language', '', 'text', 'The language the respondent read the survey in (en, fr, zh…). Answers are option ids, the same in every language; blank if not recorded.', '', ''],
-    ['survey_seconds', '', 'number', 'Seconds from the first question shown to sending, breaks included; blank if not recorded. The bonus questions after sending are not counted.', '', '']
+    [
+      'respondent_id',
+      '',
+      'id',
+      'Random id for the response. Not linked to a person.',
+      '',
+      ''
+    ],
+    [
+      'submitted_at',
+      '',
+      'timestamp',
+      'When the response was saved (UTC).',
+      '',
+      ''
+    ],
+    [
+      'source',
+      '',
+      'text',
+      'The ?source= tag on the link the respondent followed; blank if none. internal-preview = test data.',
+      '',
+      ''
+    ],
+    [
+      'language',
+      '',
+      'text',
+      'The language the respondent read the survey in (en, fr, zh…). Answers are option ids, the same in every language; blank if not recorded.',
+      '',
+      ''
+    ],
+    [
+      'survey_seconds',
+      '',
+      'number',
+      'Seconds from the first question shown to sending, breaks included; blank if not recorded. The bonus questions after sending are not counted.',
+      '',
+      ''
+    ]
   ];
   for (const c of cols) {
     const q = c.question;
     book.push([c.name, q.id, q.kind, q.text, '', c.describe]);
     if (c.name === col(q.id) && q.kind === 'single') {
       for (const o of q.options) {
-        book.push([c.name, q.id, '', '', o.id, o.label + (o.offScale ? ' (off the scale)' : '')]);
+        book.push([
+          c.name,
+          q.id,
+          '',
+          '',
+          o.id,
+          o.label + (o.offScale ? ' (off the scale)' : '')
+        ]);
       }
     }
     if (q.kind === 'likert') {
@@ -309,7 +375,14 @@ async function main() {
   for (const q of conjoints) {
     const file = conjoints.length > 1 ? `conjoint-${q.id}.csv` : 'conjoint.csv';
     for (const attr of q.attributes) {
-      book.push([`${file}: ${col(attr.id)}`, q.id, 'conjoint attribute', attr.label, '', '']);
+      book.push([
+        `${file}: ${col(attr.id)}`,
+        q.id,
+        'conjoint attribute',
+        attr.label,
+        '',
+        ''
+      ]);
       for (const l of attr.levels) {
         book.push([
           `${file}: ${col(attr.id)}`,
@@ -324,17 +397,37 @@ async function main() {
   }
   writeFileSync(
     join(out, 'codebook.csv'),
-    csv(['column', 'question_id', 'type', 'question_or_description', 'value', 'value_label'], book)
+    csv(
+      [
+        'column',
+        'question_id',
+        'type',
+        'question_or_description',
+        'value',
+        'value_label'
+      ],
+      book
+    )
   );
 
   writeFileSync(join(out, 'raw.json'), JSON.stringify(rows, null, 2));
 
   // README.md
   const bySource = new Map<string, number>();
-  for (const r of rows) bySource.set(r.source ?? '(none)', (bySource.get(r.source ?? '(none)') ?? 0) + 1);
-  const surveyTimed = rows.filter((r) => typeof r.duration_ms === 'number').length;
+  for (const r of rows)
+    bySource.set(
+      r.source ?? '(none)',
+      (bySource.get(r.source ?? '(none)') ?? 0) + 1
+    );
+  const surveyTimed = rows.filter(
+    (r) => typeof r.duration_ms === 'number'
+  ).length;
   const byLanguage = new Map<string, number>();
-  for (const r of rows) byLanguage.set(r.language ?? '(not recorded)', (byLanguage.get(r.language ?? '(not recorded)') ?? 0) + 1);
+  for (const r of rows)
+    byLanguage.set(
+      r.language ?? '(not recorded)',
+      (byLanguage.get(r.language ?? '(not recorded)') ?? 0) + 1
+    );
   const timed = rows.filter((r) =>
     conjoints.some((q) => typeof r.answers?.[q.id]?.durationMs === 'number')
   ).length;
@@ -353,11 +446,17 @@ Exported ${new Date().toISOString()} · ${rows.length} responses${
 
 | Source | Responses |
 |---|---:|
-${[...bySource].sort((a, b) => b[1] - a[1]).map(([s, n]) => `| ${s} | ${n} |`).join('\n')}
+${[...bySource]
+  .sort((a, b) => b[1] - a[1])
+  .map(([s, n]) => `| ${s} | ${n} |`)
+  .join('\n')}
 
 | Language | Responses |
 |---|---:|
-${[...byLanguage].sort((a, b) => b[1] - a[1]).map(([l, n]) => `| ${l} | ${n} |`).join('\n')}
+${[...byLanguage]
+  .sort((a, b) => b[1] - a[1])
+  .map(([l, n]) => `| ${l} | ${n} |`)
+  .join('\n')}
 
 **Whole-survey time:** \`survey_seconds\` is first question shown to sending, breaks included (${surveyTimed} of ${rows.length} responses have it). Use it, with \`job_choice_seconds\`, to drop responses that were too fast to be read.
 
@@ -376,6 +475,7 @@ ${[...byLanguage].sort((a, b) => b[1] - a[1]).map(([l, n]) => `| ${l} | ${n} |`)
 - **“Other” write-ins:** in a \`question_other\` column next to the question.
 - **Bonus questions** (asked after submitting, optional) are blank for anyone who skipped the bonus round.
 - Some question wording swaps in the respondent’s role (\`{term}\` in the codebook), so people saw slightly different text.
+- **\`has_job\`** (“I’m working at the moment”, a checkbox that starts ticked) was added on 11 November 2026, after the survey opened. \`no\` means they unticked it: they then saw the job questions worded about their most recent job, and the job cards' pay as relative to their last pay. Blank means working: only the unticked answer is stored, so responses from people who are working look exactly like those from before the checkbox existed.
 - Free text has been length-capped and checked, but not edited.
 
 ## The job-choice exercise (conjoint.csv)
@@ -409,7 +509,11 @@ This is the standard long format for conjoint packages (e.g. R’s \`cregg\`: cl
 
   console.log(
     `Wrote ${rows.length} responses (${cards} conjoint cards) to ${out}/` +
-      (includeTest ? ` — includes ${testCount} test rows` : testCount ? ` — ${testCount} test rows left out` : '')
+      (includeTest
+        ? ` — includes ${testCount} test rows`
+        : testCount
+          ? ` — ${testCount} test rows left out`
+          : '')
   );
 }
 

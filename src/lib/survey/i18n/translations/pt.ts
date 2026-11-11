@@ -142,6 +142,63 @@ export const pt: SurveyTranslation = {
         hint: 'Suas respostas estão salvas.'
       }
     },
+    notWorking: {
+      questions: {
+        'career-satisfaction': {
+          text: 'Quão satisfeito(a) você estava com o seu trabalho mais recente?',
+          hint: 'Se você ainda não teve um emprego, pense na experiência mais parecida que já teve, como um estágio ou um projeto grande.'
+        },
+        'role-security': {
+          text: 'Quão estável você sentia que era o seu cargo mais recente?'
+        },
+        skill: {
+          text: 'Na minha opinião, eu era bom/boa no meu trabalho mais recente'
+        },
+        passion: {
+          text: 'Você tinha entusiasmo pelo seu trabalho mais recente'
+        },
+        pay: {
+          text: 'Considerando todos os meus esforços e conquistas no meu trabalho mais recente, eu sentia que era pago(a) de forma adequada'
+        },
+        'benefit-to-world': {
+          text: 'Meu trabalho mais recente era útil para a sociedade'
+        },
+        'job-choice': {
+          levels: {
+            pay: {
+              'less-30': 'Salário 30% menor que o último',
+              'less-15': 'Salário 15% menor que o último',
+              same: 'Mesmo salário que o último',
+              'more-15': 'Salário 15% maior que o último',
+              'more-30': 'Salário 30% maior que o último'
+            }
+          }
+        },
+        burnout: {
+          text: 'Com que frequência você se sentia esgotado(a) pelo seu trabalho mais recente?'
+        },
+        'manages-people': {
+          text: 'Você fazia gestão de pessoas no seu trabalho mais recente?'
+        },
+        'org-size': {
+          text: 'Qual era o tamanho da sua empresa ou organização mais recente?'
+        },
+        'designer-pm-count': {
+          text: 'Quantos designers e PMs trabalhavam na sua empresa ou organização mais recente?'
+        },
+        'org-type': {
+          text: 'Em que tipo de organização você trabalhou mais recentemente?'
+        },
+        sectors: {
+          text: 'Quais foram os principais setores em que você trabalhou mais recentemente?'
+        }
+      },
+      groups: {
+        'about-you': {
+          title: 'Sobre você e onde você trabalhou mais recentemente'
+        }
+      }
+    },
     questions: {
       role: {
         text: 'Qual é o seu tipo de cargo?',
@@ -161,6 +218,14 @@ export const pt: SurveyTranslation = {
           'product-manager': 'Product manager',
           founder: 'Fundador(a)/negócio próprio',
           other: 'Outro…'
+        }
+      },
+      'has-job': {
+        text: 'Estou trabalhando no momento (com emprego ou como freelancer)',
+        hint: 'Desmarque se você estiver entre um emprego e outro.',
+        options: {
+          yes: 'Trabalhando no momento',
+          no: 'Sem trabalhar no momento'
         }
       },
       'career-satisfaction': {

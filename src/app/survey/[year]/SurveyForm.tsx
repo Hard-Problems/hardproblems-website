@@ -54,6 +54,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {
   buildSteps,
+  isNotWorking,
+  notWorkingSurvey,
   orderedOptions,
   questionTextFor
 } from '../../../lib/survey';
@@ -304,7 +306,7 @@ type SurveyFormProps = {
 };
 
 function SurveyFormInner({
-  survey,
+  survey: baseSurvey,
   ui,
   language,
   languages,
@@ -317,6 +319,15 @@ function SurveyFormInner({
   const [step, setStep] = useState(0);
   const posthog = usePostHog();
   const [answers, setAnswers] = useState<Answers>({});
+  // The survey as this respondent sees it: someone who has unticked
+  // "I'm working at the moment" is asked about their most recent job
+  // (see `notWorking` in the definition). Keyed on that one answer, so
+  // the rest of the form is recomputed only when it flips.
+  const notWorking = isNotWorking(baseSurvey, flatten(answers));
+  const survey = useMemo(
+    () => (notWorking ? notWorkingSurvey(baseSurvey) : baseSurvey),
+    [baseSurvey, notWorking]
+  );
   const [seed, setSeed] = useState('');
   // When this run's first question was shown. Set with the seed, saved
   // with the progress so a reload keeps the clock running, and sent as
@@ -355,6 +366,7 @@ function SurveyFormInner({
   const sentRef = useRef(false);
   const total = steps.length;
   const current = steps[step];
+  const stepIds = current?.map((q) => q.id).join(',');
   const groupId = current[0].group;
   const group = groupId ? survey.groups?.[groupId] : undefined;
 
@@ -402,7 +414,7 @@ function SurveyFormInner({
       survey_year: survey.year,
       step: step + 1,
       total_steps: total,
-      question_ids: steps[step]?.map((q) => q.id).join(','),
+      question_ids: stepIds,
       internal_test: Boolean(accessCode),
       language: language.code
     });
@@ -410,7 +422,9 @@ function SurveyFormInner({
     phase,
     step,
     total,
-    steps,
+    // The ids, not the steps: the steps are rebuilt when the
+    // not-working wording switches, and that is not a new step view.
+    stepIds,
     survey.year,
     posthog,
     accessCode,
@@ -1492,6 +1506,32 @@ function QuestionBody({
       // reader. The visible heading is repeated as an sr-only <label>
       // for the same reason the country picker does it — a heading is
       // not an accessible name.
+      // A yes/no statement as one checkbox, starting ticked — see
+      // `as: 'checkbox'` in types.ts. Its label is the question, so it
+      // has no heading of its own; the step's main question above it is
+      // the heading.
+      if (question.kind === 'single' && question.as === 'checkbox') {
+        const [ticked, unticked] = question.options;
+        return (
+          <div className={styles.checkboxQuestion}>
+            <label className={styles.option}>
+              <input
+                type="checkbox"
+                name={question.id}
+                checked={answer?.value !== unticked.id}
+                aria-describedby={describedBy}
+                onChange={(e) =>
+                  onAnswer({
+                    value: e.target.checked ? ticked.id : unticked.id
+                  })
+                }
+              />
+              <span>{heading}</span>
+            </label>
+            {hint}
+          </div>
+        );
+      }
       if (question.kind === 'single' && question.as === 'select') {
         const chosen = typeof answer?.value === 'string' ? answer.value : '';
         const selectOptions = orderedOptions(question, seed);
