@@ -8,7 +8,7 @@ import ScreeningForm from './ScreeningForm';
 // engines drop it even if the link leaks — share the URL directly.
 
 export const metadata: Metadata = {
-  title: 'User Research Form — Hard Problems',
+  title: 'User research form — Hard Problems',
   description:
     'A short questionnaire about how you discover and evaluate career opportunities.',
   robots: { index: false, follow: false }
