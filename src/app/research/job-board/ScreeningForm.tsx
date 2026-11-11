@@ -411,13 +411,24 @@ export default function ScreeningForm({
         <ul className={styles.books}>
           {BOOKS.map((b) => (
             <li key={b.title} className={styles.book}>
-              <Image
-                className={styles.cover}
-                src={b.cover}
-                alt=""
-                width={48}
-                height={72}
-              />
+              {/* Same link as the title. Hidden from keyboard and screen
+                  readers so each book is one link, not two. */}
+              <a
+                className={styles.coverLink}
+                href={b.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                tabIndex={-1}
+                aria-hidden="true"
+              >
+                <Image
+                  className={styles.cover}
+                  src={b.cover}
+                  alt=""
+                  width={48}
+                  height={72}
+                />
+              </a>
               <span className={styles.bookText}>
                 <a
                   className={styles.bookTitle}
