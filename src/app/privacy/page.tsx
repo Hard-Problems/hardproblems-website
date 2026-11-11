@@ -60,6 +60,9 @@ export default function Page() {
             <Link href="#where">Where we get personal information from</Link>
           </li>
           <li>
+            <Link href="#research">User research</Link>
+          </li>
+          <li>
             <Link href="#keep">How long we keep information</Link>
           </li>
           <li>
@@ -129,6 +132,23 @@ export default function Page() {
           </span>
           <br />
           <span className="tag">A short recommendation you provide</span>
+        </p>
+        <p>
+          We collect or use the following personal information from people who
+          apply to take part in our user research (see{' '}
+          <Link href="#research">User research</Link>):
+          <br />
+          <span className="tag">Email address</span>
+          <br />
+          <span className="tag">
+            Professional role, years of experience and country
+          </span>
+          <br />
+          <span className="tag">
+            Answers about your job search and use of our job board
+          </span>
+          <br />
+          <span className="tag">Your preferred session time and time zone</span>
         </p>
         <p>
           We collect or use the following personal information for dealing with
@@ -253,6 +273,16 @@ export default function Page() {
             job-alert email, or by contacting us using the details at the top of
             this privacy notice.
           </p>
+          <p>
+            Our lawful bases for collecting or using personal information to{' '}
+            <b>select and contact user research participants</b> are:
+          </p>
+          <p className="indent">
+            Consent - you tick a box on the form agreeing to be contacted about
+            our research. All of your data protection rights may apply, except
+            the right to object. You can withdraw your consent at any time by
+            contacting us using the details at the top of this privacy notice.
+          </p>
         </div>
 
         <h3 className="space-top-large" id="cookies">
@@ -325,9 +355,16 @@ export default function Page() {
           <dt>Supabase</dt>
           <dd>
             Managed database used to store job-alert subscribers, their saved
-            filter preferences, and a log of which listings have already been
-            sent to each subscriber. Supabase Inc. is based in the United
-            States.
+            filter preferences, a log of which listings have already been sent
+            to each subscriber, and user research applications. Supabase Inc. is
+            based in the United States.
+          </dd>
+          <dt>Slack</dt>
+          <dd>
+            Internal team messaging. When you apply to take part in our user
+            research, a copy of your answers, including your email address, is
+            posted to a private channel that only the Hard Problems team can
+            see. Slack Technologies, LLC is based in the United States.
           </dd>
           <dt>Luma</dt>
           <dd>
@@ -394,6 +431,29 @@ export default function Page() {
           written answers.
         </p>
 
+        <h3 className="space-top-large" id="research">
+          User research
+        </h3>
+        <p>
+          From time to time we invite people to a user research session to help
+          us improve Hard Problems, for example how people find work through our
+          site. To take part you fill in a short form about your role, your job
+          search and how you use our job board. If you&rsquo;d like to join a
+          session, you also give us your email address and a time that suits
+          you, and agree to be contacted.
+        </p>
+        <p>
+          We use your answers only to choose participants and arrange sessions.
+          Your answers are confidential: only the Hard Problems team can see
+          them, we never publish them in a way that identifies you, and we never
+          share them for anyone else&rsquo;s marketing. Being selected is not
+          guaranteed, and taking part is always optional.
+        </p>
+        <p>
+          To withdraw or have your answers deleted at any time, contact us using
+          the details at the top of this privacy notice.
+        </p>
+
         <h3 className="space-top-large" id="keep">
           How long we keep information
         </h3>
@@ -420,9 +480,13 @@ export default function Page() {
           Anonymous survey answers are kept indefinitely so that each year can
           be compared with the last.
         </p>
+        <p>
+          User research applications, including your email address, are deleted
+          within 3 months of the research round ending.
+        </p>
 
         <h3 className="space-top-large">Last updated</h3>
-        <p>5 November 2026</p>
+        <p>11 November 2026</p>
       </section>
       <section className="right">
         <h3 id="complain">How to complain</h3>

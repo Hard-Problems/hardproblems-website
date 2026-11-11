@@ -1,0 +1,339 @@
+// Participant screening form at /research/job-board. Builds on the
+// shared field / button styles in jobs/jobSubmit.module.scss.
+
+.wrap {
+  padding-bottom: 3rem;
+}
+
+.intro p {
+  font-size: var(--font-size-base);
+  line-height: 1.55;
+  margin: 0 0 0.75rem 0;
+}
+
+// "A small thank-you" note under the intro. Kept compact so it doesn't
+// pull focus from the form: one line, then the four books as small
+// rows (tiny cover on the left, title and author beside it), two per
+// row on wider screens.
+.incentive {
+  margin: 2.5rem 0 3rem;
+}
+
+.incentive p {
+  margin: 0 0 0.6rem 0;
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.incentiveTitle {
+  font-family: var(--font-instrument-serif), Georgia, 'Times New Roman', serif;
+  font-size: var(--font-size-lg);
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--color-dark-green);
+  margin: 0 0 0.2rem 0;
+}
+
+.books {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0.5em 0 0;
+  list-style: none;
+}
+
+// Each book: cover on top, title and author underneath. Four in a row,
+// dropping to a 2 × 2 grid at the site's 600px mobile breakpoint.
+.books .book {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+}
+
+.books .book::before {
+  content: none;
+}
+
+// The cover links to the book's site too; it lifts slightly on hover.
+.coverLink {
+  display: block;
+  text-decoration: none;
+  transition: transform 0.15s ease;
+}
+
+.coverLink:hover {
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coverLink {
+    transition: none;
+  }
+
+  .coverLink:hover {
+    transform: none;
+  }
+}
+
+// The book's real front cover as a small thumbnail.
+.cover {
+  flex-shrink: 0;
+  display: block;
+  width: 48px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 1px 3px 3px 1px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.15),
+    0 2px 5px rgba(35, 83, 55, 0.15);
+}
+
+.bookText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.bookTitle {
+  align-self: center;
+  margin-bottom: 0.3em;
+  text-decoration: underline;
+  text-decoration-color: rgba(35, 83, 55, 0.35);
+  text-underline-offset: 2px;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--color-dark-green);
+}
+
+.bookTitle:hover {
+  text-decoration-color: currentColor;
+}
+
+.bookAuthor {
+  font-size: var(--font-size-xs);
+  line-height: 1.3;
+  color: var(--color-text);
+  opacity: 0.7;
+}
+
+@media only screen and (max-width: 600px) {
+  .books {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 0.75rem;
+  }
+}
+
+.form {
+  counter-reset: question;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem 1.25rem;
+  background: var(--color-pale-green);
+  border-radius: 12px;
+}
+
+.sectionTitle {
+  font-family: var(--font-instrument-serif), Georgia, 'Times New Roman', serif;
+  font-size: var(--font-size-xl);
+  font-weight: 400;
+  color: var(--color-dark-green);
+  line-height: 1.2;
+  margin: 0;
+}
+
+.question {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.legend {
+  padding: 0;
+  margin-bottom: 0.5rem;
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-dark-green);
+  line-height: 1.4;
+}
+
+// Each section's questions are an ordered list, laid out like a
+// standard one: the number hangs in a left gutter and everything in the
+// item (question, hint, answers, follow-ups) is indented to line up with
+// the question text. One counter runs through the whole form (reset on
+// .form), so numbering carries on from section to section and closes up
+// when a conditional question is hidden.
+.questions {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.questions > .questionItem {
+  position: relative;
+  margin: 0;
+  padding: 0 0 0 1.75rem;
+  counter-increment: question;
+}
+
+// The number, right-aligned in the gutter so "9." and "10." line up on
+// the full stop. Same type as the question so it sits on its baseline.
+.questions > .questionItem::before {
+  content: counter(question) '.';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1.35rem;
+  text-align: right;
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-dark-green);
+}
+
+.hint {
+  margin: -0.25rem 0 0 0;
+  font-size: var(--font-size-sm);
+  opacity: 0.7;
+}
+
+.subLabel {
+  margin: 0.5rem 0 0 0;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-dark-green);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+  color: var(--color-text);
+}
+
+.option input {
+  flex-shrink: 0;
+  margin: 0.15rem 0 0 0;
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+  accent-color: var(--color-mid-green);
+}
+
+.otherField {
+  margin-top: 0.25rem;
+}
+
+.selectField select {
+  cursor: pointer;
+}
+
+// Q10: date, start time and time zone dropdowns. Date and time share a
+// row; the (long) time zone list gets its own full-width row.
+.timePicker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+@media only screen and (max-width: 600px) {
+  .timePicker {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pickerField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.pickerZone {
+  grid-column: 1 / -1;
+}
+
+.pickerLabel {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-dark-green);
+}
+
+.consent {
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-light-green);
+}
+
+.optionalHint {
+  font-weight: 400;
+  opacity: 0.7;
+  margin-left: 0.35em;
+}
+
+.requiredMark {
+  color: var(--color-error);
+  font-weight: 400;
+  margin-left: 0.25em;
+}
+
+.privacyNote {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  opacity: 0.8;
+}
+
+.submit {
+  align-self: flex-start;
+  padding: 12px 28px;
+  font-size: var(--font-size-base);
+}
+
+// Finished screen, after the survey's: body text under the page title,
+// with small sans subheadings for what happens next.
+.done {
+  margin-top: 1.5rem;
+}
+
+.done p {
+  margin: 0 0 0.75rem 0;
+  font-size: var(--font-size-base);
+  line-height: 1.55;
+}
+
+.doneHeading {
+  font-family: var(--font-sans);
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--color-dark-green);
+  margin: 2rem 0 0.5rem 0;
+}
