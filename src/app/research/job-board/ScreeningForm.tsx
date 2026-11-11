@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Check, Loader2 } from 'lucide-react';
 import formStyles from '../../jobs/jobSubmit.module.scss';
 import styles from './page.module.scss';
@@ -423,9 +424,10 @@ export default function ScreeningForm({
           opportunities, so we can make the Hard Problems job board more useful.
         </p>
         <p>
-          This short form helps us find the right people to invite to a
-          research session. It takes 2–3 minutes. Your answers are kept
-          confidential and only used for this research.
+          This short form helps us find the right people to invite to a research
+          session. It takes 2–3 minutes. Your answers are kept confidential and
+          only used for this research (
+          <Link href="/privacy#research">privacy notice</Link>).
         </p>
       </div>
 
@@ -704,6 +706,11 @@ export default function ScreeningForm({
             onChange={(e) => setHoneypot(e.target.value)}
           />
         </label>
+
+        <p className={styles.privacyNote}>
+          We&rsquo;ll only use your details for this research. See our{' '}
+          <Link href="/privacy#research">Privacy notice</Link>.
+        </p>
 
         <button
           type="submit"

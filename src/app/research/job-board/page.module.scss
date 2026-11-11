@@ -240,6 +240,12 @@
   margin-left: 0.25em;
 }
 
+.privacyNote {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  opacity: 0.8;
+}
+
 .submit {
   align-self: flex-start;
   padding: 12px 28px;
