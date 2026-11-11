@@ -3,11 +3,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Check, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import formStyles from '../../jobs/jobSubmit.module.scss';
 import styles from './page.module.scss';
 import {
-  ACTIONS,
   BOOKS,
   EXPERIENCE,
   INTEREST,
@@ -17,6 +16,7 @@ import {
   TOOK_ACTION,
   YES_NO,
   isInterested,
+  wantsSession,
   type SessionDate,
   type TimeZoneOption
 } from '../../../lib/research/screening';
@@ -29,12 +29,6 @@ type Status = 'idle' | 'submitting' | 'sent' | 'error';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-function toggle(list: string[], value: string): string[] {
-  return list.includes(value)
-    ? list.filter((v) => v !== value)
-    : [...list, value];
-}
-
 function Required() {
   return (
     <span className={styles.requiredMark} aria-label="required">
@@ -43,35 +37,37 @@ function Required() {
   );
 }
 
+/**
+ * One question: an item of the section's <ol>. The visible number comes
+ * from that list (see .questions in the SCSS), so a question that is
+ * hidden doesn't leave a gap in the numbering.
+ */
 function Question({
-  number,
   label,
   hint,
   required,
   children
 }: {
-  number?: number;
   label: ReactNode;
   hint?: ReactNode;
   required?: boolean;
   children: ReactNode;
 }) {
   return (
-    <fieldset className={styles.question}>
-      <legend className={styles.legend}>
-        {number !== undefined && (
-          <span className={styles.number}>{number}.</span>
-        )}
-        {label}
-        {required ? (
-          <Required />
-        ) : (
-          <span className={styles.optionalHint}>(optional)</span>
-        )}
-      </legend>
-      {hint && <p className={styles.hint}>{hint}</p>}
-      {children}
-    </fieldset>
+    <li className={styles.questionItem}>
+      <fieldset className={styles.question}>
+        <legend className={styles.legend}>
+          {label}
+          {required ? (
+            <Required />
+          ) : (
+            <span className={styles.optionalHint}>(optional)</span>
+          )}
+        </legend>
+        {hint && <p className={styles.hint}>{hint}</p>}
+        {children}
+      </fieldset>
+    </li>
   );
 }
 
@@ -100,37 +96,6 @@ function Options({
             value={o}
             checked={value === o}
             onChange={() => onChange(o)}
-            disabled={disabled}
-          />
-          <span>{labels?.[o] ?? o}</span>
-        </label>
-      ))}
-    </div>
-  );
-}
-
-function Checkboxes({
-  options,
-  value,
-  onChange,
-  disabled,
-  labels
-}: {
-  options: readonly string[];
-  value: string[];
-  onChange: (v: string[]) => void;
-  disabled: boolean;
-  labels?: Record<string, string>;
-}) {
-  return (
-    <div className={styles.options}>
-      {options.map((o) => (
-        <label key={o} className={styles.option}>
-          <input
-            type="checkbox"
-            value={o}
-            checked={value.includes(o)}
-            onChange={() => onChange(toggle(value, o))}
             disabled={disabled}
           />
           <span>{labels?.[o] ?? o}</span>
@@ -273,11 +238,8 @@ export default function ScreeningForm({
   const [country, setCountry] = useState('');
   const [lastSearch, setLastSearch] = useState('');
   const [tookAction, setTookAction] = useState('');
-  const [actions, setActions] = useState<string[]>([]);
-  const [actionOther, setActionOther] = useState('');
   const [interest, setInterest] = useState('');
   const [email, setEmail] = useState('');
-  const [comments, setComments] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [timeZone, setTimeZone] = useState('');
@@ -304,6 +266,8 @@ export default function ScreeningForm({
 
   const disabled = status === 'submitting';
   const interested = isInterested(interest);
+  // "Yes" picks a session time; "Maybe" only leaves an email.
+  const booking = wantsSession(interest);
   const hasDates = dates.length > 0;
 
   function fail(msg: string) {
@@ -326,18 +290,6 @@ export default function ScreeningForm({
     if (!country) return fail('Please choose the country you’re based in.');
     if (!lastSearch)
       return fail('Please tell us when you last looked for a job.');
-    if (!tookAction)
-      return fail(
-        'Please tell us whether you’ve acted on an opportunity from Hard Problems.'
-      );
-    if (tookAction === 'Yes' && actions.length === 0)
-      return fail('Please tell us what you did with the opportunity.');
-    if (
-      tookAction === 'Yes' &&
-      actions.includes('Other') &&
-      !actionOther.trim()
-    )
-      return fail('Please specify what else you did.');
     if (!interest)
       return fail(
         'Please tell us whether you’d like to join a research session.'
@@ -347,7 +299,7 @@ export default function ScreeningForm({
         return fail(
           'Please enter a valid email address so we can get in touch.'
         );
-      if (hasDates) {
+      if (booking && hasDates) {
         if (!date) return fail('Please choose a date for your session.');
         if (!time) return fail('Please choose a start time for your session.');
         if (!timeZone) return fail('Please choose your time zone.');
@@ -369,14 +321,11 @@ export default function ScreeningForm({
           country,
           lastSearch,
           tookAction,
-          actions: tookAction === 'Yes' ? actions : [],
-          actionOther,
           interest,
           email: interested ? email : '',
-          comments,
-          date: interested ? date : '',
-          time: interested ? time : '',
-          timeZone: interested ? timeZone : '',
+          date: booking ? date : '',
+          time: booking ? time : '',
+          timeZone: booking ? timeZone : '',
           consent: interested ? consent : false,
           hp: honeypot
         })
@@ -391,29 +340,52 @@ export default function ScreeningForm({
     }
   };
 
+  // The finished screen follows the survey's: the page title becomes
+  // "Thank you!" and what happens next sits under plain subheadings,
+  // with no tinted box. "Next" depends on how they answered Q7.
   if (status === 'sent') {
     return (
-      <div ref={topRef} className={styles.wrap}>
-        <div className={styles.thanks} role="status">
-          <Check
-            size={28}
-            className={formStyles.sentIcon}
-            strokeWidth={2.5}
-            aria-hidden="true"
-          />
-          <h1 className={styles.thanksTitle}>Thank you!</h1>
+      <div ref={topRef} className={styles.wrap} role="status">
+        <h1 className="page-title">Thank you!</h1>
+        <div className={styles.done}>
           <p>
-            Your answers are in. If you signed up for a session, we&rsquo;ll
-            email you to confirm the time.
+            Your answers are in. Thanks for helping us make the Hard Problems
+            job board better.
           </p>
-          <p>
-            Selected participants get a book of their choice. We&rsquo;ll sort
-            that out after your session.
-          </p>
+
+          {interested && (
+            <>
+              <h2 className={styles.doneHeading}>What happens next</h2>
+              <p>
+                {booking
+                  ? 'We’ll email you to confirm your session time, with a calendar invite and a video call link.'
+                  : 'We’ll email you with more about the session, so you can decide whether to take part.'}
+              </p>
+            </>
+          )}
         </div>
       </div>
     );
   }
+
+  // Consent closes the "Choose a time" section for Yes, and the
+  // research section for Maybe.
+  const consentBox = (
+    <label className={`${styles.option} ${styles.consent}`}>
+      <input
+        type="checkbox"
+        checked={consent}
+        onChange={(e) => setConsent(e.target.checked)}
+        disabled={disabled}
+      />
+      <span>
+        I agree to be contacted by the Hard Problems team about participating in
+        future user research. I understand that providing my contact details
+        does not guarantee selection.
+        <Required />
+      </span>
+    </label>
+  );
 
   return (
     <div ref={topRef} className={styles.wrap}>
@@ -465,241 +437,177 @@ export default function ScreeningForm({
       <form className={styles.form} onSubmit={onSubmit} noValidate>
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>About you</h2>
-
-          <Question
-            number={1}
-            label="Have you visited the Hard Problems job board before?"
-            required
-          >
-            <Options
-              name="visited"
-              options={YES_NO}
-              value={visited}
-              onChange={setVisited}
-              disabled={disabled}
-            />
-          </Question>
-
-          <Question
-            number={2}
-            label="What is your current professional role?"
-            required
-          >
-            <Options
-              name="role"
-              options={ROLES}
-              value={role}
-              onChange={setRole}
-              disabled={disabled}
-              labels={{ Other: 'Other (please specify)' }}
-            />
-            {role === 'Other' && (
-              <OtherInput
-                label="Your professional role"
-                value={roleOther}
-                onChange={setRoleOther}
+          <ol className={styles.questions} start={1}>
+            <Question
+              label="Have you visited the Hard Problems job board before?"
+              required
+            >
+              <Options
+                name="visited"
+                options={YES_NO}
+                value={visited}
+                onChange={setVisited}
                 disabled={disabled}
               />
-            )}
-          </Question>
+            </Question>
 
-          <Question
-            number={3}
-            label="How many years have you worked in design, product or a related field?"
-            required
-          >
-            <Options
-              name="experience"
-              options={EXPERIENCE}
-              value={experience}
-              onChange={setExperience}
-              disabled={disabled}
-            />
-          </Question>
-
-          <Question
-            number={4}
-            label="Which country are you currently based in?"
-            required
-          >
-            <span className={`${formStyles.field} ${styles.selectField}`}>
-              <select
-                aria-label="Country"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
+            <Question label="What is your current professional role?" required>
+              <Options
+                name="role"
+                options={ROLES}
+                value={role}
+                onChange={setRole}
                 disabled={disabled}
-                className={formStyles.input}
-              >
-                <option value="">Choose a country</option>
-                {countries.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </span>
-          </Question>
+                labels={{ Other: 'Other (please specify)' }}
+              />
+              {role === 'Other' && (
+                <OtherInput
+                  label="Your professional role"
+                  value={roleOther}
+                  onChange={setRoleOther}
+                  disabled={disabled}
+                />
+              )}
+            </Question>
+
+            <Question
+              label="How many years have you worked in design, product or a related field?"
+              required
+            >
+              <Options
+                name="experience"
+                options={EXPERIENCE}
+                value={experience}
+                onChange={setExperience}
+                disabled={disabled}
+              />
+            </Question>
+
+            <Question
+              label="Which country are you currently based in?"
+              required
+            >
+              <span className={`${formStyles.field} ${styles.selectField}`}>
+                <select
+                  aria-label="Country"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  disabled={disabled}
+                  className={formStyles.input}
+                >
+                  <option value="">Choose a country</option>
+                  {countries.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </span>
+            </Question>
+          </ol>
         </div>
 
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Your job search</h2>
-
-          <Question
-            number={5}
-            label="When did you last actively look for a job?"
-            required
-          >
-            <Options
-              name="lastSearch"
-              options={LAST_JOB_SEARCH}
-              value={lastSearch}
-              onChange={setLastSearch}
-              disabled={disabled}
-            />
-          </Question>
-
-          <Question
-            number={6}
-            label="Have you acted on an opportunity you found through Hard Problems?"
-            required
-          >
-            <Options
-              name="tookAction"
-              options={TOOK_ACTION}
-              value={tookAction}
-              onChange={setTookAction}
-              disabled={disabled}
-            />
-          </Question>
-
-          {tookAction === 'Yes' && (
-            <Question
-              label="What did you do?"
-              hint="Select all that apply."
-              required
-            >
-              <Checkboxes
-                options={ACTIONS}
-                value={actions}
-                onChange={setActions}
+          <ol className={styles.questions} start={5}>
+            <Question label="When did you last look for a job?" required>
+              <Options
+                name="lastSearch"
+                options={LAST_JOB_SEARCH}
+                value={lastSearch}
+                onChange={setLastSearch}
                 disabled={disabled}
-                labels={{ Other: 'Other (please specify)' }}
               />
-              {actions.includes('Other') && (
-                <OtherInput
-                  label="What else you did"
-                  value={actionOther}
-                  onChange={setActionOther}
-                  disabled={disabled}
-                />
-              )}
             </Question>
-          )}
+
+            <Question label="Have you acted on an opportunity you found through Hard Problems?">
+              <Options
+                name="tookAction"
+                options={TOOK_ACTION}
+                value={tookAction}
+                onChange={setTookAction}
+                disabled={disabled}
+              />
+            </Question>
+          </ol>
         </div>
 
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Join our research</h2>
-
-          <Question
-            number={7}
-            label="Would you like to join a follow-up research session about job searching and the Hard Problems job board?"
-            required
-          >
-            <Options
-              name="interest"
-              options={INTEREST}
-              value={interest}
-              onChange={setInterest}
-              disabled={disabled}
-            />
-          </Question>
-
-          {interested && (
+          <ol className={styles.questions} start={7}>
             <Question
-              number={8}
-              label="What’s the best email to reach you?"
-              hint="We’ll send your calendar invite here."
+              label="Would you be willing to participate in a 60-minute user research interview over video call?"
               required
             >
-              <span className={formStyles.field}>
-                <input
-                  type="email"
-                  aria-label="Your email address"
-                  placeholder="Your email address"
-                  autoComplete="email"
-                  value={email}
-                  maxLength={254}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={disabled}
-                  className={formStyles.input}
-                />
-              </span>
-            </Question>
-          )}
-
-          <Question
-            number={9}
-            label="Anything else you’d like to share about job searching or what you want from a job platform?"
-          >
-            <span className={formStyles.field}>
-              <textarea
-                aria-label="Your response"
-                placeholder="Your response"
-                rows={4}
-                value={comments}
-                maxLength={4000}
-                onChange={(e) => setComments(e.target.value)}
+              <Options
+                name="interest"
+                options={INTEREST}
+                value={interest}
+                onChange={setInterest}
                 disabled={disabled}
-                className={formStyles.input}
               />
-            </span>
-          </Question>
+            </Question>
+
+            {interested && (
+              <Question
+                label="What’s the best email to reach you?"
+                hint={
+                  booking
+                    ? 'We’ll send your calendar invite here.'
+                    : 'We’ll email you more about the session.'
+                }
+                required
+              >
+                <span className={formStyles.field}>
+                  <input
+                    type="email"
+                    aria-label="Your email address"
+                    placeholder="Your email address"
+                    autoComplete="email"
+                    value={email}
+                    maxLength={254}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={disabled}
+                    className={formStyles.input}
+                  />
+                </span>
+              </Question>
+            )}
+          </ol>
+          {interested && !booking && consentBox}
         </div>
 
-        {interested && (
+        {booking && (
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Choose a time</h2>
+            <ol className={styles.questions} start={9}>
+              <Question
+                label="Pick a time for a 60-minute session."
+                hint="Any weekday in November."
+                required
+              >
+                {hasDates ? (
+                  <TimePicker
+                    dates={dates}
+                    timeZones={timeZones}
+                    date={date}
+                    time={time}
+                    timeZone={timeZone}
+                    onDate={setDate}
+                    onTime={setTime}
+                    onTimeZone={setTimeZone}
+                    disabled={disabled}
+                  />
+                ) : (
+                  <p className={styles.hint}>
+                    There are no session dates open right now — we&rsquo;ll
+                    email you when new ones are available.
+                  </p>
+                )}
+              </Question>
+            </ol>
 
-            <Question
-              number={10}
-              label="Pick a time for a 60-minute session."
-              hint="Any weekday in November."
-              required
-            >
-              {hasDates ? (
-                <TimePicker
-                  dates={dates}
-                  timeZones={timeZones}
-                  date={date}
-                  time={time}
-                  timeZone={timeZone}
-                  onDate={setDate}
-                  onTime={setTime}
-                  onTimeZone={setTimeZone}
-                  disabled={disabled}
-                />
-              ) : (
-                <p className={styles.hint}>
-                  There are no session dates open right now — we&rsquo;ll email
-                  you when new ones are available.
-                </p>
-              )}
-            </Question>
-
-            <label className={`${styles.option} ${styles.consent}`}>
-              <input
-                type="checkbox"
-                checked={consent}
-                onChange={(e) => setConsent(e.target.checked)}
-                disabled={disabled}
-              />
-              <span>
-                I agree to be contacted by the Hard Problems team about
-                participating in future user research. I understand that
-                providing my contact details does not guarantee selection.
-                <Required />
-              </span>
-            </label>
+            {consentBox}
           </div>
         )}
 

@@ -16,7 +16,7 @@
 // rows (tiny cover on the left, title and author beside it), two per
 // row on wider screens.
 .incentive {
-  margin-top: 1.25rem;
+  margin: 2.5rem 0 3rem;
 }
 
 .incentive p {
@@ -39,7 +39,7 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem;
   margin: 0;
-  padding: 0;
+  padding: 0.5em 0 0;
   list-style: none;
 }
 
@@ -80,12 +80,12 @@
 
 .bookTitle {
   align-self: center;
+  margin-bottom: 0.3em;
   text-decoration: underline;
   text-decoration-color: rgba(35, 83, 55, 0.35);
   text-underline-offset: 2px;
   font-size: var(--font-size-sm);
   font-weight: 600;
-  font-style: italic;
   line-height: 1.25;
   color: var(--color-dark-green);
 }
@@ -109,6 +109,7 @@
 }
 
 .form {
+  counter-reset: question;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -152,8 +153,41 @@
   line-height: 1.4;
 }
 
-.number {
-  margin-right: 0.35em;
+// Each section's questions are an ordered list, laid out like a
+// standard one: the number hangs in a left gutter and everything in the
+// item (question, hint, answers, follow-ups) is indented to line up with
+// the question text. One counter runs through the whole form (reset on
+// .form), so numbering carries on from section to section and closes up
+// when a conditional question is hidden.
+.questions {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.questions > .questionItem {
+  position: relative;
+  margin: 0;
+  padding: 0 0 0 1.75rem;
+  counter-increment: question;
+}
+
+// The number, right-aligned in the gutter so "9." and "10." line up on
+// the full stop. Same type as the question so it sits on its baseline.
+.questions > .questionItem::before {
+  content: counter(question) '.';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1.35rem;
+  text-align: right;
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-dark-green);
 }
 
 .hint {
@@ -262,21 +296,23 @@
   font-size: var(--font-size-base);
 }
 
-.thanks {
-  padding: 2rem 1.5rem;
-  background: var(--color-pale-green);
-  border-radius: 12px;
+// Finished screen, after the survey's: body text under the page title,
+// with small sans subheadings for what happens next.
+.done {
+  margin-top: 1.5rem;
 }
 
-.thanks p {
+.done p {
   margin: 0 0 0.75rem 0;
+  font-size: var(--font-size-base);
   line-height: 1.55;
 }
 
-.thanksTitle {
-  font-family: var(--font-instrument-serif), Georgia, 'Times New Roman', serif;
-  font-size: var(--font-size-2xl);
-  font-weight: 400;
+.doneHeading {
+  font-family: var(--font-sans);
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0;
   color: var(--color-dark-green);
-  margin: 0.5rem 0 1rem 0;
+  margin: 2rem 0 0.5rem 0;
 }

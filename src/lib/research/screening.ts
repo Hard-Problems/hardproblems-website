@@ -21,33 +21,23 @@ export const ROLES = [
 ] as const;
 
 export const EXPERIENCE = [
-  'Less than 1 year',
+  'Less than a year',
   '1–2 years',
-  '3–5 years',
-  '6–10 years',
-  '11–15 years',
+  '3–4 years',
+  '5–9 years',
+  '10–15 years',
   'More than 15 years'
 ] as const;
 
 export const LAST_JOB_SEARCH = [
-  "I'm currently actively looking for a job",
-  'Within the last month',
+  "I'm currently looking for a job",
   'Within the last 3 months',
   'Within the last 6 months',
-  'More than 6 months ago',
-  "I'm not actively looking, but open to opportunities"
+  'Within the last 12 months',
+  'More than 12 months ago'
 ] as const;
 
 export const TOOK_ACTION = ['Yes', 'No', "Not sure / Can't remember"] as const;
-
-export const ACTIONS = [
-  'Clicked through to view the full job listing',
-  'Saved or bookmarked the opportunity',
-  'Shared the opportunity with someone',
-  "Visited the organisation's website",
-  'Started or submitted an application',
-  'Other'
-] as const;
 
 export const INTEREST = [
   "Yes, I'd be happy to participate.",
@@ -102,6 +92,11 @@ export const LAST_SESSION_DATE = '2026-11-30';
 /** Yes or Maybe on the interest question: the follow-up fields apply. */
 export function isInterested(interest: string): boolean {
   return interest === INTEREST[0] || interest === INTEREST[1];
+}
+
+/** Yes only: they pick a session time. "Maybe" just leaves an email. */
+export function wantsSession(interest: string): boolean {
+  return interest === INTEREST[0];
 }
 
 export type SessionDate = {

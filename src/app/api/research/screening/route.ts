@@ -13,7 +13,6 @@ import { postToSlackForms } from '../../../../lib/slack';
 import { logError } from '../../../../lib/posthog-server';
 import { COUNTRY_NAMES } from '../../../../lib/countries';
 import {
-  ACTIONS,
   EXPERIENCE,
   INTEREST,
   LAST_JOB_SEARCH,
@@ -22,6 +21,7 @@ import {
   TOOK_ACTION,
   YES_NO,
   isInterested,
+  wantsSession,
   isValidTimeZone,
   sessionDates,
   slotLabel
@@ -35,25 +35,14 @@ import {
 // public form routes.
 
 const MAX_SHORT = 200;
-const MAX_LONG = 4000;
 
 function pick(rec: Record<string, unknown>, key: string): string {
   const v = rec[key];
   return typeof v === 'string' ? v.trim() : '';
 }
 
-function pickList(rec: Record<string, unknown>, key: string): string[] {
-  const v = rec[key];
-  if (!Array.isArray(v)) return [];
-  return [...new Set(v.filter((x): x is string => typeof x === 'string'))];
-}
-
 function oneOf(value: string, allowed: readonly string[]): boolean {
   return allowed.includes(value);
-}
-
-function allOf(values: string[], allowed: readonly string[]): boolean {
-  return values.every((v) => allowed.includes(v));
 }
 
 function bad(error: string) {
@@ -99,11 +88,8 @@ export async function POST(request: Request) {
   const country = pick(rec, 'country');
   const lastSearch = pick(rec, 'lastSearch');
   const tookAction = pick(rec, 'tookAction');
-  const actions = pickList(rec, 'actions');
-  const actionOther = pick(rec, 'actionOther').slice(0, MAX_SHORT);
   const interest = pick(rec, 'interest');
   const email = pick(rec, 'email');
-  const comments = pick(rec, 'comments').slice(0, MAX_LONG);
   const date = pick(rec, 'date');
   const time = pick(rec, 'time');
   const timeZone = pick(rec, 'timeZone').slice(0, 100);
@@ -121,16 +107,11 @@ export async function POST(request: Request) {
     return bad('Please choose the country you’re based in.');
   if (!oneOf(lastSearch, LAST_JOB_SEARCH))
     return bad('Please tell us when you last looked for a job.');
-  if (!oneOf(tookAction, TOOK_ACTION))
+  // Optional: blank when skipped (the column is NOT NULL, so '' not null).
+  if (tookAction && !oneOf(tookAction, TOOK_ACTION))
     return bad(
       'Please tell us whether you’ve acted on an opportunity from Hard Problems.'
     );
-  if (tookAction === 'Yes') {
-    if (actions.length === 0 || !allOf(actions, ACTIONS))
-      return bad('Please tell us what you did with the opportunity.');
-    if (actions.includes('Other') && !actionOther)
-      return bad('Please specify what else you did.');
-  }
   if (!oneOf(interest, INTEREST))
     return bad('Please tell us whether you’d like to join a research session.');
 
@@ -144,13 +125,15 @@ export async function POST(request: Request) {
       ...sessionDates(now)
     ].map((d) => d.label)
   );
-  const hasSlot = interested && date !== '';
+  // Only "Yes" picks a time; a date sent with "Maybe" is ignored.
+  const booking = wantsSession(interest);
+  const hasSlot = booking && date !== '';
   if (interested) {
     if (email.length > MAX_EMAIL_LENGTH || !EMAIL_RE.test(email))
       return bad('Please enter a valid email address so we can get in touch.');
-    if (date && !offered.has(date))
+    if (hasSlot && !offered.has(date))
       return bad('That date is no longer available. Please choose another.');
-    if (sessionDates(now).length > 0 && !date)
+    if (booking && sessionDates(now).length > 0 && !date)
       return bad('Please choose a date for your session.');
     if (hasSlot) {
       if (!oneOf(time, SESSION_TIMES))
@@ -169,16 +152,12 @@ export async function POST(request: Request) {
     country,
     last_job_search: lastSearch,
     took_action: tookAction,
-    actions: tookAction === 'Yes' ? actions : [],
-    action_other:
-      tookAction === 'Yes' && actions.includes('Other') ? actionOther : null,
     research_interest: interest,
     email: interested ? email : null,
     contact_consent: interested ? consent : false,
     available_days: hasSlot ? [date] : [],
     available_times: hasSlot ? [slotLabel(date, time)] : [],
-    time_zone: hasSlot ? timeZone : null,
-    comments: comments || null
+    time_zone: hasSlot ? timeZone : null
   };
 
   try {
@@ -202,7 +181,7 @@ export async function POST(request: Request) {
     const lines = [
       `:mag: *New research screening response*`,
       `*Role:* ${roleLine} · ${experience} · ${country}`,
-      `*Visited job board:* ${visited} · *Acted on a job:* ${tookAction}`,
+      `*Visited job board:* ${visited} · *Acted on a job:* ${tookAction || '—'}`,
       `*Last job search:* ${lastSearch}`,
       `*Interest:* ${interest}`
     ];
@@ -210,7 +189,6 @@ export async function POST(request: Request) {
       lines.push(`*Email:* ${email}`);
       if (hasSlot) lines.push(`*Session:* ${date}, ${time} (${timeZone})`);
     }
-    if (comments) lines.push(`*Comments:* ${comments}`);
     await postToSlackForms({ text: lines.join('\n'), unfurl_links: false });
   } catch (err) {
     logError('[research/screening] slack post failed', err, { role });
