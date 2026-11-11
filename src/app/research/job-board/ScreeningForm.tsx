@@ -423,8 +423,9 @@ export default function ScreeningForm({
           opportunities, so we can make the Hard Problems job board more useful.
         </p>
         <p>
-          This takes 2–3 minutes. Your answers are used only for our research
-          and to invite people to a follow-up session.
+          This short form helps us find the right people to invite to a
+          research session. It takes 2–3 minutes, and your answers are only
+          used for this research.
         </p>
       </div>
 
