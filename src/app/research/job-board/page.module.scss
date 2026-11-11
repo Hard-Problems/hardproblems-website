@@ -48,7 +48,8 @@
 .books .book {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  text-align: center;
   gap: 0.4rem;
   margin: 0;
   padding: 0;
@@ -78,7 +79,7 @@
 }
 
 .bookTitle {
-  align-self: flex-start;
+  align-self: center;
   text-decoration: underline;
   text-decoration-color: rgba(35, 83, 55, 0.35);
   text-underline-offset: 2px;
