@@ -60,7 +60,10 @@ type BaseQuestion = {
   text: string;
   /** Rendered as a GDS-style hint above the inputs, not as placeholder text. */
   hint?: string;
-  /** Only question 25 is optional; everything else must be answered. */
+  /**
+   * May be left blank. On its own step, it gets a "Skip this question"
+   * button. In 2026: the metaphor and the bonus round.
+   */
   optional?: boolean;
   /**
    * Put this question on a shared step with its neighbours.

@@ -646,6 +646,8 @@ export const hi: SurveyTranslation = {
       exit: 'बाहर निकलें',
       exitRest: '',
       surveyBy: 'सर्वे, {logo} द्वारा',
+      phoneTitle: 'सर्वे',
+      phoneBy: '{logo} द्वारा',
       privacy: 'गोपनीयता',
       privacyRest: ' नीति',
       back: 'पीछे',

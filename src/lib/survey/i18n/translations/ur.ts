@@ -641,6 +641,8 @@ export const ur: SurveyTranslation = {
       exit: 'باہر نکلیں',
       exitRest: '',
       surveyBy: '{logo} کا سروے',
+      phoneTitle: 'سروے',
+      phoneBy: '{logo} کی جانب سے',
       privacy: 'پرائیویسی',
       privacyRest: ' پالیسی',
       back: 'واپس',

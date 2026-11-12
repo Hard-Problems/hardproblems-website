@@ -653,6 +653,8 @@ export const ta: SurveyTranslation = {
       exit: 'வெளியேறு',
       exitRest: '',
       surveyBy: '{logo} வழங்கும் கணக்கெடுப்பு',
+      phoneTitle: 'கணக்கெடுப்பு',
+      phoneBy: 'வழங்குபவர்: {logo}',
       privacy: 'தனியுரிமை',
       privacyRest: ' கொள்கை',
       back: 'பின்செல்',

@@ -651,6 +651,8 @@ export const ha: SurveyTranslation = {
       exit: 'Fita',
       exitRest: ' daga bincike',
       surveyBy: 'bincike daga {logo}',
+      phoneTitle: 'Bincike',
+      phoneBy: 'daga {logo}',
       privacy: 'Sirri',
       privacyRest: '',
       back: 'Koma baya',

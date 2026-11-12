@@ -633,6 +633,8 @@ export const tr: SurveyTranslation = {
       exit: 'Çık',
       exitRest: '',
       surveyBy: '{logo} anketi',
+      phoneTitle: 'Anket',
+      phoneBy: '{logo} tarafından',
       privacy: 'Gizlilik',
       privacyRest: ' politikası',
       back: 'Geri',

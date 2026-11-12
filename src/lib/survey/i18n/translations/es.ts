@@ -648,6 +648,8 @@ export const es: SurveyTranslation = {
       exit: 'Salir',
       exitRest: ' de la encuesta',
       surveyBy: 'encuesta de {logo}',
+      phoneTitle: 'Encuesta',
+      phoneBy: 'de {logo}',
       privacy: 'Privacidad',
       privacyRest: '',
       back: 'Atrás',

@@ -632,6 +632,8 @@ export const ja: SurveyTranslation = {
       exit: '終了',
       exitRest: '',
       surveyBy: 'アンケート（実施：{logo}）',
+      phoneTitle: 'アンケート',
+      phoneBy: '実施：{logo}',
       privacy: 'プライバシー',
       privacyRest: 'ポリシー',
       back: '戻る',

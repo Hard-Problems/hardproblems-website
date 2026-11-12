@@ -637,6 +637,8 @@ export const pa: SurveyTranslation = {
       exit: 'ਬਾਹਰ ਜਾਓ',
       exitRest: '',
       surveyBy: '{logo} ਦਾ ਸਰਵੇਖਣ',
+      phoneTitle: 'ਸਰਵੇਖਣ',
+      phoneBy: '{logo} ਵੱਲੋਂ',
       privacy: 'ਪਰਦੇਦਾਰੀ',
       privacyRest: ' ਨੀਤੀ',
       back: 'ਪਿੱਛੇ',

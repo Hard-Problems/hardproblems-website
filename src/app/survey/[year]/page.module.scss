@@ -665,6 +665,8 @@ $job-palettes: (
 // one object; on a phone the cards need every pixel, so no panel.
 .conjointStage {
   margin-top: 1.25rem;
+  // Room above when the form scrolls it back into view after a pick.
+  scroll-margin-top: 1rem;
 }
 
 @media only screen and (min-width: 601px) {
@@ -749,6 +751,36 @@ $job-palettes: (
     border: 0;
   }
 
+  // The whole card is a pick (the form's tapCard). Pointing at any part
+  // of it, or pressing it, outlines that card in its colour, so it is
+  // clear the card itself is the target.
+  [data-side] {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color 0.15s ease;
+  }
+
+  @each $side in a, b {
+    &:has([data-side='#{$side}']:hover) [data-side='#{$side}'],
+    &:has([data-side='#{$side}']:active) [data-side='#{$side}'] {
+      border-left-color: var(--job-accent);
+      border-right-color: var(--job-accent);
+    }
+    &:has([data-side='#{$side}']:hover) thead [data-side='#{$side}'],
+    &:has([data-side='#{$side}']:active) thead [data-side='#{$side}'] {
+      border-top-color: var(--job-accent);
+    }
+    &:has([data-side='#{$side}']:hover) tfoot [data-side='#{$side}'],
+    &:has([data-side='#{$side}']:active) tfoot [data-side='#{$side}'] {
+      border-bottom-color: var(--job-accent);
+    }
+    // Pressed on a phone: the card tints, the same as when a new one
+    // arrives, so the tap visibly landed.
+    &:has([data-side='#{$side}']:active) [data-side='#{$side}'] {
+      background: color-mix(in srgb, var(--job-accent) 10%, #fff);
+    }
+  }
+
   // The card's top: just the coloured band, then the title. The header
   // cell's only content is a screen-reader label ("First job"), so its
   // height is the padding — the space between band and title.
@@ -831,9 +863,11 @@ $job-palettes: (
     }
   }
 
+  // At least 44px tall: Apple's and Google's minimum for a tap target.
   .conjointTable .conjointChoose {
+    min-height: 44px;
     padding: 7px 10px;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
   }
 
   .conjointLine {
@@ -1338,6 +1372,13 @@ $job-palettes: (
 :global(body.survey-focus) {
   .survey {
     padding-top: 2.5rem;
+
+    // On a phone the header's own margin is gap enough (see
+    // .site-header in globals.css): with the 2.5rem on top, 72px of a
+    // small screen sat empty above every question.
+    @media only screen and (max-width: 600px) {
+      padding-top: 0;
+    }
   }
 
   .step {

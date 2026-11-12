@@ -54,6 +54,12 @@ export const EN_UI = {
     exitRest: ' survey',
     /** "{title} survey by Hard Problems." — {logo} is the Hard Problems logo. */
     surveyBy: 'survey by {logo}',
+    /**
+     * On a phone the survey's title is too long for the header, so it
+     * shows these two lines instead: "Survey" / "by Hard Problems."
+     */
+    phoneTitle: 'Survey',
+    phoneBy: 'by {logo}',
     privacy: 'Privacy',
     privacyRest: ' policy',
     back: 'Back',

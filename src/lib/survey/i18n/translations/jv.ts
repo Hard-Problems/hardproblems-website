@@ -654,6 +654,8 @@ export const jv: SurveyTranslation = {
       exit: 'Medal',
       exitRest: ' saking survei',
       surveyBy: 'survei saking {logo}',
+      phoneTitle: 'Survei',
+      phoneBy: 'saking {logo}',
       privacy: 'Privasi',
       privacyRest: '',
       back: 'Wangsul',

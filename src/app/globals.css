@@ -2192,6 +2192,23 @@ body.survey-focus .survey-step-count {
   white-space: nowrap;
 }
 
+/* The phone's short title ("Survey" / "by Hard Problems.") — shown
+   instead of the full one below 600px. */
+body.survey-focus .survey-header-phone {
+  display: none;
+}
+
+@media only screen and (max-width: 600px) {
+  body.survey-focus .survey-header-title > .survey-header-name,
+  body.survey-focus .survey-header-title > .survey-header-by {
+    display: none;
+  }
+
+  body.survey-focus .survey-header-phone {
+    display: inline;
+  }
+}
+
 /* Below desktop the three top-row items would squeeze the title, so
    "survey by Hard Problems." drops to a second line under the name. */
 @media only screen and (max-width: 999px) {
@@ -2214,11 +2231,24 @@ body.survey-focus .survey-step-count {
 
   body.survey-focus .survey-step-row {
     grid-template-columns: auto 1fr;
-    margin-top: 1rem;
+    margin-top: 0.6rem;
   }
 
   body.survey-focus .survey-step-count {
     justify-self: end;
+  }
+
+  /* No Back button on a phone: it took a whole row above every
+     question. The phone's own back gesture and button still step back
+     a question — each step is a history entry (see SurveyForm). The
+     step count stays, on the right, under Privacy. */
+  body.survey-focus .survey-back {
+    display: none;
+  }
+
+  /* And less space under the header, so the question starts higher. */
+  body.survey-focus .site-header {
+    margin-bottom: 1.25rem;
   }
 }
 
@@ -2296,11 +2326,14 @@ body.survey-focus .survey-privacy {
   /* In translations the phone label is often the whole phrase ("Exit
      survey" does not split in Tamil, German, Japanese…), too long for
      one line beside the title. There it wraps — at a space where it
-     can, anywhere as a last resort — rather than pushing Privacy off
-     the screen. */
+     can, then at a proper hyphenation point ("Daten-schutz", not
+     "Datensc-hutz"), and anywhere only as a last resort, for a script
+     the browser has no hyphenation rules for — rather than pushing
+     Privacy off the screen. */
   body.survey-focus .survey-exit:not(:lang(en)),
   body.survey-focus .survey-privacy:not(:lang(en)) {
     white-space: normal;
+    hyphens: auto;
     overflow-wrap: anywhere;
     min-width: 0;
     /* Not a flex row here: the words would be an anonymous flex item,

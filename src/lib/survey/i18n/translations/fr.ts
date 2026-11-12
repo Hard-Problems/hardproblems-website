@@ -650,6 +650,8 @@ export const fr: SurveyTranslation = {
       exit: 'Quitter',
       exitRest: ' l’enquête',
       surveyBy: 'enquête de {logo}',
+      phoneTitle: 'Enquête',
+      phoneBy: 'par {logo}',
       privacy: 'Confidentialité',
       privacyRest: '',
       back: 'Retour',

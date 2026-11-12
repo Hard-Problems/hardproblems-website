@@ -490,7 +490,10 @@ export const SURVEY_2026: SurveyDefinition = {
       id: 'metaphor',
       text: '{Subject} in 2026 feels like…',
       hint: 'Finish the sentence.',
-      maxLength: 200
+      maxLength: 200,
+      // Optional from 12 Nov 2026, with a Skip button: it was the step
+      // most people stopped at. Earlier respondents all answered it.
+      optional: true
     },
 
     likert(
