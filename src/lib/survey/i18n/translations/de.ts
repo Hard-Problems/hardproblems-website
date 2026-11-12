@@ -647,6 +647,8 @@ export const de: SurveyTranslation = {
       exit: 'Beenden',
       exitRest: '',
       surveyBy: '– eine Umfrage von {logo}',
+      phoneTitle: 'Umfrage',
+      phoneBy: 'von {logo}',
       privacy: 'Datenschutz',
       privacyRest: 'erklärung',
       back: 'Zurück',

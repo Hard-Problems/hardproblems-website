@@ -114,14 +114,19 @@ check(
         new Set(q.labels).size === q.labels.length
     )
 );
-// The optional questions are exactly the bonus round, all on the last
-// step — nothing required can be skipped by accident.
+// The optional questions are the metaphor (skippable since 12 Nov) and
+// the bonus round — nothing else can be skipped by accident. The
+// metaphor is on a step of its own, which is what shows its Skip button.
 check(
-  'optional questions are the bonus round',
+  'optional questions are the metaphor and the bonus round',
   JSON.stringify(qs.filter((q) => q.optional).map((q) => q.id)) ===
-    JSON.stringify(['one-change', 'admire', 'amazing-work']) &&
-    qs.filter((q) => q.optional).every((q) => q.group === 'bonus')
+    JSON.stringify(['metaphor', 'one-change', 'admire', 'amazing-work']) &&
+    qs
+      .filter((q) => q.optional && q.id !== 'metaphor')
+      .every((q) => q.group === 'bonus') &&
+    !qs.find((q) => q.id === 'metaphor')?.group
 );
+
 // The bonus round is asked after sending, so it is not a numbered step
 // and nothing in it may be required.
 check(
@@ -393,6 +398,13 @@ delete skipOptional['one-change'];
 check(
   'optional question may be skipped',
   validateSubmission(SURVEY_2026, skipOptional, COUNTRIES).length === 0
+);
+// The metaphor has had a Skip button since 12 Nov.
+const skipMetaphor = goodAnswers();
+delete skipMetaphor['metaphor'];
+check(
+  'the metaphor may be skipped',
+  validateSubmission(SURVEY_2026, skipMetaphor, COUNTRIES).length === 0
 );
 
 // ---- validation: the attacks it must stop ---------------------------

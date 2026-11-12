@@ -639,6 +639,8 @@ export const bn: SurveyTranslation = {
       exit: 'বের হন',
       exitRest: '',
       surveyBy: 'সার্ভে, {logo}-এর পক্ষ থেকে',
+      phoneTitle: 'সার্ভে',
+      phoneBy: '{logo}-এর পক্ষ থেকে',
       privacy: 'গোপনীয়তা',
       privacyRest: ' নীতি',
       back: 'পেছনে',

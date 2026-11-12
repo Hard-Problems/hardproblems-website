@@ -645,6 +645,8 @@ export const vi: SurveyTranslation = {
       exit: 'Thoát',
       exitRest: ' khảo sát',
       surveyBy: '– khảo sát của {logo}',
+      phoneTitle: 'Khảo sát',
+      phoneBy: 'của {logo}',
       privacy: 'Quyền riêng tư',
       privacyRest: '',
       back: 'Quay lại',

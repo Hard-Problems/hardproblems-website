@@ -631,6 +631,8 @@ export const ko: SurveyTranslation = {
       exit: '나가기',
       exitRest: '',
       surveyBy: '설문조사 · {logo} 진행',
+      phoneTitle: '설문조사',
+      phoneBy: '{logo} 진행',
       privacy: '개인정보',
       privacyRest: ' 처리방침',
       back: '뒤로',

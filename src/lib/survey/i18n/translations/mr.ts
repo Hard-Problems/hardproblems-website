@@ -649,6 +649,8 @@ export const mr: SurveyTranslation = {
       exit: 'बाहेर पडा',
       exitRest: '',
       surveyBy: 'सर्वेक्षण, {logo} तर्फे',
+      phoneTitle: 'सर्वेक्षण',
+      phoneBy: '{logo} तर्फे',
       privacy: 'गोपनीयता',
       privacyRest: ' धोरण',
       back: 'मागे',

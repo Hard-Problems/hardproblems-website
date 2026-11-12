@@ -642,6 +642,8 @@ export const id: SurveyTranslation = {
       exit: 'Keluar',
       exitRest: ' dari survei',
       surveyBy: 'survei oleh {logo}',
+      phoneTitle: 'Survei',
+      phoneBy: 'oleh {logo}',
       privacy: 'Privasi',
       privacyRest: '',
       back: 'Kembali',

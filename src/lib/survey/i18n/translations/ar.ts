@@ -615,6 +615,8 @@ export const ar: SurveyTranslation = {
       exit: 'خروج',
       exitRest: ' من الاستبيان',
       surveyBy: 'استبيان من {logo}',
+      phoneTitle: 'استبيان',
+      phoneBy: 'من {logo}',
       privacy: 'الخصوصية',
       privacyRest: '',
       back: 'رجوع',

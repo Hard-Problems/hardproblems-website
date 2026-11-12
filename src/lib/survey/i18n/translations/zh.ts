@@ -595,6 +595,8 @@ export const zh: SurveyTranslation = {
       exit: '退出',
       exitRest: '调查',
       surveyBy: '调查 · 由 {logo} 发起',
+      phoneTitle: '调查',
+      phoneBy: '由 {logo} 发起',
       privacy: '隐私',
       privacyRest: '政策',
       back: '返回',

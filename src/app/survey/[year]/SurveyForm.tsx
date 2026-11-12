@@ -29,6 +29,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
   type ReactNode
 } from 'react';
 import { createPortal } from 'react-dom';
@@ -1282,7 +1283,17 @@ function SurveyFormInner({
               <button
                 type="button"
                 className={styles.skipLink}
-                onClick={() => goTo(step + 1)}
+                onClick={() => {
+                  // Skipping means no answer, even if something was
+                  // typed before deciding to skip.
+                  setAnswers((prev) => {
+                    if (!(current[0].id in prev)) return prev;
+                    const next = { ...prev };
+                    delete next[current[0].id];
+                    return next;
+                  });
+                  goTo(step + 1);
+                }}
               >
                 {ui.actions.skip}
               </button>
@@ -1290,6 +1301,36 @@ function SurveyFormInner({
           </div>
         )}
       </div>
+    </>
+  );
+}
+
+/**
+ * "survey by {logo}", in whatever order the language puts it: the words
+ * muted, the logo as the logo, linking home.
+ */
+function ByLogo({ template }: { template: string }) {
+  return (
+    <>
+      {splitTemplate(template).map((part, i) =>
+        'key' in part ? (
+          <Link
+            key={i}
+            href="/"
+            className="site-logo survey-header-logo"
+            lang="en"
+            dir="ltr"
+          >
+            Hard Problems<span className="hp-period">.</span>
+          </Link>
+        ) : part.text.trim() ? (
+          <span key={i} className="survey-header-muted">
+            {part.text}
+          </span>
+        ) : (
+          <span key={i}> </span>
+        )
+      )}
     </>
   );
 }
@@ -1368,27 +1409,16 @@ function SurveyHeader({
       <p className="survey-header-title" {...lang}>
         <span className="survey-header-name">{title}</span>{' '}
         <span className="survey-header-by">
-          {/* "survey by {logo}", in whatever order the language puts
-              it: the words muted, the logo as the logo. */}
-          {splitTemplate(ui.header.surveyBy).map((part, i) =>
-            'key' in part ? (
-              <Link
-                key={i}
-                href="/"
-                className="site-logo survey-header-logo"
-                lang="en"
-                dir="ltr"
-              >
-                Hard Problems<span className="hp-period">.</span>
-              </Link>
-            ) : part.text.trim() ? (
-              <span key={i} className="survey-header-muted">
-                {part.text}
-              </span>
-            ) : (
-              <span key={i}> </span>
-            )
-          )}
+          <ByLogo template={ui.header.surveyBy} />
+        </span>
+        {/* On a phone, instead of the two above: the full title is too
+            long for the header, so just "Survey" / "by Hard Problems."
+            (globals.css switches between them). */}
+        <span className="survey-header-phone">
+          <span className="survey-header-name">{ui.header.phoneTitle}</span>{' '}
+          <span className="survey-header-by">
+            <ByLogo template={ui.header.phoneBy} />
+          </span>
         </span>
       </p>
 
@@ -1976,8 +2006,43 @@ function ConjointChoice({
   }, [rounds.length]);
   const savedStart = parsed ? answer?.startedAt : undefined;
 
+  // ---- on a phone -----------------------------------------------------
+  //
+  // A new pair lands exactly where the last one was, so a quick second
+  // tap (or a double tap) would pick from cards nobody has read. Taps
+  // are ignored while the new pair arrives.
+  const readyAt = useRef(0);
+  // On a small screen the Choose buttons can be below the fold, so the
+  // respondent scrolls down to pick, and the next pair's titles arrive
+  // above the screen. Bring the pair back into view after a pick.
+  const pairRef = useRef<HTMLDivElement>(null);
+  const shownRounds = useRef(rounds.length);
+  useEffect(() => {
+    readyAt.current = Date.now() + 350;
+    if (shownRounds.current === rounds.length) return;
+    shownRounds.current = rounds.length;
+    const el = pairRef.current;
+    if (el && el.getBoundingClientRect().top < 0) {
+      const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+      el.scrollIntoView({
+        block: 'start',
+        behavior: still.matches ? 'auto' : 'smooth'
+      });
+    }
+  }, [rounds.length]);
+
+  // The whole card picks it, not only its button: a much bigger target
+  // on a phone. The buttons stay for keyboards and screen readers, which
+  // is why the table's click handler leaves clicks on them alone.
+  function tapCard(e: ReactMouseEvent<HTMLTableElement>) {
+    const target = e.target as Element;
+    if (target.closest('button')) return;
+    const side = target.closest<HTMLElement>('[data-side]')?.dataset.side;
+    if (side === 'a' || side === 'b') choose(side);
+  }
+
   function choose(pick: Side) {
-    if (!pair) return;
+    if (!pair || Date.now() < readyAt.current) return;
     const value = [...kept, encodeRound(question, { ...pair, pick })];
     const startedAt =
       savedStart ??
@@ -2018,7 +2083,7 @@ function ConjointChoice({
         <>
           {/* The two cards and the count sit on a tinted panel on wide
               screens, so the choice reads as one object on the page. */}
-          <div className={styles.conjointStage}>
+          <div className={styles.conjointStage} ref={pairRef}>
             {/* Wraps the table so the "vs." badge can be centred on
                 the gap between the two cards. */}
             <div className={styles.conjointPair}>
@@ -2028,7 +2093,10 @@ function ConjointChoice({
               left column of names (two columns fit a phone, three do
               not), so each row's names are a header for screen readers
               only; sighted readers get the icon and the wording. */}
-              <table className={styles.conjointTable}>
+              {/* Clicks on a card are a pick too (tapCard); the buttons
+                  are the keyboard's and screen reader's way to do it. */}
+              {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */}
+              <table className={styles.conjointTable} onClick={tapCard}>
                 <caption className="sr-only">{ui.jobs.caption}</caption>
                 {/* The first column holds only the screen-reader row
                 headers, so it takes no width. */}
@@ -2046,6 +2114,7 @@ function ConjointChoice({
                     <th
                       key={`a-${jobs.a}`}
                       scope="col"
+                      data-side="a"
                       className={`${palette(jobs.a)} ${styles.conjointFresh}`}
                       style={rowStyle(0)}
                     >
@@ -2056,6 +2125,7 @@ function ConjointChoice({
                     <th
                       key={`b-${jobs.b}`}
                       scope="col"
+                      data-side="b"
                       className={`${palette(jobs.b)} ${styles.conjointFresh}`}
                       style={rowStyle(0)}
                     >
@@ -2074,6 +2144,7 @@ function ConjointChoice({
                         return (
                           <td
                             key={`${i}-${job}`}
+                            data-side={i ? 'b' : 'a'}
                             className={`${palette(job)} ${styles.conjointFresh}`}
                             style={rowStyle(n + 1)}
                           >
@@ -2096,6 +2167,7 @@ function ConjointChoice({
                       // card.
                       <td
                         key={`${side}-${jobs[side]}`}
+                        data-side={side}
                         className={`${palette(jobs[side])} ${styles.conjointFresh}`}
                         style={rowStyle(lines.length + 1)}
                       >
