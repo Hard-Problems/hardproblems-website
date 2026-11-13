@@ -256,6 +256,52 @@ export async function writeJobsSnapshot(
   }
 }
 
+/**
+ * Column X for ONE job, without reading the whole snapshot.
+ *
+ * A job's own page is the only surface that renders the long
+ * description, and it needs exactly one of them — but the only way to
+ * get it used to be fetchJobsWithFullText(), which pulls the ~2.9MB
+ * full row and parses all ~580 jobs to render a single page. On an ISR
+ * regeneration that is the bulk of the function time, and with ~580
+ * pages regenerating on a timer it was the largest line on the Vercel
+ * bill (Function Duration, +106% in one cycle).
+ *
+ * This asks Postgres to pick the one array element out instead, so the
+ * page can read the ~1.0MB board row for everything else — the slug
+ * map, the related lists, the per-country counts — and take only the
+ * few KB it actually needs from the full one.
+ *
+ * `key` is jobKey(job): the apply URL, or "company|title" when a row
+ * has no URL. Only the URL form can match here, because that is what
+ * the stored element carries; a job with no URL falls back, which is
+ * correct and rare.
+ *
+ * Returns null whenever the targeted read cannot answer — Supabase
+ * unconfigured, the function not created yet, any error, or no match.
+ * Null means "fall back to the full snapshot", never "no description",
+ * so this stays safe to deploy before the SQL function exists.
+ */
+export async function fetchJobFullText(key: string): Promise<string | null> {
+  const db = getDb();
+  if (!db || !key.startsWith('http')) return null;
+  try {
+    const { data, error } = await db.rpc('job_full_text', { job_key: key });
+    if (error) {
+      // Not escalated through degraded(): the caller falls back to the
+      // full snapshot and renders correctly, so this is a lost
+      // optimisation rather than a broken page. Logged once per render
+      // so a missing function is visible without paging anyone.
+      console.warn('[jobsSnapshot] job_full_text unavailable:', error.message);
+      return null;
+    }
+    return typeof data === 'string' && data.length > 0 ? data : null;
+  } catch (err) {
+    console.warn('[jobsSnapshot] job_full_text threw:', err);
+    return null;
+  }
+}
+
 // ---- read-side degradation ------------------------------------------
 //
 // The write path above catches a broken sync. This catches everything

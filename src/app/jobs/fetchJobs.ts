@@ -1,5 +1,9 @@
 import { validateAndNormalizeUrl } from '../../lib/validateUrl';
-import { readJobsSnapshot, type SnapshotVariant } from './jobsSnapshot';
+import {
+  readJobsSnapshot,
+  fetchJobFullText,
+  type SnapshotVariant
+} from './jobsSnapshot';
 import { buildJobSlugs, jobKey } from './jobSlug';
 import { fetchSheetRowsViaApi } from './sheetsClient';
 
@@ -501,12 +505,34 @@ export async function fetchJobs(): Promise<SerializedJob[]> {
 }
 
 /**
- * Every job WITH Column X, for a job's own page — the one surface that
- * renders the long description, and the only caller that should pay for
- * reading it.
+ * Every job WITH Column X.
+ *
+ * Only generateStaticParams still wants this: a build legitimately
+ * walks every job. A single job page should NOT call it — use
+ * fetchJobs() for the board-shaped data and jobFullText() for the one
+ * long description it renders, which together read ~1.0MB instead of
+ * ~2.9MB. See the comment on fetchJobFullText in jobsSnapshot.ts.
  */
 export async function fetchJobsWithFullText(): Promise<SerializedJob[]> {
   return fetchJobsVariant('full');
+}
+
+/**
+ * The long description for one job, by jobKey().
+ *
+ * Tries the targeted read first. When that cannot answer — Supabase
+ * unconfigured, the `job_full_text` function not created yet, a job
+ * with no URL — it falls back to the full snapshot, so the page renders
+ * identically either way and this is safe to deploy before the
+ * function exists. The fallback costs exactly what the page used to
+ * cost, never more.
+ */
+export async function jobFullText(key: string): Promise<string> {
+  const targeted = await fetchJobFullText(key);
+  if (targeted !== null) return targeted;
+  const all = await fetchJobsVariant('full');
+  const match = all.find((j) => jobKey(j) === key);
+  return match?.fullJobDescription ?? '';
 }
 
 async function fetchJobsVariant(
