@@ -14,6 +14,7 @@ export const pa: SurveyTranslation = {
     ],
     roleTerms: {
       'product-designer': 'ਡਿਜ਼ਾਈਨ',
+      'design-manager': 'ਡਿਜ਼ਾਈਨ',
       'graphic-designer': 'ਡਿਜ਼ਾਈਨ',
       'brand-designer': 'ਡਿਜ਼ਾਈਨ',
       illustrator: 'ਇਲਸਟ੍ਰੇਸ਼ਨ',
@@ -34,6 +35,13 @@ export const pa: SurveyTranslation = {
     },
     roleQuestionText: {
       'product-designer': {
+        metaphor: '2026 ਵਿੱਚ ਡਿਜ਼ਾਈਨ ਦਾ ਖੇਤਰ ਇੰਝ ਲੱਗਦਾ ਹੈ ਜਿਵੇਂ…',
+        'still-here-in-5':
+          'ਇਸ ਗੱਲ ਦੀ ਕਿੰਨੀ ਸੰਭਾਵਨਾ ਹੈ ਕਿ ਪੰਜ ਸਾਲਾਂ ਬਾਅਦ ਵੀ ਤੁਸੀਂ ਡਿਜ਼ਾਈਨ ਦੇ ਖੇਤਰ ਵਿੱਚ ਕੰਮ ਕਰ ਰਹੇ ਹੋਵੋਗੇ?',
+        'would-recommend':
+          'ਕੀ ਤੁਸੀਂ ਕਿਸੇ ਛੋਟੀ ਉਮਰ ਦੇ ਦੋਸਤ ਨੂੰ ਡਿਜ਼ਾਈਨ ਦੇ ਖੇਤਰ ਵਿੱਚ ਕਰੀਅਰ ਬਣਾਉਣ ਦੀ ਸਲਾਹ ਦਿਓਗੇ?'
+      },
+      'design-manager': {
         metaphor: '2026 ਵਿੱਚ ਡਿਜ਼ਾਈਨ ਦਾ ਖੇਤਰ ਇੰਝ ਲੱਗਦਾ ਹੈ ਜਿਵੇਂ…',
         'still-here-in-5':
           'ਇਸ ਗੱਲ ਦੀ ਕਿੰਨੀ ਸੰਭਾਵਨਾ ਹੈ ਕਿ ਪੰਜ ਸਾਲਾਂ ਬਾਅਦ ਵੀ ਤੁਸੀਂ ਡਿਜ਼ਾਈਨ ਦੇ ਖੇਤਰ ਵਿੱਚ ਕੰਮ ਕਰ ਰਹੇ ਹੋਵੋਗੇ?',
@@ -195,6 +203,7 @@ export const pa: SurveyTranslation = {
         hint: 'ਉਹ ਚੁਣੋ ਜੋ ਤੁਹਾਡੇ ਲਈ ਸਭ ਤੋਂ ਢੁਕਵੀਂ ਹੋਵੇ।',
         options: {
           'product-designer': 'ਡਿਜੀਟਲ ਪ੍ਰੋਡਕਟ ਡਿਜ਼ਾਈਨਰ',
+          'design-manager': 'ਡਿਜ਼ਾਈਨ ਮੈਨੇਜਰ',
           'graphic-designer': 'ਗ੍ਰਾਫਿਕ ਡਿਜ਼ਾਈਨਰ',
           'brand-designer': 'ਬ੍ਰਾਂਡ ਡਿਜ਼ਾਈਨਰ',
           illustrator: 'ਇਲਸਟ੍ਰੇਟਰ',
@@ -204,7 +213,7 @@ export const pa: SurveyTranslation = {
           'design-researcher': 'ਯੂਜ਼ਰ ਰਿਸਰਚਰ',
           'ux-designer': 'UX ਡਿਜ਼ਾਈਨਰ',
           'ui-designer': 'UI ਡਿਜ਼ਾਈਨਰ',
-          'design-writer': 'ਲੇਖਕ',
+          'design-writer': 'ਕੰਟੈਂਟ ਡਿਜ਼ਾਈਨਰ/ਲੇਖਕ',
           'product-manager': 'ਪ੍ਰੋਡਕਟ ਮੈਨੇਜਰ',
           founder: 'ਸੰਸਥਾਪਕ/ਕਾਰੋਬਾਰ',
           other: 'ਹੋਰ…'

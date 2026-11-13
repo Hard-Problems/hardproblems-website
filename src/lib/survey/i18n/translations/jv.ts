@@ -15,6 +15,7 @@ export const jv: SurveyTranslation = {
     ],
     roleTerms: {
       'product-designer': 'desain',
+      'design-manager': 'desain',
       'graphic-designer': 'desain',
       'brand-designer': 'desain',
       illustrator: 'ilustrasi',
@@ -35,6 +36,13 @@ export const jv: SurveyTranslation = {
     },
     roleQuestionText: {
       'product-designer': {
+        metaphor: 'Desain ing taun 2026 raosipun kados…',
+        'still-here-in-5':
+          'Sepinten kamungkinanipun panjenengan taksih nyambut damel ing bidang desain gangsal taun malih?',
+        'would-recommend':
+          'Menapa panjenengan badhe nyaranaken karir ing bidang desain dhateng kanca ingkang langkung anem?'
+      },
+      'design-manager': {
         metaphor: 'Desain ing taun 2026 raosipun kados…',
         'still-here-in-5':
           'Sepinten kamungkinanipun panjenengan taksih nyambut damel ing bidang desain gangsal taun malih?',
@@ -207,6 +215,7 @@ export const jv: SurveyTranslation = {
         hint: 'Mangga pilih ingkang paling trep kaliyan panjenengan.',
         options: {
           'product-designer': 'Digital Product Designer',
+          'design-manager': 'Design Manager',
           'graphic-designer': 'Desainer Grafis',
           'brand-designer': 'Brand Designer',
           illustrator: 'Ilustrator',
@@ -216,7 +225,7 @@ export const jv: SurveyTranslation = {
           'design-researcher': 'User Researcher',
           'ux-designer': 'UX Designer',
           'ui-designer': 'UI Designer',
-          'design-writer': 'Panyerat',
+          'design-writer': 'Content Designer/Panyerat',
           'product-manager': 'Product Manager',
           founder: 'Pendiri/pamilik usaha',
           other: 'Sanesipun…'

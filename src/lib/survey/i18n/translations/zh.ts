@@ -14,6 +14,7 @@ export const zh: SurveyTranslation = {
     ],
     roleTerms: {
       'product-designer': '设计',
+      'design-manager': '设计',
       'graphic-designer': '设计',
       'brand-designer': '设计',
       illustrator: '插画',
@@ -34,6 +35,11 @@ export const zh: SurveyTranslation = {
     },
     roleQuestionText: {
       'product-designer': {
+        metaphor: '2026 年的设计，感觉就像……',
+        'still-here-in-5': '五年后您仍在从事设计工作的可能性有多大？',
+        'would-recommend': '您会向比您年轻的朋友推荐从事设计职业吗？'
+      },
+      'design-manager': {
         metaphor: '2026 年的设计，感觉就像……',
         'still-here-in-5': '五年后您仍在从事设计工作的可能性有多大？',
         'would-recommend': '您会向比您年轻的朋友推荐从事设计职业吗？'
@@ -157,6 +163,7 @@ export const zh: SurveyTranslation = {
         hint: '请选择最符合您的一项。',
         options: {
           'product-designer': '数字产品设计师',
+          'design-manager': '设计经理',
           'graphic-designer': '平面设计师',
           'brand-designer': '品牌设计师',
           illustrator: '插画师',
@@ -166,7 +173,7 @@ export const zh: SurveyTranslation = {
           'design-researcher': '用户研究员',
           'ux-designer': 'UX 设计师',
           'ui-designer': 'UI 设计师',
-          'design-writer': '写作者',
+          'design-writer': '内容设计师/写作者',
           'product-manager': '产品经理',
           founder: '创始人／企业主',
           other: '其他……'

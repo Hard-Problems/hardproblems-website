@@ -208,18 +208,43 @@ export async function writeJobsSnapshot(
     // falls through on an empty string.
     const boardJobs = jobs.map((job) => ({ ...job, fullJobDescription: '' }));
 
-    // Both rows in one call, so the two can never be left describing
-    // different syncs.
-    const { error } = await db.from(TABLE).upsert(
-      [
-        { id: ROW_ID_FULL, synced_at: syncedAt, jobs },
-        { id: ROW_ID_BOARD, synced_at: syncedAt, jobs: boardJobs }
-      ],
-      { onConflict: 'id' }
-    );
-    if (error) {
-      await report('jobsSnapshot: write failed', new Error(error.message));
-      return { ok: false, reason: error.message };
+    // One row per statement, NOT both in a single upsert.
+    //
+    // Was one call, so the two rows could never describe different
+    // syncs. The cost of that guarantee grew past what it was worth:
+    // the full row is ~2.9MB and the board row ~1.0MB, so a combined
+    // upsert moved ~3.9MB in one statement, every 15 minutes. That is
+    // what was tripping Postgres's statement timeout ("canceling
+    // statement due to statement timeout"), intermittently at first and
+    // then several times a day once survey traffic arrived.
+    //
+    // Splitting trades that guarantee for two smaller statements. The
+    // rows can now briefly disagree if the second write fails, but
+    // nothing reads them as a pair — readJobsSnapshot() fetches exactly
+    // one row by id — so the worst case is that one surface is a sync
+    // staler than the other, which the 15-minute cron already allows.
+    //
+    // Board first, deliberately: it is the smaller statement and it
+    // backs the higher-traffic surface, so if the full row is the one
+    // that times out, the board is already fresh.
+    const writes: Array<[string, number, SerializedJob[]]> = [
+      ['board', ROW_ID_BOARD, boardJobs],
+      ['full', ROW_ID_FULL, jobs]
+    ];
+    for (const [label, id, payload] of writes) {
+      const { error } = await db
+        .from(TABLE)
+        .upsert(
+          { id, synced_at: syncedAt, jobs: payload },
+          { onConflict: 'id' }
+        );
+      if (error) {
+        await report(
+          `jobsSnapshot: ${label} row write failed`,
+          new Error(error.message)
+        );
+        return { ok: false, reason: `${label} row: ${error.message}` };
+      }
     }
     return { ok: true };
   } catch (err) {

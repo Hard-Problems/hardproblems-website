@@ -14,6 +14,7 @@ export const id: SurveyTranslation = {
     ],
     roleTerms: {
       'product-designer': 'desain',
+      'design-manager': 'desain',
       'graphic-designer': 'desain',
       'brand-designer': 'desain',
       illustrator: 'ilustrasi',
@@ -34,6 +35,13 @@ export const id: SurveyTranslation = {
     },
     roleQuestionText: {
       'product-designer': {
+        metaphor: 'Desain pada tahun 2026 terasa seperti…',
+        'still-here-in-5':
+          'Seberapa besar kemungkinan Anda masih bekerja di bidang desain lima tahun lagi?',
+        'would-recommend':
+          'Apakah Anda akan merekomendasikan karier di bidang desain kepada teman yang lebih muda?'
+      },
+      'design-manager': {
         metaphor: 'Desain pada tahun 2026 terasa seperti…',
         'still-here-in-5':
           'Seberapa besar kemungkinan Anda masih bekerja di bidang desain lima tahun lagi?',
@@ -197,6 +205,7 @@ export const id: SurveyTranslation = {
         hint: 'Pilih yang paling sesuai dengan Anda.',
         options: {
           'product-designer': 'Digital Product Designer',
+          'design-manager': 'Design Manager',
           'graphic-designer': 'Desainer Grafis',
           'brand-designer': 'Brand Designer',
           illustrator: 'Ilustrator',
@@ -206,7 +215,7 @@ export const id: SurveyTranslation = {
           'design-researcher': 'User Researcher',
           'ux-designer': 'UX Designer',
           'ui-designer': 'UI Designer',
-          'design-writer': 'Penulis',
+          'design-writer': 'Content Designer/Penulis',
           'product-manager': 'Product Manager',
           founder: 'Pendiri/pemilik usaha',
           other: 'Lainnya…'
