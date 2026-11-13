@@ -33,7 +33,7 @@ IMPACT_SECTORS = ["sectors__government", "sectors__nonprofit", "sectors__educati
 COMMERCIAL_ORGS = {"startup", "scale-up", "big-tech", "enterprise"}
 DESIGN_ROLES = {"product-designer", "graphic-designer", "brand-designer", "illustrator", "motion-designer",
                 "service-designer", "industrial-designer", "design-researcher", "ux-designer", "ui-designer",
-                "design-writer"}
+                "design-writer", "design-manager"}
 
 FEELING_LABELS = {"mixed": "Mixed feelings"}
 POSITIVE_FEELINGS = {"optimistic", "excited", "confident", "grateful", "fulfilled", "curious", "comfortable"}

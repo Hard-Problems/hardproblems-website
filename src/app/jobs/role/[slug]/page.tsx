@@ -22,7 +22,7 @@ import { Fragment, type ReactNode } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { fetchJobsWithFullText, type SerializedJob } from '../../fetchJobs';
+import { fetchJobs, jobFullText, type SerializedJob } from '../../fetchJobs';
 import { buildJobSlugs, findJobBySlug, jobKey } from '../../jobSlug';
 import {
   countryQualifies,
@@ -58,10 +58,22 @@ import BreadcrumbSchema from './BreadcrumbSchema';
 // restyling them here, so the two stay in step.
 import styles from './page.module.scss';
 
-// Hourly, matching the location pages. The underlying snapshot only
-// changes every 15 minutes and a job's own details rarely change at
-// all, so this is mostly about picking up removals.
-export const revalidate = 3600;
+// Daily, not hourly.
+//
+// There are ~580 of these pages, and an ISR window is per region, so
+// an hourly window let each page regenerate 24 times a day in every
+// region Vercel served it from. Crawlers keep that timer hot — Google
+// Jobs walks the whole board — and the result was 1.59M ISR writes in
+// one billing cycle, up 531%, plus the function time to rebuild each
+// page (see the snapshot read below).
+//
+// A job's own details essentially never change after it is posted, so
+// a shorter window bought nothing. What it was really for is picking
+// up removals, and that still works: /jobs is on a 60s window, so a
+// job that disappears from the sheet leaves the board within a minute
+// whatever this page does. A stale page for a filled role is a far
+// smaller problem than a board still advertising it.
+export const revalidate = 86400;
 
 // Only matters on the degraded path. Normally this route reads the
 // Supabase snapshot, which is a single fast row read. When the snapshot
@@ -77,7 +89,11 @@ export const maxDuration = 60;
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateStaticParams() {
-  const jobs = await fetchJobsWithFullText();
+  // Board data: buildJobSlugs only reads title, company and url, all
+  // of which the board row carries. A build pre-renders every job
+  // page, so this ran against the 2.9MB row once per deploy for
+  // nothing.
+  const jobs = await fetchJobs();
   const slugs = buildJobSlugs(jobs);
   // Deduped: the sheet carries a few genuinely duplicate rows (same
   // apply URL listed twice), which share a slug and so describe one
@@ -243,7 +259,10 @@ function summarise(job: {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const found = findJobBySlug(await fetchJobsWithFullText(), slug);
+  // Board data, not the full row: nothing below reads Column X, and
+  // pulling the 2.9MB row to build a share card tripled the cost of
+  // every regeneration.
+  const found = findJobBySlug(await fetchJobs(), slug);
   if (!found) return { title: 'Job — Hard Problems' };
   const { job } = found;
   const where = summarise(job);
@@ -295,13 +314,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function JobPage({ params }: Props) {
   const { slug } = await params;
-  const jobs = await fetchJobsWithFullText();
+  // The board row, not the full one. Everything on this page except
+  // the long description — the slug map, the related lists, the
+  // per-country counts — is board-shaped, and Column X is two thirds
+  // of the full payload.
+  const jobs = await fetchJobs();
   // buildJobSlugs rather than findJobBySlug: the related-job lists below
   // need the whole map, and findJobBySlug would build a second copy of it
   // for every render.
   const slugs = buildJobSlugs(jobs);
   const job = jobs.find((j) => slugs.get(jobKey(j)) === slug);
   if (!job) notFound();
+
+  // The one field the board row blanks, fetched on its own.
+  const fullText = await jobFullText(jobKey(job));
 
   // Only link a country that actually has a location page. /jobs/<country>
   // exists only for countries over the active-job threshold, so linking
@@ -470,7 +496,7 @@ export default async function JobPage({ params }: Props) {
 
   // Column X when the long-form write-up exists, Column U otherwise.
   // Both are newline-separated prose, so `paragraphs` handles either.
-  const aboutRole = job.fullJobDescription || job.jobDescription;
+  const aboutRole = fullText || job.jobDescription;
 
   // The apply block closes the first prose section on the page, so this
   // chain follows the section order below: impact, then the role
