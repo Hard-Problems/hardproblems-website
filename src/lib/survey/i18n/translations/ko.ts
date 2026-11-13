@@ -14,6 +14,7 @@ export const ko: SurveyTranslation = {
     ],
     roleTerms: {
       'product-designer': '디자인',
+      'design-manager': '디자인',
       'graphic-designer': '디자인',
       'brand-designer': '디자인',
       illustrator: '일러스트레이션',
@@ -34,6 +35,13 @@ export const ko: SurveyTranslation = {
     },
     roleQuestionText: {
       'product-designer': {
+        metaphor: '2026년의 디자인은 마치…',
+        'still-here-in-5':
+          '5년 후에도 디자인 분야에서 일하고 있을 가능성은 얼마나 되나요?',
+        'would-recommend':
+          '자신보다 어린 친구에게 디자인 분야의 커리어를 추천하시겠어요?'
+      },
+      'design-manager': {
         metaphor: '2026년의 디자인은 마치…',
         'still-here-in-5':
           '5년 후에도 디자인 분야에서 일하고 있을 가능성은 얼마나 되나요?',
@@ -189,6 +197,7 @@ export const ko: SurveyTranslation = {
         hint: '가장 잘 맞는 하나를 선택해 주세요.',
         options: {
           'product-designer': '디지털 프로덕트 디자이너',
+          'design-manager': '디자인 매니저',
           'graphic-designer': '그래픽 디자이너',
           'brand-designer': '브랜드 디자이너',
           illustrator: '일러스트레이터',
@@ -198,7 +207,7 @@ export const ko: SurveyTranslation = {
           'design-researcher': '사용자 리서처',
           'ux-designer': 'UX 디자이너',
           'ui-designer': 'UI 디자이너',
-          'design-writer': '라이터',
+          'design-writer': '콘텐츠 디자이너/라이터',
           'product-manager': '프로덕트 매니저',
           founder: '창업자/사업가',
           other: '기타…'

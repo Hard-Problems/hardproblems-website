@@ -54,6 +54,13 @@ const MAX_JOBS_PER_DIGEST = 30;
 // run.
 const RECENT_JOBS_WINDOW_DAYS = 3;
 
+// How long a row in alert_sent is kept. Must stay comfortably above
+// fetchJobs' MAX_AGE_DAYS (45): once a job is too old to be listed it
+// can no longer be sent, so its dedupe rows are dead weight. Raising
+// MAX_AGE_DAYS past this without raising this too would let an old job
+// be emailed to a subscriber a second time.
+const SENT_RETENTION_DAYS = 90;
+
 type ActiveSubscriber = {
   id: string;
   email: string;
@@ -132,7 +139,8 @@ export async function GET(request: Request) {
     skipped: 0,
     failed: 0,
     skippedRecent: 0,
-    skippedEmpty: 0
+    skippedEmpty: 0,
+    prunedSent: 0
   };
 
   for (const sub of rows) {
@@ -289,6 +297,39 @@ export async function GET(request: Request) {
       });
       totals.failed++;
     }
+  }
+
+  // Retention sweep for alert_sent, which had never been pruned and had
+  // reached ~45k rows.
+  //
+  // The table exists only to stop a job being emailed to the same
+  // subscriber twice, so a row stops being useful the moment its job
+  // can no longer appear in a digest. Jobs are hidden once they pass
+  // MAX_AGE_DAYS (45) in fetchJobs, so anything older than that is
+  // already incapable of being re-sent. SENT_RETENTION_DAYS is double
+  // that, which leaves room for the window to be widened without this
+  // sweep quietly becoming a re-send bug.
+  //
+  // Deliberately unindexed: there is no index on sent_at, so this is a
+  // sequential scan, but it runs once a day over a table this size and
+  // adding one would tax every digest insert to save a few ms here.
+  //
+  // Failure is logged, not fatal — a digest run that sent mail must not
+  // report failure because its housekeeping step did.
+  const prunedBefore = new Date(
+    Date.now() - SENT_RETENTION_DAYS * 86_400_000
+  ).toISOString();
+  const { data: prunedRows, error: pruneErr } = await db
+    .from('alert_sent')
+    .delete()
+    .lt('sent_at', prunedBefore)
+    .select('id');
+  if (pruneErr) {
+    logError('[alerts/cron] alert_sent prune failed', pruneErr, {
+      before: prunedBefore
+    });
+  } else {
+    totals.prunedSent = prunedRows?.length ?? 0;
   }
 
   console.log('[alerts/cron] finished', totals);

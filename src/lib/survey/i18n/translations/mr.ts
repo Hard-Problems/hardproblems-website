@@ -14,6 +14,7 @@ export const mr: SurveyTranslation = {
     ],
     roleTerms: {
       'product-designer': 'डिझाइन',
+      'design-manager': 'डिझाइन',
       'graphic-designer': 'डिझाइन',
       'brand-designer': 'डिझाइन',
       illustrator: 'इलस्ट्रेशन',
@@ -34,6 +35,13 @@ export const mr: SurveyTranslation = {
     },
     roleQuestionText: {
       'product-designer': {
+        metaphor: '2026 मध्ये डिझाइन असे वाटते, जणू…',
+        'still-here-in-5':
+          'पाच वर्षांनंतरही तुम्ही डिझाइनमध्ये काम करत असण्याची शक्यता किती आहे?',
+        'would-recommend':
+          'तुमच्यापेक्षा लहान वयाच्या एखाद्या मित्राला तुम्ही डिझाइनमध्ये करिअर करण्याचा सल्ला द्याल का?'
+      },
+      'design-manager': {
         metaphor: '2026 मध्ये डिझाइन असे वाटते, जणू…',
         'still-here-in-5':
           'पाच वर्षांनंतरही तुम्ही डिझाइनमध्ये काम करत असण्याची शक्यता किती आहे?',
@@ -206,6 +214,7 @@ export const mr: SurveyTranslation = {
         hint: 'तुम्हाला सर्वात जास्त लागू होणारा पर्याय निवडा.',
         options: {
           'product-designer': 'डिजिटल प्रॉडक्ट डिझायनर',
+          'design-manager': 'डिझाइन मॅनेजर',
           'graphic-designer': 'ग्राफिक डिझायनर',
           'brand-designer': 'ब्रँड डिझायनर',
           illustrator: 'इलस्ट्रेटर',
@@ -215,7 +224,7 @@ export const mr: SurveyTranslation = {
           'design-researcher': 'यूजर रिसर्चर',
           'ux-designer': 'UX डिझायनर',
           'ui-designer': 'UI डिझायनर',
-          'design-writer': 'लेखक (रायटर)',
+          'design-writer': 'कंटेंट डिझायनर/लेखक',
           'product-manager': 'प्रॉडक्ट मॅनेजर',
           founder: 'फाउंडर/व्यवसाय',
           other: 'इतर…'

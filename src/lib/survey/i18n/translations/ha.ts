@@ -14,6 +14,7 @@ export const ha: SurveyTranslation = {
     ],
     roleTerms: {
       'product-designer': 'ƙira',
+      'design-manager': 'ƙira',
       'graphic-designer': 'ƙira',
       'brand-designer': 'ƙira',
       illustrator: 'zane-zane',
@@ -34,6 +35,13 @@ export const ha: SurveyTranslation = {
     },
     roleQuestionText: {
       'product-designer': {
+        metaphor: 'A shekarar 2026, ƙira tamkar…',
+        'still-here-in-5':
+          'Yaya yiwuwar cewa nan da shekaru biyar har yanzu kuna aiki a fannin ƙira?',
+        'would-recommend':
+          'Shin za ku ba wani abokinku ƙarami shawarar yin sana’a a fannin ƙira?'
+      },
+      'design-manager': {
         metaphor: 'A shekarar 2026, ƙira tamkar…',
         'still-here-in-5':
           'Yaya yiwuwar cewa nan da shekaru biyar har yanzu kuna aiki a fannin ƙira?',
@@ -204,6 +212,7 @@ export const ha: SurveyTranslation = {
         options: {
           'product-designer':
             'Mai Ƙirar Samfuran Dijital (Digital Product Designer)',
+          'design-manager': 'Manajan Zane (Design Manager)',
           'graphic-designer': 'Mai Zanen Hoto (Graphic Designer)',
           'brand-designer': 'Mai Ƙirar Alamar Kasuwanci (Brand Designer)',
           illustrator: 'Mai Zane-zane (Illustrator)',
@@ -213,7 +222,8 @@ export const ha: SurveyTranslation = {
           'design-researcher': 'Mai Binciken Masu Amfani (User Researcher)',
           'ux-designer': 'Mai Ƙirar UX (UX Designer)',
           'ui-designer': 'Mai Ƙirar UI (UI Designer)',
-          'design-writer': 'Marubuci (Writer)',
+          'design-writer':
+            'Mai Tsara Abun Ciki/Marubuci (Content Designer/Writer)',
           'product-manager': 'Manajan Samfura (Product Manager)',
           founder: 'Mai kafa kamfani/mai kasuwanci',
           other: 'Wani daban…'

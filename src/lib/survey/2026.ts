@@ -59,6 +59,7 @@ export const SURVEY_2026: SurveyDefinition = {
     'ux-designer': 'design',
     'ui-designer': 'design',
     'design-writer': 'writing',
+    'design-manager': 'design',
     'product-manager': 'product management',
     founder: 'your organisation',
     other: 'your field'
@@ -171,7 +172,9 @@ export const SURVEY_2026: SurveyDefinition = {
         { id: 'design-researcher', label: 'User Researcher' },
         { id: 'ux-designer', label: 'UX Designer' },
         { id: 'ui-designer', label: 'UI Designer' },
-        { id: 'design-writer', label: 'Writer' },
+        { id: 'design-writer', label: 'Content Designer/Writer' },
+        // Added 13 Nov 2026 (people had been typing it into Other).
+        { id: 'design-manager', label: 'Design Manager' },
         { id: 'product-manager', label: 'Product Manager' },
         { id: 'founder', label: 'Founder/business' },
         { id: 'other', label: 'Other…', isOther: true }

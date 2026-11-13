@@ -14,6 +14,7 @@ export const tr: SurveyTranslation = {
     ],
     roleTerms: {
       'product-designer': 'tasarım',
+      'design-manager': 'tasarım',
       'graphic-designer': 'tasarım',
       'brand-designer': 'tasarım',
       illustrator: 'illüstrasyon',
@@ -34,6 +35,13 @@ export const tr: SurveyTranslation = {
     },
     roleQuestionText: {
       'product-designer': {
+        metaphor: '2026’da tasarım şuna benziyor: …',
+        'still-here-in-5':
+          'Beş yıl sonra hâlâ tasarım alanında çalışıyor olma olasılığınız nedir?',
+        'would-recommend':
+          'Sizden genç bir arkadaşınıza tasarım alanında kariyer yapmasını önerir misiniz?'
+      },
+      'design-manager': {
         metaphor: '2026’da tasarım şuna benziyor: …',
         'still-here-in-5':
           'Beş yıl sonra hâlâ tasarım alanında çalışıyor olma olasılığınız nedir?',
@@ -191,6 +199,7 @@ export const tr: SurveyTranslation = {
         hint: 'Size en uygun olanı seçin.',
         options: {
           'product-designer': 'Dijital Ürün Tasarımcısı',
+          'design-manager': 'Tasarım Yöneticisi',
           'graphic-designer': 'Grafik Tasarımcı',
           'brand-designer': 'Marka Tasarımcısı',
           illustrator: 'İllüstratör',
@@ -200,7 +209,7 @@ export const tr: SurveyTranslation = {
           'design-researcher': 'Kullanıcı Araştırmacısı',
           'ux-designer': 'UX Tasarımcısı',
           'ui-designer': 'UI Tasarımcısı',
-          'design-writer': 'Yazar',
+          'design-writer': 'İçerik Tasarımcısı/Yazar',
           'product-manager': 'Ürün Yöneticisi',
           founder: 'Kurucu/işletme sahibi',
           other: 'Diğer…'

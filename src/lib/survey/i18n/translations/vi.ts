@@ -14,6 +14,7 @@ export const vi: SurveyTranslation = {
     ],
     roleTerms: {
       'product-designer': 'thiết kế',
+      'design-manager': 'thiết kế',
       'graphic-designer': 'thiết kế',
       'brand-designer': 'thiết kế',
       illustrator: 'minh họa',
@@ -34,6 +35,13 @@ export const vi: SurveyTranslation = {
     },
     roleQuestionText: {
       'product-designer': {
+        metaphor: 'Làm thiết kế năm 2026 giống như…',
+        'still-here-in-5':
+          'Khả năng năm năm nữa bạn vẫn làm việc trong lĩnh vực thiết kế là bao nhiêu?',
+        'would-recommend':
+          'Bạn có khuyên một người bạn trẻ hơn theo đuổi sự nghiệp thiết kế không?'
+      },
+      'design-manager': {
         metaphor: 'Làm thiết kế năm 2026 giống như…',
         'still-here-in-5':
           'Khả năng năm năm nữa bạn vẫn làm việc trong lĩnh vực thiết kế là bao nhiêu?',
@@ -203,6 +211,7 @@ export const vi: SurveyTranslation = {
         hint: 'Hãy chọn vai trò phù hợp với bạn nhất.',
         options: {
           'product-designer': 'Nhà thiết kế sản phẩm số (Product Designer)',
+          'design-manager': 'Quản lý thiết kế (Design Manager)',
           'graphic-designer': 'Nhà thiết kế đồ họa',
           'brand-designer': 'Nhà thiết kế thương hiệu',
           illustrator: 'Họa sĩ minh họa',
@@ -212,7 +221,8 @@ export const vi: SurveyTranslation = {
           'design-researcher': 'Nhà nghiên cứu người dùng (UX Researcher)',
           'ux-designer': 'UX Designer',
           'ui-designer': 'UI Designer',
-          'design-writer': 'Người viết (Writer)',
+          'design-writer':
+            'Nhà thiết kế nội dung/Người viết (Content Designer/Writer)',
           'product-manager': 'Quản lý sản phẩm (Product Manager)',
           founder: 'Nhà sáng lập/chủ doanh nghiệp',
           other: 'Khác…'

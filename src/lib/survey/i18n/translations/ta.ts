@@ -15,6 +15,7 @@ export const ta: SurveyTranslation = {
     ],
     roleTerms: {
       'product-designer': 'வடிவமைப்பு',
+      'design-manager': 'வடிவமைப்பு',
       'graphic-designer': 'வடிவமைப்பு',
       'brand-designer': 'வடிவமைப்பு',
       illustrator: 'இல்லஸ்ட்ரேஷன்',
@@ -35,6 +36,13 @@ export const ta: SurveyTranslation = {
     },
     roleQuestionText: {
       'product-designer': {
+        metaphor: '2026-இல் வடிவமைப்புத் துறை இப்படித் தோன்றுகிறது…',
+        'still-here-in-5':
+          'ஐந்து ஆண்டுகளுக்குப் பிறகும் நீங்கள் வடிவமைப்புத் துறையில் பணியாற்றிக்கொண்டிருப்பதற்கான வாய்ப்பு எவ்வளவு?',
+        'would-recommend':
+          'இளைய நண்பர் ஒருவருக்கு வடிவமைப்புத் துறையில் ஒரு தொழில் வாழ்க்கையை நீங்கள் பரிந்துரைப்பீர்களா?'
+      },
+      'design-manager': {
         metaphor: '2026-இல் வடிவமைப்புத் துறை இப்படித் தோன்றுகிறது…',
         'still-here-in-5':
           'ஐந்து ஆண்டுகளுக்குப் பிறகும் நீங்கள் வடிவமைப்புத் துறையில் பணியாற்றிக்கொண்டிருப்பதற்கான வாய்ப்பு எவ்வளவு?',
@@ -207,6 +215,7 @@ export const ta: SurveyTranslation = {
         hint: 'உங்களுக்கு மிகவும் பொருந்தும் ஒன்றைத் தேர்ந்தெடுக்கவும்.',
         options: {
           'product-designer': 'டிஜிட்டல் புராடக்ட் டிசைனர்',
+          'design-manager': 'டிசைன் மேனேஜர்',
           'graphic-designer': 'கிராஃபிக் டிசைனர்',
           'brand-designer': 'பிராண்ட் டிசைனர்',
           illustrator: 'இல்லஸ்ட்ரேட்டர்',
@@ -216,7 +225,7 @@ export const ta: SurveyTranslation = {
           'design-researcher': 'யூசர் ரிசர்ச்சர்',
           'ux-designer': 'UX டிசைனர்',
           'ui-designer': 'UI டிசைனர்',
-          'design-writer': 'எழுத்தாளர்',
+          'design-writer': 'கன்டென்ட் டிசைனர்/எழுத்தாளர்',
           'product-manager': 'புராடக்ட் மேனேஜர்',
           founder: 'நிறுவனர்/தொழில்',
           other: 'மற்றவை…'

@@ -14,6 +14,7 @@ export const ur: SurveyTranslation = {
     ],
     roleTerms: {
       'product-designer': 'ڈیزائن',
+      'design-manager': 'ڈیزائن',
       'graphic-designer': 'ڈیزائن',
       'brand-designer': 'ڈیزائن',
       illustrator: 'السٹریشن',
@@ -34,6 +35,13 @@ export const ur: SurveyTranslation = {
     },
     roleQuestionText: {
       'product-designer': {
+        metaphor: '2026 میں ڈیزائن کا شعبہ ایسا لگتا ہے جیسے…',
+        'still-here-in-5':
+          'اس بات کا کتنا امکان ہے کہ پانچ سال بعد بھی آپ ڈیزائن کے شعبے میں کام کر رہے ہوں گے؟',
+        'would-recommend':
+          'کیا آپ کسی کم عمر دوست کو ڈیزائن کے شعبے میں کیریئر بنانے کا مشورہ دیں گے؟'
+      },
+      'design-manager': {
         metaphor: '2026 میں ڈیزائن کا شعبہ ایسا لگتا ہے جیسے…',
         'still-here-in-5':
           'اس بات کا کتنا امکان ہے کہ پانچ سال بعد بھی آپ ڈیزائن کے شعبے میں کام کر رہے ہوں گے؟',
@@ -199,6 +207,7 @@ export const ur: SurveyTranslation = {
         hint: 'وہ منتخب کریں جو آپ پر سب سے زیادہ موزوں ہو۔',
         options: {
           'product-designer': 'ڈیجیٹل پروڈکٹ ڈیزائنر',
+          'design-manager': 'ڈیزائن مینیجر',
           'graphic-designer': 'گرافک ڈیزائنر',
           'brand-designer': 'برانڈ ڈیزائنر',
           illustrator: 'السٹریٹر',
@@ -208,7 +217,7 @@ export const ur: SurveyTranslation = {
           'design-researcher': 'یوزر ریسرچر',
           'ux-designer': 'UX ڈیزائنر',
           'ui-designer': 'UI ڈیزائنر',
-          'design-writer': 'رائٹر',
+          'design-writer': 'کنٹینٹ ڈیزائنر/رائٹر',
           'product-manager': 'پروڈکٹ مینیجر',
           founder: 'بانی/کاروبار',
           other: 'دیگر…'
