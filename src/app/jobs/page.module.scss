@@ -724,6 +724,27 @@ a.jobCompany:focus {
   text-underline-offset: 0.15em;
 }
 
+// Hovering anywhere on the row underlines BOTH of the links that lead
+// somewhere — the job title and the employer — so it is obvious the
+// row is made of links rather than being one big target. The two rules
+// above still carry the colour shift, so a direct hover on one link
+// stays distinguishable from a hover on the row around it.
+//
+// Specificity is what makes this work without touching the blanket
+// `.board a:hover { text-decoration: none }` reset at the top of this
+// file: these selectors score 0,3,1 against its 0,2,1, so they win
+// both when the row is hovered and when the link itself is. They also
+// avoid naming `.board` or `.jobs`, which is why the location pages —
+// which render these rows outside the `.board` wrapper — get the same
+// behaviour instead of drifting the way they did before <JobRow>.
+.job:hover .jobTitle a,
+.job:hover a.jobCompany {
+  text-decoration: underline;
+  text-decoration-color: #b7ddc8;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+}
+
 .companyFavicon {
   width: 16px;
   height: 16px;
