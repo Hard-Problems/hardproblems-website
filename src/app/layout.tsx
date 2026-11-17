@@ -52,6 +52,14 @@ export const metadata: Metadata = {
       'A nonprofit helping designers to work on the hard problems that matter in the world.'
     // twitter:image is auto-populated by Next.js from each route's
     // opengraph-image.tsx, so no need to specify it here.
+  },
+  // Site verification for hideandseek.bot, which audits how legible the
+  // site is to crawlers and answer engines. Lives on the root layout so
+  // it is served on every route: unlike `openGraph` and `twitter` above,
+  // no page sets its own `other`, so this is inherited rather than
+  // replaced. If a page ever does set `other`, it must repeat this key.
+  other: {
+    hideandseek: 'b91afae43c'
   }
 };
 
