@@ -22,6 +22,7 @@ import styles from '../app/articles/page.module.scss';
 // On mobile the hero flag has no effect (compact still applies).
 export default function ArticleCard({
   article,
+  headingLevel = 'h3',
   compact = false,
   hero = false,
   hideDate = false,
@@ -30,6 +31,15 @@ export default function ArticleCard({
   durationLabel
 }: {
   article: Article;
+  /**
+   * h3 by default, because most callers put these cards under a section
+   * heading of their own ("Careers", "Top articles") — but the homepage
+   * and /articles/type/<type> are grids of cards under nothing but the
+   * page's h1, where h3 skipped a level. `.articleCardTitle` states its
+   * own family, size, weight and leading, so the level changes nothing
+   * about how a card looks.
+   */
+  headingLevel?: 'h2' | 'h3';
   compact?: boolean;
   hero?: boolean;
   hideDate?: boolean;
@@ -55,6 +65,7 @@ export default function ArticleCard({
    */
   durationLabel?: string;
 }) {
+  const Title = headingLevel;
   const articleTypeLower = article.articleType?.toLowerCase();
   const isVideo = articleTypeLower === 'video';
   const isPodcast = articleTypeLower === 'podcast';
@@ -181,9 +192,9 @@ export default function ArticleCard({
               )}
             </p>
           )}
-          <h3 className={styles.articleCardTitle}>
+          <Title className={styles.articleCardTitle}>
             {renderTitleWithItalics(article.title)}
-          </h3>
+          </Title>
           {article.excerpt && (
             <p className={styles.articleCardExcerpt}>{article.excerpt}</p>
           )}

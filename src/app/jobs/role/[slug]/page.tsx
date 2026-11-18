@@ -178,6 +178,27 @@ const SUBHEADING = /^#{1,6}\s+(\S.*)$/;
 // changes shape by gaining this rule.
 const BULLET = /^[-*\u2022]\s+(\S.*)$/;
 
+// The same fields as RichText below, flattened to the text a reader
+// actually sees — markdown markers resolved rather than carried through.
+// It exists for the JobPosting JSON-LD: the sheet's prose is written with
+// "## " subheadings and "- " bullets, so handing that string to
+// structured data describes the role in characters no reader encounters,
+// and Google's JobPosting spec takes plain text or HTML, never markdown.
+//
+// Built from the same `paragraphs()` split and the same two regexes as
+// RichText, in the same order, so the markup and the markup's description
+// of itself cannot drift apart.
+function richTextToPlain(text: string): string {
+  return paragraphs(text)
+    .map((para) => {
+      const bullet = para.match(BULLET);
+      if (bullet) return bullet[1];
+      const heading = para.match(SUBHEADING);
+      return heading ? heading[1] : para;
+    })
+    .join('\n');
+}
+
 // Renders one of the sheet's prose fields: paragraphs, subheadings and
 // bullet lists. Used for all three prose sections so that a heading or a
 // list added to another column later renders as one rather than showing
@@ -507,8 +528,12 @@ export default async function JobPage({ params }: Props) {
   const applyAfter = impact ? 'why' : aboutRole ? 'role' : null;
 
   return (
-    <main className={styles.job}>
-      <JobPostingSchema job={job} slug={slug} />
+    <div className={styles.job}>
+      <JobPostingSchema
+        job={job}
+        slug={slug}
+        pageDescription={aboutRole ? richTextToPlain(aboutRole) : null}
+      />
       <BreadcrumbSchema
         job={job}
         slug={slug}
@@ -680,6 +705,6 @@ export default async function JobPage({ params }: Props) {
           )}
         </section>
       )}
-    </main>
+    </div>
   );
 }

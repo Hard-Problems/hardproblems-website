@@ -713,7 +713,20 @@ h1.page-title {
   }
 }
 
-h3 {
+/* The site's section-heading look. It was attached to `h3` alone for
+   historical reasons: every long page here leads with an h1 and then
+   used h3 for its sections, because h3 is the tag that looked right.
+   The cost was that all of those pages skipped h2 — they told a reader,
+   a screen reader and a crawler that they had no second-level structure
+   at all, only a title and a pile of third-level headings.
+
+   `.heading-section` carries the look so the tag can carry the level:
+   those pages now use `h2.heading-section`, which renders identically
+   and nests correctly. Single-class specificity is deliberate — the
+   `.space-top-*` utilities are defined further down this file and have
+   to keep winning on margin-top. */
+h3,
+.heading-section {
   font-family: var(--font-instrument-serif), Georgia, 'Times New Roman', serif;
   font-weight: 400;
   text-transform: none;
@@ -723,20 +736,45 @@ h3 {
   margin-bottom: 0.3rem;
 }
 
-h3 + p {
+/* An h2 needs its top margin stated where an h3 does not: the browser
+   default is 0.83em for h2 against 1em for h3, which at this font-size
+   is a 0.3rem difference — visible on the few of these headings that
+   carry no .space-top-* class of their own. */
+.heading-section {
+  margin-top: 1em;
+}
+
+h3 + p,
+.heading-section + p {
   margin-top: 0.5em;
 }
 
-h3.divider {
+h2.divider {
   padding-top: 0;
   margin-top: 4rem;
 }
 
-h4 {
+/* The same trade one level down: h4's look, available to an h3 that now
+   sits under an `h2.heading-section`. The `inherit` values reproduce
+   what an unstyled h4 does — take the body's family and leading — and
+   in doing so undo the serif treatment the `h3` rule above would
+   otherwise apply to it. */
+h4,
+.heading-sub {
   margin: 1.2em 0 0 0;
 }
 
-h4 + p {
+.heading-sub {
+  font-family: inherit;
+  font-size: 1em;
+  font-weight: bold;
+  line-height: inherit;
+  letter-spacing: inherit;
+  text-transform: none;
+}
+
+h4 + p,
+.heading-sub + p {
   margin-top: 0.3em;
 }
 
@@ -1933,7 +1971,7 @@ body.survey-past-start .survey-band {
     border-color: var(--color-link);
   }
 
-  h3.divider {
+  h2.divider {
     padding: 0;
     margin-left: 0;
     margin-right: 0;

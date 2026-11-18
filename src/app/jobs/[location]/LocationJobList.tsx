@@ -58,6 +58,8 @@ export default function LocationJobList({ jobs }: { jobs: ListedJob[] }) {
           <JobRow
             key={`${job.url}-${i}`}
             job={job}
+            // Directly under the hub's <h1>Design jobs {label}</h1>.
+            headingLevel="h2"
             liClassName={styles.locationJob}
             location={formatLocation(job)}
             salary={hasSalary ? job.salary : null}

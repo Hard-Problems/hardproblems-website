@@ -92,7 +92,20 @@ export default function RootLayout({
               <SiteHeaderNav side="right" />
             </header>
             <TopBar />
-            <div className="container">{children}</div>
+            {/* The page's content, and the site's only `main`
+                landmark. It was a plain <div>, which meant no page on
+                the site had one: an assistant or a screen reader had no
+                way to tell the article from the masthead, the rotating
+                tagline and the four-column footer around it. `.main`
+                above is a layout class and not a landmark — the name
+                collision is unfortunate but predates this.
+
+                Four routes used to render their own <main> inside this
+                one. Nested landmarks are worse than none (two `main`s
+                is invalid, and a reader cannot tell which is the
+                content), so those are now <div>s and this is the single
+                landmark they sit inside. */}
+            <main className="container">{children}</main>
           </div>
           <FooterIntro />
           <footer className="site-footer">

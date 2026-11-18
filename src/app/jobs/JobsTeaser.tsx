@@ -68,6 +68,8 @@ export default function JobsTeaser({
             <JobRow
               key={`${job.url}-${i}`}
               job={job}
+              // Under the "New on the job board" h2 the teaser sits beneath.
+              headingLevel="h3"
               liClassName={teaserStyles.teaserJob}
               titleClassName={teaserStyles.teaserTitle}
               metaClassName={teaserStyles.teaserMeta}

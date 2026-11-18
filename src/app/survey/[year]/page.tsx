@@ -214,13 +214,13 @@ export default async function SurveyPage({ params, searchParams }: Props) {
           <p className="newsletter-form-label">{ui.band}</p>
         </div>
       </div>
-      <main
+      <div
         className={`${styles.survey} ph-no-capture`}
         lang={locale}
         dir={language.dir}
       >
         {/* No class: the column width and padding come from `.survey` on
-          the <main>, and this element only groups the content. It used
+          the wrapper, and this element only groups the content. It used
           to reference a `styles.intro` rule that was never written. */}
         <article>
           {/* The intro belongs to the landing state, not to every step —
@@ -284,7 +284,7 @@ export default async function SurveyPage({ params, searchParams }: Props) {
             </>
           )}
         </article>
-      </main>
+      </div>
     </>
   );
 }

@@ -15,6 +15,11 @@ const DESCRIPTION =
   'The email newsletter for designers and technologists who want to work on hard problems. Four or five emails a month, no spam, easy unsubscribe.';
 
 export const metadata: Metadata = {
+  // Its own address. Without this a page has no opinion about which
+  // URL is the real one, and anything that reaches it with a query
+  // string or tracking parameter attached is free to treat that as a
+  // separate page. See /jobs, which has carried one for this reason.
+  alternates: { canonical: '/newsletter' },
   title: 'Newsletter for designers and technologists — Hard Problems',
   description: DESCRIPTION,
   openGraph: {

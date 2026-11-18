@@ -12,6 +12,11 @@ import Image from 'next/image';
 // explicit openGraph block replaces the parent's rather than merging,
 // so leaving `images` out silently drops the card image.
 export const metadata: Metadata = {
+  // Its own address. Without this a page has no opinion about which
+  // URL is the real one, and anything that reaches it with a query
+  // string or tracking parameter attached is free to treat that as a
+  // separate page. See /jobs, which has carried one for this reason.
+  alternates: { canonical: '/events' },
   title: 'Events for designers and technologists — Hard Problems',
   description:
     'We host online events globally and in-person events in London, featuring great speakers, to build a community of people working on hard problems.',
@@ -47,14 +52,14 @@ export default function Page() {
           see you at an event soon.
         </p>
 
-        <h3 className="space-top-large">Upcoming events</h3>
+        <h2 className="heading-section space-top-large">Upcoming events</h2>
         <p>
           We’re busy working on the next event. Join our{' '}
           <Link href="/newsletter">email newsletter</Link> to make sure you
           don’t miss it.
         </p>
 
-        <h3 className="space-top-large">Past events</h3>
+        <h2 className="heading-section space-top-large">Past events</h2>
 
         <div className="event">
           <div className="event-image">
@@ -66,11 +71,11 @@ export default function Page() {
             />
             <div className="event-image-date">May 29, 2025</div>
           </div>
-          <h4>
+          <h3 className="heading-sub">
             <Link href="https://lu.ma/nqd3pagz">
               Why are public health experts looking for technologists?
             </Link>
-          </h4>
+          </h3>
           <p>
             Join us for a behind-the-scenes conversation with Dr. Prabhdeep Kaur
             and Dr. Ganeshkumar, senior epidemiologists at the Indian Council of
@@ -110,12 +115,12 @@ export default function Page() {
             />
             <div className="event-image-date">Apr 10, 2025</div>
           </div>
-          <h4>
+          <h3 className="heading-sub">
             <Link href="https://lu.ma/kme2kbaa">
               Fireside chat with ASquared: Can a design agency do good in the
               world and run a viable business?
             </Link>
-          </h4>
+          </h3>
           <p>
             We will discuss with three of the leaders of ASquared about their
             agency&rsquo;s transition to a B-Corp that does half their work with
@@ -145,11 +150,11 @@ export default function Page() {
             />
             <div className="event-image-date">Mar 13, 2025</div>
           </div>
-          <h4>
+          <h3 className="heading-sub">
             <Link href="https://lu.ma/bengeegp">
               Fireside chat with Brian O&#39;Donnell from DHIS2.org
             </Link>
-          </h4>
+          </h3>
           <p>
             We are hosting tech architect, Brian O D&rsquo;onnell (Linkedin),
             for a fireside chat where we will discuss what he does, how he ended
@@ -180,11 +185,11 @@ export default function Page() {
             />
             <div className="event-image-date">Dec 11, 2024</div>
           </div>
-          <h4>
+          <h3 className="heading-sub">
             <Link href="https://lu.ma/3n56utd7">
               Wine &amp; chat at our new office
             </Link>
-          </h4>
+          </h3>
           <p>
             Come to our new office in London for casual wine, beverages, and
             snacks or just to say hello!

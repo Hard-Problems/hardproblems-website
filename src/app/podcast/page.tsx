@@ -33,6 +33,11 @@ const EPISODES = EPISODE_TITLES.map((title, i) => {
 // repeated here. The segment's own opengraph-image.tsx still supplies
 // the image.
 export const metadata: Metadata = {
+  // Its own address. Without this a page has no opinion about which
+  // URL is the real one, and anything that reaches it with a query
+  // string or tracking parameter attached is free to treat that as a
+  // separate page. See /jobs, which has carried one for this reason.
+  alternates: { canonical: '/podcast' },
   title: 'Podcast for designers and technologists — Hard Problems',
   description:
     'A podcast for designers and technologists who want to work on urgent problems like public health and climate change. Coming soon — and we are looking for guests.',
@@ -68,7 +73,9 @@ export default function Page() {
           <span className="notice-pill">Coming soon…</span>
         </h1>
 
-        <h3 className="space-top-large">What will the podcast be about?</h3>
+        <h2 className="heading-section space-top-large">
+          What will the podcast be about?
+        </h2>
         <p>
           We want to find out what works and what doesn&#8216;t work for
           designers who are working on the world&#8216;s most urgent challenges.
@@ -77,7 +84,7 @@ export default function Page() {
           inspire people (you?) to make the jump to work on hard problems.
         </p>
 
-        <h3 className="space-top-large">Episodes</h3>
+        <h2 className="heading-section space-top-large">Episodes</h2>
         <p>
           Join our <Link href="/newsletter/">email newsletter</Link> so you
           don&#8216;t miss when we start the podcast.
@@ -91,7 +98,7 @@ export default function Page() {
           ))}
         </ul>
 
-        <h3 className="space-top-large">We need your help</h3>
+        <h2 className="heading-section space-top-large">We need your help</h2>
         <p>
           Know someone who we should interview? Tell us about them and why
           they&rsquo;d make a great guest.
@@ -100,7 +107,7 @@ export default function Page() {
           <PodcastGuestForm />
         </p>
 
-        <h3 className="divider">Who makes a good guest?</h3>
+        <h2 className="heading-section divider">Who makes a good guest?</h2>
         <ul className="hand-drawn-checklist">
           <li>Not the usual suspects who do the podcast circuit.</li>
           <li>

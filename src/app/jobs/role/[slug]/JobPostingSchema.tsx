@@ -57,7 +57,11 @@ function validThrough(
 // omitted when the sheet value is missing (Google is fine with sparse
 // data; required-for-Jobs-Card fields are title, description, and
 // datePosted, all of which we always have).
-function buildJobPosting(job: SerializedJob, canonicalUrl: string) {
+function buildJobPosting(
+  job: SerializedJob,
+  canonicalUrl: string,
+  pageDescription: string | null
+) {
   const remote = isRemote(job.remote);
 
   const posting: Record<string, unknown> = {
@@ -70,7 +74,20 @@ function buildJobPosting(job: SerializedJob, canonicalUrl: string) {
     // exactly that and runs to ~650 words, so prefer it; Column U is the
     // shorter role-specific blurb; Column M (the COMPANY description) is
     // the last resort, and was previously the only thing sent.
+    //
+    // `pageDescription` is first because it is the one that is *on the
+    // page*: the caller passes the same prose the page renders, already
+    // flattened out of the sheet's markdown. The board snapshot blanks
+    // `fullJobDescription` to keep its row small (jobsSnapshot.ts) and
+    // the job page refetches that column on its own, so this used to
+    // fall through to `jobDescription` — a short paraphrase the page
+    // never renders. The result was structured data describing the role
+    // in words a reader could not find anywhere, which is what
+    // hideandseek.bot's schema-match check fails you for and, more to
+    // the point, the kind of mismatch Google treats as a reason not to
+    // trust the markup.
     description:
+      pageDescription ||
       job.fullJobDescription ||
       job.jobDescription ||
       job.description ||
@@ -157,13 +174,18 @@ function buildJobPosting(job: SerializedJob, canonicalUrl: string) {
 // pages were introduced. Keep it to a single posting here.
 export default function JobPostingSchema({
   job,
-  slug
+  slug,
+  pageDescription = null
 }: {
   job: SerializedJob;
   slug: string;
+  // The role's description as the page renders it, in plain text.
+  // Optional so the component still works without it, but a caller that
+  // renders that prose should pass it — see the `description` note above.
+  pageDescription?: string | null;
 }) {
   const json = JSON.stringify(
-    buildJobPosting(job, `${SITE_URL}/jobs/role/${slug}`)
+    buildJobPosting(job, `${SITE_URL}/jobs/role/${slug}`, pageDescription)
   );
   return (
     <script
