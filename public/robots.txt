@@ -23,11 +23,38 @@ Allow: /
 User-agent: DuckDuckBot
 Allow: /
 
+# --- Answer engines ---
+# Explicitly allowed, and deliberately separate from the training
+# crawlers below. These fetch a page to cite it or to answer a
+# question someone is asking right now; two of them only fetch at all
+# because a person asked. Blocking them does not protect the content
+# from being trained on — the training crawlers are the ones that do
+# that, and they stay blocked. It only removes us from the answer.
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
 # --- LLM training crawlers ---
 # These scrape site content to train large language models. Blocking
-# them here doesn't affect search ranking. Well-behaved bots respect
-# these rules; malicious scrapers ignore them (for those, use rate
-# limiting or bot protection).
+# them here doesn't affect search ranking, and — now that the answer
+# engines are listed separately above — it no longer costs us a place
+# in an assistant's answers either. Those two things were conflated
+# when this list was written: OAI-SearchBot, ChatGPT-User,
+# PerplexityBot and Perplexity-User sat in this block, which meant
+# ChatGPT and Perplexity were not allowed to read a page even when a
+# person had explicitly asked them to.
+#
+# Well-behaved bots respect these rules; malicious scrapers ignore
+# them (for those, use rate limiting or bot protection).
 #
 # `Google-Extended` and `Applebot-Extended` are the specific opt-outs
 # for Bard/Gemini and Apple Intelligence — they're SEPARATE from
@@ -35,12 +62,6 @@ Allow: /
 # visibility.
 
 User-agent: GPTBot
-Disallow: /
-
-User-agent: ChatGPT-User
-Disallow: /
-
-User-agent: OAI-SearchBot
 Disallow: /
 
 User-agent: ClaudeBot
@@ -53,12 +74,6 @@ User-agent: anthropic-ai
 Disallow: /
 
 User-agent: CCBot
-Disallow: /
-
-User-agent: PerplexityBot
-Disallow: /
-
-User-agent: Perplexity-User
 Disallow: /
 
 User-agent: YouBot

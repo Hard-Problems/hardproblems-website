@@ -108,9 +108,21 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: article.canonicalUrl
-      ? { canonical: article.canonicalUrl }
-      : undefined,
+    // An article first published elsewhere points at that original —
+    // that is what `canonicalUrl` is for. Everything else used to send
+    // `undefined`, i.e. no canonical at all, when the answer was always
+    // its own permalink. `article.slug` rather than the route param,
+    // because the frontmatter slug is the canonical one (see
+    // getArticleBySlug, which looks it up that way first).
+    //
+    // `||` and not `??`: the frontmatter in these files carries
+    // `canonicalUrl: ''` as a placeholder rather than omitting the key,
+    // so the value is an empty string and `??` would hand Next an empty
+    // canonical — which it renders as no tag at all. That is exactly
+    // the bug this line is fixing, so it would have fixed nothing.
+    alternates: {
+      canonical: article.canonicalUrl || `/articles/${article.slug}`
+    },
     openGraph: {
       type: 'article',
       title: plainTitle,

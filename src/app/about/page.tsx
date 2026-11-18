@@ -13,6 +13,11 @@ import articlesStyles from '../articles/page.module.scss';
 // repeated here. The segment's own opengraph-image.tsx still supplies
 // the image.
 export const metadata: Metadata = {
+  // Its own address. Without this a page has no opinion about which
+  // URL is the real one, and anything that reaches it with a query
+  // string or tracking parameter attached is free to treat that as a
+  // separate page. See /jobs, which has carried one for this reason.
+  alternates: { canonical: '/about' },
   title: 'About us: a nonprofit for designers — Hard Problems',
   description:
     'Hard Problems is a UK nonprofit that helps designers, researchers and technologists shift into full-time work on urgent problems like climate change and public health.',
@@ -48,7 +53,7 @@ export default function Page() {
           climate change and public health.
         </h1>
 
-        <h3>Our mission</h3>
+        <h2 className="heading-section">Our mission</h2>
         <p>
           While the loudest part of the tech world is focused on AI, crypto,
           fin-tech, and advertising, other people are trying to tackle the
@@ -93,7 +98,9 @@ export default function Page() {
           fundamentally important problems.
         </p>
 
-        <h3 className="space-top-large">What success looks like</h3>
+        <h2 className="heading-section space-top-large">
+          What success looks like
+        </h2>
         <p>
           Thinking of this in terms of KPIs, we’d first think of measuring: the
           number of people we help make the leap from the traditional tech world
@@ -102,10 +109,12 @@ export default function Page() {
           people who work on hard problems.
         </p>
 
-        <h3 className="space-top-large">Our team</h3>
+        <h2 className="heading-section space-top-large">Our team</h2>
         <Team />
 
-        <h3 className="space-top-large">Hard Problems explained...</h3>
+        <h2 className="heading-section space-top-large">
+          Hard Problems explained...
+        </h2>
         {featuredArticle && (
           <div className={articlesStyles.aboutFeaturedArticle}>
             <ul className={articlesStyles.articleList}>

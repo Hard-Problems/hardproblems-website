@@ -73,7 +73,7 @@ export default function Page() {
 
         <NewsletterModule />
 
-        <h3 className="space-top-large">Recent newsletters</h3>
+        <h2 className="heading-section space-top-large">Recent newsletters</h2>
         <div className={styles.newsletters}>
           {!newslettersLoaded && (
             <>
@@ -103,9 +103,9 @@ export default function Page() {
                       />
                     </div>
                     <div className={styles.newsletterBody}>
-                      <h4 className={styles.newsletterTitle}>
+                      <h3 className={styles.newsletterTitle}>
                         {newsletter.title}
-                      </h4>
+                      </h3>
                       <p className={styles.newsletterExcerpt}>
                         {newsletter.content}
                       </p>

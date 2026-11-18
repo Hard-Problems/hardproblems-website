@@ -75,12 +75,17 @@ export type JobRowProps = {
   salary?: string | null;
 
   /**
-   * The board and the hubs use <h4>; the related lists on a job page use
-   * <h3> so the heading order stays intact under that page's <h2>. The
-   * global h3 rule would otherwise render them in Instrument Serif, which
-   * `.relatedList h3` resets.
+   * Chosen per surface so the page's heading order has no gaps in it,
+   * which is the only thing this controls:
+   *   - h2 on the board and the location hubs. A row there sits directly
+   *     under the page's single h1 with no section heading between them,
+   *     so h4 — the old default — skipped two levels on every row.
+   *   - h3 in the homepage teaser and the related lists on a job page,
+   *     both of which sit under an h2 of their own.
+   * `.jobTitle` states its own font-family, so the level has no bearing
+   * on how the row looks.
    */
-  headingLevel?: 'h3' | 'h4';
+  headingLevel?: 'h2' | 'h3' | 'h4';
   /**
    * Where the title points. Every surface now passes the job's own page
    * on this site; it falls back to the employer's listing for the rare

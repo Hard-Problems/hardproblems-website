@@ -39,7 +39,8 @@ export async function generateMetadata({
   if (!author) return { title: 'Author — Hard Problems' };
   return {
     title: `${author.name} — Hard Problems`,
-    description: author.bio.split('\n\n')[0] ?? author.bio
+    description: author.bio.split('\n\n')[0] ?? author.bio,
+    alternates: { canonical: `/authors/${author.slug}` }
   };
 }
 
@@ -147,7 +148,7 @@ export default async function AuthorPage({ params }: Props) {
   };
 
   return (
-    <main style={{ maxWidth: 800, margin: '0 auto', padding: '1.5rem' }}>
+    <div style={{ maxWidth: 800, margin: '0 auto', padding: '1.5rem' }}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }}
@@ -205,9 +206,12 @@ export default async function AuthorPage({ params }: Props) {
         <>
           {/* Clear the float so the articles list starts on a new row
               below the photo, not wrapping around it. */}
-          <h3 style={{ marginTop: '4.5rem', clear: 'both' }}>
+          <h2
+            className="heading-section"
+            style={{ marginTop: '4.5rem', clear: 'both' }}
+          >
             Articles by {author.name}
-          </h3>
+          </h2>
           <ul className={articleStyles.articleList}>
             {articles.map((article) => (
               <ArticleCard key={article.slug} article={article} />
@@ -215,6 +219,6 @@ export default async function AuthorPage({ params }: Props) {
           </ul>
         </>
       )}
-    </main>
+    </div>
   );
 }

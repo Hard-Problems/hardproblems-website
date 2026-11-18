@@ -724,6 +724,8 @@ export default function JobsList({
               <JobRow
                 key={`${job.url}-${i}`}
                 job={job}
+                // Directly under this page's <h1>Job board</h1>.
+                headingLevel="h2"
                 location={formatLocation(job)}
                 salary={hasSalary ? job.salary : null}
                 chips={chips}

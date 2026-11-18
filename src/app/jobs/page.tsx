@@ -97,7 +97,29 @@ export default async function Page() {
         ) : (
           // Suspense is required because JobsList reads useSearchParams.
           // Without it Next.js would deopt the route from static rendering.
-          <Suspense fallback={null}>
+          //
+          // The fallback is not decorative. `useSearchParams` makes
+          // JobsList bail out of the static render, so at build time
+          // Next renders this fallback instead — and while it was
+          // `null`, everything JobsList holds was absent from the
+          // served HTML, the <h1> below included. /jobs was shipping a
+          // page with no heading at all to anything that does not run
+          // JavaScript, which is most crawlers and every answer engine.
+          //
+          // So the fallback now renders the heading, in the same
+          // `.layout > .filters > .filterHeader` nesting JobsList uses,
+          // from the same stylesheet. Hydration replaces it with
+          // identical markup, so nothing moves; the heading simply also
+          // exists before the JS arrives, and paints sooner.
+          <Suspense
+            fallback={
+              <div className={styles.layout}>
+                <div className={styles.filters}>
+                  <div className={styles.filterHeader}>{filterHeader}</div>
+                </div>
+              </div>
+            }
+          >
             <JobsList
               jobs={toListedJobs(jobs)}
               filterHeader={filterHeader}

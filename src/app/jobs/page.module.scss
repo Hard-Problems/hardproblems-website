@@ -681,6 +681,14 @@ a.jobDescriptionDetails:focus-visible {
 
 .jobTitle {
   margin: 0 0 0.25rem 0;
+  // Stated so the row looks the same whichever heading level it is. The
+  // level varies by surface — h2 for the rows on the board and the
+  // location hubs, which sit directly under those pages' h1, h3 for the
+  // teaser and the related lists, which sit under an h2 — and the global
+  // h2 and h3 rules both set Instrument Serif. `.relatedList h3` has
+  // been resetting exactly this for the one surface that had already hit
+  // the problem.
+  font-family: inherit;
   font-size: var(--font-size-base);
   line-height: 1.3;
   font-weight: 500;

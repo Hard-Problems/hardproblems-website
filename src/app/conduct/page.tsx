@@ -11,6 +11,11 @@ import Link from 'next/link';
 // explicit openGraph block replaces the parent's rather than merging,
 // so leaving `images` out silently drops the card image.
 export const metadata: Metadata = {
+  // Its own address. Without this a page has no opinion about which
+  // URL is the real one, and anything that reaches it with a query
+  // string or tracking parameter attached is free to treat that as a
+  // separate page. See /jobs, which has carried one for this reason.
+  alternates: { canonical: '/conduct' },
   title: 'Code of conduct — Hard Problems',
   description:
     'The code of conduct for Hard Problems events and community spaces: the standards we expect, our responsibilities, the scope it covers and how it is enforced.',
@@ -44,7 +49,7 @@ export default function Page() {
           race, religion, or sexual identity and orientation.
         </p>
 
-        <h3 className="space-top-large">Our standards</h3>
+        <h2 className="heading-section space-top-large">Our standards</h2>
         <p>
           Examples of behavior that contributes to creating a positive
           environment include:
@@ -79,7 +84,9 @@ export default function Page() {
           </li>
         </ul>
 
-        <h3 className="space-top-large">Our responsibilities</h3>
+        <h2 className="heading-section space-top-large">
+          Our responsibilities
+        </h2>
         <p>
           Leaders are responsible for clarifying the standards of acceptable
           behavior and are expected to take appropriate and fair corrective
@@ -93,7 +100,7 @@ export default function Page() {
           inappropriate, threatening, offensive, or harmful.
         </p>
 
-        <h3 className="space-top-large">Scope</h3>
+        <h2 className="heading-section space-top-large">Scope</h2>
         <p>
           This Code of Conduct applies both within project spaces and in public
           spaces when an individual is representing the project or its
@@ -104,7 +111,7 @@ export default function Page() {
           defined and clarified by project maintainers.
         </p>
 
-        <h3 className="space-top-large">Enforcement</h3>
+        <h2 className="heading-section space-top-large">Enforcement</h2>
         <p>
           Instances of abusive, harassing, or otherwise unacceptable behavior
           may be reported by contacting the project team at{' '}
@@ -124,7 +131,7 @@ export default function Page() {
         </p>
       </section>
       <section className="right">
-        <h3>Attribution</h3>
+        <h2 className="heading-section">Attribution</h2>
         <p>
           This Code of Conduct is adapted from the Contributor Covenant, version
           1.4,{' '}

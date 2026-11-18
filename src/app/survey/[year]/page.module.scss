@@ -6,7 +6,7 @@
 // as Hard Problems rather than as GOV.UK.
 
 .survey {
-  // `width: 100%` is doing the real work here. This <main> sits inside
+  // `width: 100%` is doing the real work here. This wrapper sits inside
   // `div.container`, which is `display: flex` — so as a flex item it had
   // `flex: 0 1 auto` and sized itself from its CONTENT. Every question
   // got its own width (398px to 704px at a 1200px viewport) and the

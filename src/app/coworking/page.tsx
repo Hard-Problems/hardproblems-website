@@ -12,6 +12,11 @@ import styles from './page.module.scss';
 // repeated here. The segment's own opengraph-image.tsx still supplies
 // the image.
 export const metadata: Metadata = {
+  // Its own address. Without this a page has no opinion about which
+  // URL is the real one, and anything that reaches it with a query
+  // string or tracking parameter attached is free to treat that as a
+  // separate page. See /jobs, which has carried one for this reason.
+  alternates: { canonical: '/coworking' },
   title: 'Coworking space in London — Hard Problems',
   description:
     'A small London coworking space for people working on hard problems. A few free days if you qualify, or a fixed desk at £450/month and a drop-in desk at £200/month.',
@@ -44,7 +49,7 @@ export default function Page() {
           Hard Problems has a small coworking space in London. This space is
           intended to foster community for people working on hard problems.
         </h1>
-        <h3 className="space-top-small">Can I work here?</h3>
+        <h2 className="heading-section space-top-small">Can I work here?</h2>
         <p>
           If you work on a design or tech project related to climate change,
           public health, healthcare, education, poverty, etc, the answer could
@@ -52,16 +57,24 @@ export default function Page() {
         </p>
         <div className={styles.twoCol}>
           <div>
-            <h4 style={{ color: 'var(--color-mid-green)' }}>
+            <h3
+              className="heading-sub"
+              style={{ color: "var(--color-mid-green)" }}
+            >
               Just for a few days
-            </h4>
+            </h3>
             <p>
               Need a desk for just a few days? If you work on a hard problem,
               apply and we could offer you a free place to work.
             </p>
           </div>
           <div>
-            <h4 style={{ color: 'var(--color-mid-green)' }}>Long-term desks</h4>
+            <h3
+              className="heading-sub"
+              style={{ color: "var(--color-mid-green)" }}
+            >
+              Long-term desks
+            </h3>
             <p>
               If you can pay, a fixed desk is £450/month and a drop-in desk is
               £200/month. If that is too much, get in touch and we might be able
@@ -70,13 +83,15 @@ export default function Page() {
           </div>
         </div>
 
-        <h3 className="space-top-small">How to apply for a desk?</h3>
+        <h2 className="heading-section space-top-small">
+          How to apply for a desk?
+        </h2>
         <p>Tell us a bit about you and the hard problem you work on:</p>
         <p>
           <DeskApplicationForm />
         </p>
 
-        <h3 className="space-top-large">Photos</h3>
+        <h2 className="heading-section space-top-large">Photos</h2>
         <div className={styles.photoBricks}>
           {[1, 2, 3, 4, 5].map((n) => (
             <Link key={n} href={`/images/office-photo-${n}.jpg`}>
@@ -90,7 +105,7 @@ export default function Page() {
           ))}
         </div>
 
-        <h3 className="space-top-large">Location</h3>
+        <h2 className="heading-section space-top-large">Location</h2>
         <p>
           <Link
             href="https://maps.app.goo.gl/8SYY1vdDDcwwqGJy7"
@@ -104,7 +119,7 @@ export default function Page() {
           We are located in the Autograph Gallery building at 1 Rivington Place
           in the Shoreditch neighborhood.
         </p>
-        <h3 className="space-top-small">Getting here</h3>
+        <h2 className="heading-section space-top-small">Getting here</h2>
         <p>
           Liverpool Street Station and Old Street Station are closest
           Underground stops. There is secure bicycle parking at the office by
@@ -112,7 +127,7 @@ export default function Page() {
           Problems at the front desk.
         </p>
 
-        <h3 className="space-top-large">Teams</h3>
+        <h2 className="heading-section space-top-large">Teams</h2>
         <p>People from these organizations use the coworking space:</p>
         <ul className={styles.teamsGrid}>
           {teams.map((team) => (

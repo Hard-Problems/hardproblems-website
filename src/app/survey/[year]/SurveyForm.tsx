@@ -408,7 +408,7 @@ function SurveyFormInner({
   // far people get and where they stop. Progress only — never an
   // answer. The step's question ids say which question it is; nothing
   // here says what anyone chose. (Autocapture is off for the whole
-  // survey: see `ph-no-capture` on its <main> in page.tsx.)
+  // survey: see `ph-no-capture` on its wrapper in page.tsx.)
   useEffect(() => {
     if (phase !== 'questions') return;
     posthog?.capture('survey_step_viewed', {
@@ -1380,7 +1380,7 @@ function SurveyHeader({
   onBack?: () => void;
 }) {
   const { ui, language } = useI18n();
-  // Portalled into the site header, which is outside the <main> that
+  // Portalled into the site header, which is outside the element that
   // carries the language — so each piece says its own.
   const lang = { lang: language.htmlLang, dir: language.dir };
   // Counts the current step, so step 1 already shows some progress and

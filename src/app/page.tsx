@@ -4,8 +4,10 @@ import Link from 'next/link';
 import ArticleCard from '../components/ArticleCard';
 import CoworkingRotator from '../components/CoworkingRotator';
 import NewsletterModule from '../components/NewsletterModule';
+import OrganizationSchema from '../components/OrganizationSchema';
 import { getAllArticles } from '../lib/articles';
 import { getSurvey, isOpen, surveyAsArticle } from '../lib/survey';
+import { SITE_URL } from '../lib/siteUrl';
 import { fetchJobs, toListedJobs } from './jobs/fetchJobs';
 import JobsTeaser from './jobs/JobsTeaser';
 import styles from './articles/page.module.scss';
@@ -44,13 +46,29 @@ const CURRENT_SURVEY_YEAR = 2026;
 // repeated here. The segment's own opengraph-image.tsx still supplies
 // the image.
 export const metadata: Metadata = {
+  // Its own address. Without this a page has no opinion about which
+  // URL is the real one, and anything that reaches it with a query
+  // string or tracking parameter attached is free to treat that as a
+  // separate page. See /jobs, which has carried one for this reason.
+  alternates: { canonical: '/' },
   title: 'Hard Problems — helping designers work on urgent problems',
   description:
     'Articles, jobs and a community for designers, researchers and technologists moving into full-time work on climate change, public health and good government.',
   openGraph: {
     title: 'Hard Problems — helping designers work on urgent problems',
     description:
-      'Articles, jobs and a community for designers, researchers and technologists moving into full-time work on climate change, public health and good government.'
+      'Articles, jobs and a community for designers, researchers and technologists moving into full-time work on climate change, public health and good government.',
+    // `url`, `siteName` and `type` are not extras — they are the three
+    // fields the layout's openGraph block supplies that this one was
+    // silently dropping, because a child `openGraph` replaces the
+    // parent's wholesale. The missing og:site_name was the visible
+    // symptom: the home page named the site in its <title> and nowhere
+    // else, so nothing corroborated it. Keep these in sync with
+    // layout.tsx; /jobs/role/[slug] repeats the same three for the same
+    // reason.
+    url: SITE_URL,
+    siteName: 'Hard Problems',
+    type: 'website'
   },
   twitter: {
     card: 'summary_large_image',
@@ -96,16 +114,23 @@ export default async function Home() {
   const heroCard = surveyIsHero ? (
     <ArticleCard
       article={surveyAsArticle(survey)}
+      headingLevel="h2"
       href={`/survey/${survey.year}`}
       imageCta="Take the survey"
       durationLabel="survey"
     />
   ) : heroArticle ? (
-    <ArticleCard article={heroArticle} />
+    <ArticleCard article={heroArticle} headingLevel="h2" />
   ) : null;
 
   return (
     <>
+      {/* Who is publishing all of this. Rendered here rather than in the
+          root layout so the 580 job pages do not each repeat it; the
+          `@id` it declares is reachable from any page that wants to
+          point at the organization. */}
+      <OrganizationSchema />
+
       {/* The homepage is a grid of cards with no visible heading of its
           own, so it had no <h1> at all — the one page on the site with
           the most authority was describing itself to search engines with
@@ -122,7 +147,7 @@ export default async function Home() {
           <div className={styles.heroRow}>
             <ul className={styles.heroList}>{heroCard}</ul>
             <aside className={styles.heroJobs}>
-              <h3>New on the job board</h3>
+              <h2 className="heading-section">New on the job board</h2>
               <JobsTeaser
                 jobs={toListedJobs(recentJobs)}
                 totalCount={jobs.length}
@@ -148,7 +173,7 @@ export default async function Home() {
                     first compact card. Hidden on desktop. */}
                 {i === 2 && (
                   <li className={styles.moreContentHeading}>
-                    <h3>More content</h3>
+                    <h2 className="heading-section">More content</h2>
                   </li>
                 )}
                 {/* hero = 1st article, list = 2nd onward. Indices 0,1
@@ -168,7 +193,7 @@ export default async function Home() {
                 )}
                 {i === COWORKING_SLOT_INDEX && (
                   <li className={styles.coworkingAside}>
-                    <h3>Coworking in London</h3>
+                    <h2 className="heading-section">Coworking in London</h2>
                     <p className={styles.coworkingAsideIntro}>
                       These health and climate organizations use our{' '}
                       <Link href="/coworking">coworking space</Link> in London,
@@ -187,6 +212,7 @@ export default async function Home() {
                 )}
                 <ArticleCard
                   article={article}
+                  headingLevel="h2"
                   compact={i >= 0}
                   hero={i === COWORKING_SLOT_INDEX}
                   hideDate={article.slug === COWORKING_HERO_SLUG}
@@ -197,7 +223,7 @@ export default async function Home() {
                     serves the same purpose. */}
                 {i === 1 && (
                   <li className={styles.mobileJobsTeaser}>
-                    <h3>New on the job board</h3>
+                    <h2 className="heading-section">New on the job board</h2>
                     <JobsTeaser
                       jobs={toListedJobs(recentJobs)}
                       totalCount={jobs.length}

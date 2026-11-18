@@ -116,7 +116,8 @@ export async function generateMetadata({
   if (type === 'all') {
     return {
       title: 'All content — Hard Problems',
-      description: 'Every article from Hard Problems.'
+      description: 'Every article from Hard Problems.',
+      alternates: { canonical: '/articles/type/all' }
     };
   }
   const match = resolveMatch(type);
@@ -125,7 +126,8 @@ export async function generateMetadata({
     match.kind === 'type' ? pluralize(match.label) : match.label;
   return {
     title: `${label} — Hard Problems`,
-    description: `${label} from Hard Problems.`
+    description: `${label} from Hard Problems.`,
+    alternates: { canonical: `/articles/type/${type}` }
   };
 }
 
@@ -165,7 +167,12 @@ export default async function TypePage({ params }: Props) {
             className={`${styles.articleList} ${styles.articleListTwoCol}`}
           >
             {articles.map((article) => (
-              <ArticleCard key={article.slug} article={article} compact />
+              <ArticleCard
+                key={article.slug}
+                article={article}
+                headingLevel="h2"
+                compact
+              />
             ))}
           </ul>
         </div>

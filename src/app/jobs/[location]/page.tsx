@@ -84,6 +84,14 @@ export async function generateMetadata({
   const noun = count === 1 ? 'design role' : 'design roles';
   return {
     title: `Design jobs ${label} — Hard Problems`,
+    // Built from the RESOLVED name, not from the slug in the URL. The
+    // country alias table means several addresses reach the same hub
+    // (/jobs/usa, /jobs/united-states), and a canonical echoing the
+    // requested slug would have each of them declare itself the
+    // original — which is the duplicate-content problem it exists to
+    // prevent. locationSlug() is the same function generateStaticParams
+    // uses, so this always names the one pre-rendered address.
+    alternates: { canonical: `/jobs/${locationSlug(resolved.name)}` },
     description: `${count} ${noun} ${label} working on hard problems — public health, climate, education, and more. Updated daily from the Hard Problems job board.`,
     openGraph: {
       title: `Design jobs ${label}`,
@@ -128,7 +136,7 @@ export default async function JobsByLocationPage({ params }: Props) {
       : `in ${displayName}`;
 
   return (
-    <main className={styles.main}>
+    <div className={styles.main}>
       <p className={styles.backLink}>
         <Link href="/jobs">← All design jobs</Link>
       </p>
@@ -172,6 +180,6 @@ export default async function JobsByLocationPage({ params }: Props) {
           </ul>
         </section>
       )}
-    </main>
+    </div>
   );
 }

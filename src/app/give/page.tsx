@@ -10,6 +10,11 @@ import { CreditCard } from 'lucide-react';
 // repeated here. The segment's own opengraph-image.tsx still supplies
 // the image.
 export const metadata: Metadata = {
+  // Its own address. Without this a page has no opinion about which
+  // URL is the real one, and anything that reaches it with a query
+  // string or tracking parameter attached is free to treat that as a
+  // separate page. See /jobs, which has carried one for this reason.
+  alternates: { canonical: '/give' },
   title: 'Support our work — Hard Problems',
   description:
     'Hard Problems is a lean nonprofit, primarily self-funded by its founding team. A gift helps us do more to move designers into work on urgent problems.',
@@ -54,7 +59,7 @@ export default function Page() {
         <p>
           Or email us: <em>contact@hardproblems.com</em>
         </p>
-        <h3 className="space-top-xlarge">Ideas for gifts</h3>
+        <h2 className="heading-section space-top-xlarge">Ideas for gifts</h2>
         <p>
           Here are a few ideas for gifts. We&rsquo;re open to all kinds of new
           ideas too, so please get in touch if you have ideas that might be
@@ -86,7 +91,7 @@ export default function Page() {
             our Newsletter.
           </li>
         </ul>
-        <h3 className="space-top-xlarge">Thank you</h3>
+        <h2 className="heading-section space-top-xlarge">Thank you</h2>
         <p>
           Thank you to all of these generous people who have helped Hard
           Problems.

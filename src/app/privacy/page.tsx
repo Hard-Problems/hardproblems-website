@@ -11,6 +11,11 @@ import Link from 'next/link';
 // explicit openGraph block replaces the parent's rather than merging,
 // so leaving `images` out silently drops the card image.
 export const metadata: Metadata = {
+  // Its own address. Without this a page has no opinion about which
+  // URL is the real one, and anything that reaches it with a query
+  // string or tracking parameter attached is free to treat that as a
+  // separate page. See /jobs, which has carried one for this reason.
+  alternates: { canonical: '/privacy' },
   title: 'Privacy notice — Hard Problems',
   description:
     'What personal information Hard Problems collects, how and why we use it, our lawful bases for doing so, and the data protection rights you have.',
@@ -70,9 +75,9 @@ export default function Page() {
           </li>
         </ul>
 
-        <h3 className="space-top-large" id="contact">
+        <h2 className="heading-section space-top-large" id="contact">
           Contact details
-        </h3>
+        </h2>
         <dl>
           <dt>Post</dt>
           <dd>Hard Problems, 1 Rivington Place, LONDON, EC2A 3BA, GB</dd>
@@ -80,9 +85,9 @@ export default function Page() {
           <dd>contact@hardproblems.com</dd>
         </dl>
 
-        <h3 className="space-top-large" id="info">
+        <h2 className="heading-section space-top-large" id="info">
           What information we collect, use, and why
-        </h3>
+        </h2>
         <p>
           We collect or use the following information to receive donations or
           funding and organize fundraising activities:
@@ -163,9 +168,9 @@ export default function Page() {
           <span className="tag">Names and contact details</span>
         </p>
 
-        <h3 className="space-top-large" id="lawful">
+        <h2 className="heading-section space-top-large" id="lawful">
           Lawful bases and data protection rights
-        </h3>
+        </h2>
         <p>
           Under UK data protection law, we must have a “lawful basis” for
           collecting and using your personal information. There is a list of
@@ -285,9 +290,9 @@ export default function Page() {
           </p>
         </div>
 
-        <h3 className="space-top-large" id="cookies">
+        <h2 className="heading-section space-top-large" id="cookies">
           Analytics
-        </h3>
+        </h2>
         <p>
           We use <b>PostHog</b> to understand how visitors use the site. When
           you visit hardproblems.com, PostHog runs in your browser and captures
@@ -309,9 +314,9 @@ export default function Page() {
           use the US cloud region of PostHog.
         </p>
 
-        <h3 className="space-top-large" id="processors">
+        <h2 className="heading-section space-top-large" id="processors">
           Service providers and international transfers
-        </h3>
+        </h2>
         <p>
           We use the following third-party processors to operate the website and
           our services. Some of them process data outside the UK and EEA; where
@@ -376,14 +381,14 @@ export default function Page() {
           </dd>
         </dl>
 
-        <h3 className="space-top-large" id="where">
+        <h2 className="heading-section space-top-large" id="where">
           Where we get personal information from
-        </h3>
+        </h2>
         <p>Directly from you</p>
 
-        <h3 className="space-top-large" id="survey">
+        <h2 className="heading-section space-top-large" id="survey">
           The annual survey
-        </h3>
+        </h2>
         <p>
           Once a year we run a survey about working in design (for example,{' '}
           <Link href="/survey/2026">
@@ -431,9 +436,9 @@ export default function Page() {
           written answers.
         </p>
 
-        <h3 className="space-top-large" id="research">
+        <h2 className="heading-section space-top-large" id="research">
           User research
-        </h3>
+        </h2>
         <p>
           From time to time we invite people to a user research session to help
           us improve Hard Problems, for example how people find work through our
@@ -454,9 +459,9 @@ export default function Page() {
           the details at the top of this privacy notice.
         </p>
 
-        <h3 className="space-top-large" id="keep">
+        <h2 className="heading-section space-top-large" id="keep">
           How long we keep information
-        </h3>
+        </h2>
         <p>
           Newsletter email addresses are kept until you unsubscribe from the
           newsletter.
@@ -485,11 +490,13 @@ export default function Page() {
           within 3 months of the research round ending.
         </p>
 
-        <h3 className="space-top-large">Last updated</h3>
+        <h2 className="heading-section space-top-large">Last updated</h2>
         <p>11 November 2026</p>
       </section>
       <section className="right">
-        <h3 id="complain">How to complain</h3>
+        <h2 className="heading-section" id="complain">
+          How to complain
+        </h2>
         <p>
           If you have any concerns about our use of your personal data, you can
           make a complaint to us using the contact details at the top of this
