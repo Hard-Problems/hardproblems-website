@@ -828,9 +828,32 @@ nav.site-nav-bar {
   display: flex;
   justify-content: center;
   width: 100%;
-  flex-wrap: nowrap;
   margin: 0 0 2rem 0;
   border-bottom: 1px solid #b7ddc8;
+  /* Smaller than the 14px `nav` default: the bar now carries five
+     controls rather than four, and at 14px the fifth left no margin
+     on a 375px phone. */
+  font-size: var(--font-size-xs);
+  /* The "More" menu hangs below the bar, so the bar itself must not
+     scroll or clip — which is why the overflow moved down to
+     .site-nav-scroll, and why this is positioned. */
+  position: relative;
+}
+
+/* The scrolling half: the links, and nothing that has to escape. */
+.site-nav-scroll {
+  display: flex;
+  justify-content: center;
+  /* Sized to its links and no wider. Growing to fill the bar would
+     push "More" out to the right edge, away from the run it belongs
+     to; the <nav> centres the two together instead. It still shrinks,
+     which is what keeps the scroll below. */
+  flex: 0 1 auto;
+  /* A flex item's min-width is auto, so without this the row of links
+     would refuse to shrink below its own content and would push "More"
+     off the end of the bar instead of scrolling. */
+  min-width: 0;
+  flex-wrap: nowrap;
   overflow-x: auto;
   /* `overflow-x: auto` promotes `overflow-y` from `visible` to `auto`
      per the CSS overflow spec, and the active-tab underline
@@ -846,12 +869,18 @@ nav.site-nav-bar {
   scrollbar-width: none;
 }
 
-nav.site-nav-bar::-webkit-scrollbar {
+.site-nav-scroll::-webkit-scrollbar {
   display: none;
 }
 
+/* `.link` alongside `a` here and on hover, so the "More" button is
+   typeset and padded by the same rules as the links it sits among
+   rather than by a copy of them that can drift. Not the active
+   underline below, though — that marks the page you are on, and the
+   button is a control rather than a page. */
 .site-nav-bar a,
-.site-nav-bar a:visited {
+.site-nav-bar a:visited,
+.site-nav-bar .link {
   flex: 0 0 auto;
   text-align: center;
   white-space: nowrap;
@@ -864,7 +893,9 @@ nav.site-nav-bar::-webkit-scrollbar {
 }
 
 .site-nav-bar a:hover,
-.site-nav-bar a:focus-visible {
+.site-nav-bar a:focus-visible,
+.site-nav-bar .link:hover,
+.site-nav-bar .link:focus-visible {
   color: var(--color-mid-green);
   text-decoration: underline;
   text-decoration-color: #b7ddc8;
@@ -889,6 +920,116 @@ nav.site-nav-bar::-webkit-scrollbar {
 
 .site-nav-bar a.active::after {
   transform: scaleX(1);
+}
+
+/* The "More" control and the menu it opens. Positioned, so the menu
+   hangs off this rather than off the bar: it lands under the button
+   wherever the row of links leaves it. */
+.site-nav-more {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+}
+
+/* A <button>, because it opens something rather than going somewhere.
+   This is the whole of the reset — everything else it needs it already
+   shares with the links above. */
+.site-nav-more-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.site-nav-more-chevron {
+  width: 1.1em;
+  height: 1.1em;
+  stroke-width: 2;
+  transition: transform 0.2s ease;
+}
+
+/* Points up while the menu is open. Driven off `aria-expanded`, which
+   the button has to carry anyway, so the arrow cannot disagree with
+   what a screen reader is told. */
+.site-nav-more-button[aria-expanded='true'] .site-nav-more-chevron {
+  transform: rotate(180deg);
+}
+
+.site-nav-more-menu {
+  position: absolute;
+  top: 100%;
+  /* Right-aligned: "More" is the last control in the bar, so the menu
+     opens inwards and cannot run off the edge of the screen. */
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  /* Clear of the bar's own bottom rule rather than tucked under it:
+     the panel is bordered on all four sides, and butted up against
+     that rule the two would read as one 2px line across the top. */
+  margin-top: 5px;
+  min-width: 12rem;
+  padding: 0.3rem 0;
+  background: #fff;
+  border: 1px solid #b7ddc8;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 10%);
+}
+
+/* `hidden` is display:none on its own, but the rule above sets
+   `display: flex` at the same specificity and later in the file. */
+.site-nav-more-menu[hidden] {
+  display: none;
+}
+
+/* Reads as a list rather than a row of tabs: left-aligned, and tall
+   enough to tap without the 1.2rem the bar's links carry to set its
+   height. */
+.site-nav-bar .site-nav-more-menu a {
+  text-align: left;
+  padding: 0.75rem 1rem;
+}
+
+/* The sliding underline belongs to the bar. Down here it would draw a
+   green rule across the bottom of a menu row. */
+.site-nav-bar .site-nav-more-menu a::after {
+  display: none;
+}
+
+.site-nav-bar .site-nav-more-menu a.active {
+  color: var(--color-mid-green);
+  font-weight: 600;
+}
+
+/* About is rendered twice — once in the bar, once in the menu — and
+   exactly one of the two is ever displayed. The hidden one is
+   `display: none`, so it is out of the accessibility tree as well as
+   out of the layout: a reader is never offered the same link twice.
+   This is the menu copy's resting state; the query below swaps them.
+*/
+.site-nav-collapsed-only {
+  display: none;
+}
+
+/* Measured at 12px: the four links come to 220px and "More" to 66px,
+   so the full bar needs 286px of room and the page gives it the
+   viewport less 48px of body padding. All five therefore stop fitting
+   at 334px, and below that the bar would clip and scroll. Collapsing
+   at 374px keeps at least 40px of slack whenever the bar is showing
+   all four, which also leaves room for a wider system font than the
+   one these numbers were taken from. */
+@media only screen and (max-width: 374px) {
+  .site-nav-bar .site-nav-collapsible {
+    display: none;
+  }
+
+  .site-nav-bar .site-nav-collapsed-only {
+    display: block;
+  }
 }
 
 /* Default: short labels visible, long hidden. Swap at the desktop
