@@ -34,6 +34,7 @@ import {
   Briefcase,
   Building2,
   ChevronRight,
+  Globe,
   Laptop,
   MapPin,
   SquareMousePointer,
@@ -259,6 +260,27 @@ function formatDate(iso: string | null): string {
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
+// What the Details table shows for the employer's URL: the host alone,
+// so "https://www.digitalservice.bund.de/en/careers" reads as
+// "digitalservice.bund.de". The link still goes to the full address —
+// this is only what a reader sees.
+//
+// Three things get dropped because none of them tells a reader
+// anything: the scheme, a leading "www.", and the path. Every URL in
+// the sheet today carries a scheme, but a hand-typed one might not, so
+// a failed parse falls back to trimming the same three by hand rather
+// than to showing nothing.
+function displayHost(url: string): string {
+  const trimmed = (url || '').trim();
+  if (!trimmed) return '';
+  const bare = (host: string) => host.replace(/^www\./i, '');
+  try {
+    return bare(new URL(trimmed).hostname);
+  } catch {
+    return bare(trimmed.replace(/^https?:\/\//i, '')).split('/')[0];
+  }
+}
+
 // Just the physical place. The remote/hybrid field is shown as its own
 // row in the Details table rather than being folded in here, so the two
 // facts don't run together in the subheading under the title.
@@ -384,14 +406,33 @@ export default async function JobPage({ params }: Props) {
   // Icons label the FIELD, not the value — the row is read as
   // "location: Boston", so the marker belongs to "Location". (The
   // value-specific sector icon already appears on the chip above.)
-  const facts: { label: string; value: string; Icon: LucideIcon }[] = [
+  const facts: {
+    label: string;
+    value: string;
+    href?: string;
+    Icon: LucideIcon;
+  }[] = [
     { label: 'Location', value: where, Icon: MapPin },
     { label: 'On-site or remote', value: job.remote, Icon: Laptop },
     { label: 'Salary', value: job.salary, Icon: Banknote },
     { label: 'Sector', value: sector, Icon: SquareMousePointer },
     { label: 'Role', value: job.role, Icon: Briefcase },
     { label: 'Seniority', value: job.seniority, Icon: UsersRound },
-    { label: 'Organisation', value: job.typeOfOrg, Icon: Building2 }
+    { label: 'Organisation', value: job.typeOfOrg, Icon: Building2 },
+    // The employer's own site, which until now the page offered only
+    // behind the company name in the header, where nothing says it is
+    // a link to anywhere in particular. Last in the table because it
+    // belongs with Organisation above it.
+    //
+    // Deliberately not the apply link: that is Column R, it points at
+    // a posting on an ATS rather than at the organisation, and it
+    // already has the green card to itself.
+    {
+      label: 'Website',
+      value: displayHost(job.companyUrl),
+      href: job.companyUrl,
+      Icon: Globe
+    }
   ];
   const visibleFacts = facts.filter((f) => f.value && f.value.trim());
 
@@ -472,11 +513,41 @@ export default async function JobPage({ params }: Props) {
   const listed = formatDate(job.date);
   const deadline = formatDate(job.expiresAt);
 
+  const impact = job.impactSummary || job.goodForWorldExplanation;
+
+  // Column X when the long-form write-up exists, Column U otherwise.
+  // Both are newline-separated prose, so `paragraphs` handles either.
+  const aboutRole = fullText || job.jobDescription;
+
+  // Which prose block the apply card follows once the columns flatten.
+  //
+  // The card is rendered in the side column with the Details table
+  // under it, which is where the pair belongs on desktop: together they
+  // are what you read to decide, beside the prose rather than inside
+  // it. Below the two-column breakpoint that column flattens back into
+  // the one reading order, and the card should land where it has always
+  // been — after the first block of prose, not stranded under all of
+  // it on a job with a long write-up.
+  //
+  // So this no longer chooses where the card is rendered, only its CSS
+  // `order` once flattened. The chain follows the section order below:
+  // impact, then the role write-up. There used to be a third fallback —
+  // a separate company blurb from Column M — but that section is gone,
+  // so a job with neither falls through to null, where the card has no
+  // prose to follow and goes first.
+  const applyAfter = impact ? 'why' : aboutRole ? 'role' : null;
+  const applyOrder =
+    applyAfter === 'why'
+      ? styles.applyAfterWhy
+      : applyAfter === 'role'
+        ? styles.applyAfterRole
+        : styles.applyFirst;
+
   // Rendered when there is anything to show, so the dates survive a job
   // that somehow arrives without an apply URL (none do today).
   const applyBlock =
     job.url || listed || deadline ? (
-      <p className={styles.applyRow}>
+      <p className={`${styles.applyRow} ${applyOrder}`}>
         {job.url && (
           <a
             href={job.url}
@@ -507,25 +578,6 @@ export default async function JobPage({ params }: Props) {
         )}
       </p>
     ) : null;
-
-  // The apply block sits at the end of the first prose section, between
-  // that section's copy and the next heading. Which section that is
-  // depends on which fields the sheet filled in, hence the fallback
-  // chain; `null` means there is no prose at all and the block stands on
-  // its own under the chips.
-  const impact = job.impactSummary || job.goodForWorldExplanation;
-
-  // Column X when the long-form write-up exists, Column U otherwise.
-  // Both are newline-separated prose, so `paragraphs` handles either.
-  const aboutRole = fullText || job.jobDescription;
-
-  // The apply block closes the first prose section on the page, so this
-  // chain follows the section order below: impact, then the role
-  // write-up. There used to be a third fallback — a separate company
-  // blurb from Column M — but that section is gone, so a job with
-  // neither of the two now falls through to null and the block renders
-  // in the header instead.
-  const applyAfter = impact ? 'why' : aboutRole ? 'role' : null;
 
   return (
     <div className={styles.job}>
@@ -592,53 +644,76 @@ export default async function JobPage({ params }: Props) {
             goodForWorld={job.goodForWorld}
           />
         </div>
-
-        {applyAfter === null && applyBlock}
       </div>
 
-      {(impact || isStaffPick) && (
-        <section className={styles.block}>
-          <h2 className="section-label">Why this work matters</h2>
-          {impact && <RichText text={impact} />}
-          {/* Says what the "Our Pick" chip at the top of the page means,
-              here rather than beside the chip because the reason a job is
-              a pick is the same thing this section is about. */}
-          {isStaffPick && (
-            <p>
-              This job was selected as &ldquo;Our Pick&rdquo; because the hiring
-              organization is particularly good for the world.
-            </p>
+      {/* Two columns on desktop: the prose on the left, and on the
+          right the apply card with the Details table under it —
+          the facts you weigh while deciding, kept together and out
+          of the middle of the description. Below that breakpoint
+          the two wrappers fall away and all four blocks stack in
+          reading order. Both halves are in `.columns` below. */}
+      <div className={styles.columns}>
+        <div className={styles.mainCol}>
+          {(impact || isStaffPick) && (
+            <section className={`${styles.block} ${styles.orderWhy}`}>
+              <h2 className="section-label">Why this work matters</h2>
+              {impact && <RichText text={impact} />}
+              {/* Says what the "Our Pick" chip at the top of the page means,
+                  here rather than beside the chip because the reason a job is
+                  a pick is the same thing this section is about. */}
+              {isStaffPick && (
+                <p>
+                  This job was selected as &ldquo;Our Pick&rdquo; because the
+                  hiring organization is particularly good for the world.
+                </p>
+              )}
+            </section>
           )}
-          {applyAfter === 'why' && applyBlock}
-        </section>
-      )}
 
-      {aboutRole && (
-        <section className={styles.block}>
-          <h2 className="section-label">
-            About {job.company || 'the organisation'}
-          </h2>
-          <RichText text={aboutRole} />
-          {applyAfter === 'role' && applyBlock}
-        </section>
-      )}
+          {aboutRole && (
+            <section className={`${styles.block} ${styles.orderRole}`}>
+              <h2 className="section-label">
+                About {job.company || 'the organisation'}
+              </h2>
+              <RichText text={aboutRole} />
+            </section>
+          )}
+        </div>
 
-      {visibleFacts.length > 0 && (
-        <section className={styles.block}>
-          <h2 className="section-label">Details</h2>
-          <dl className={styles.facts}>
-            {visibleFacts.map(({ label, value, Icon }) => (
-              <div key={label}>
-                <dt>
-                  <Icon className={styles.factIcon} aria-hidden="true" />
-                  {label}
-                </dt>
-                <dd>{value}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      )}
+        <div className={styles.sideCol}>
+          {applyBlock}
+
+          {visibleFacts.length > 0 && (
+            <section className={`${styles.block} ${styles.orderDetails}`}>
+              <h2 className="section-label">Details</h2>
+              <dl className={styles.facts}>
+                {visibleFacts.map(({ label, value, href, Icon }) => (
+                  <div key={label}>
+                    <dt>
+                      <Icon className={styles.factIcon} aria-hidden="true" />
+                      {label}
+                    </dt>
+                    <dd>
+                      {href ? (
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={styles.factLink}
+                        >
+                          {value}
+                        </a>
+                      ) : (
+                        value
+                      )}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          )}
+        </div>
+      </div>
 
       <div className={styles.footerNote}>
         <p>

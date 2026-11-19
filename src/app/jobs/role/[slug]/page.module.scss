@@ -77,15 +77,115 @@
   color: #666;
 }
 
-// Sits at the end of the first prose section, between that section's
-// copy and the next heading. `.job .applyRow` to outweigh `.block p`,
-// which would otherwise set the margins.
+// The middle of the page: the two prose sections, the apply card and
+// the Details table. On desktop they split into a reading column and a
+// side column — see the 1000px block at the foot of this file. Here,
+// flattened to one phone-width stack, they are a plain vertical list.
+//
+// A grid rather than normal flow for one reason: `order`. The card is
+// rendered in the side column with the Details table, because on
+// desktop that pair is what you read to decide — but flattened it
+// belongs back after the first block of prose, not under the whole
+// write-up, which on a long listing is several screens down. Order is
+// the only way to say that without rendering the card twice.
+.columns {
+  display: grid;
+
+  // The rhythm between blocks is the grid's job here rather than each
+  // block's own margin. Grid items do not collapse margins with their
+  // neighbours the way these sections did in normal flow, so the old
+  // 3.75rem bottom margins would stack on top of the card's own margin
+  // and open a 6rem hole above it.
+  row-gap: 3.75rem;
+}
+
+// `contents`, so the four blocks are grid items of `.columns` itself
+// and can be ordered; the wrappers only become real boxes at the
+// two-column breakpoint. Safe on a <div>, which has no semantics for
+// `display: contents` to drop out of the accessibility tree.
+.mainCol,
+.sideCol {
+  display: contents;
+}
+
+// The flattened reading order. The card takes whichever of its three
+// classes matches the prose it follows — see `applyAfter` in page.tsx,
+// which is now about this and nothing else.
+.applyFirst {
+  order: 0;
+}
+
+.orderWhy {
+  order: 1;
+}
+
+.applyAfterWhy {
+  order: 2;
+}
+
+.orderRole {
+  order: 3;
+}
+
+.applyAfterRole {
+  order: 4;
+}
+
+.orderDetails {
+  order: 5;
+}
+
+// Set by `row-gap` above, so the blocks must not also carry their own.
+.job .columns section.block {
+  margin-bottom: 0;
+}
+
+// `.job .applyRow` to outweigh `.block p`, which would otherwise set
+// the margins. Spacing is the grid's, as above.
 .job .applyRow {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 0.6rem;
-  margin: 2.25rem 0 0.5rem 0;
+  margin: 0;
+}
+
+// The apply button fills whatever holds it — the green card on
+// desktop, the full column width on a phone. It is the one thing on
+// this page a reader came to press, and at its natural width it sat
+// in the middle looking incidental.
+//
+// `justify-content` because the base class is an inline-flex packed
+// to its start: stretched to full width without it, the label and its
+// arrow would hold the left edge. The vertical padding is a little
+// over the 6px that `black-button--small` sets for genuinely tight
+// contexts — enough to carry the extra width without the button
+// reading as a slab.
+//
+// `:global`, because `black-button` is a site-wide class: written
+// bare inside a module it would be hashed and match nothing. Three
+// classes, so it outweighs `a.black-button.black-button--small`
+// whichever stylesheet lands first.
+.job .applyRow :global(.black-button) {
+  width: 100%;
+  // The site is content-box, so `width: 100%` on its own sets the
+  // CONTENT width to the full inner width and then adds the button's
+  // own padding and 1px border on top — wider than the space it was
+  // given, eating into the card's side padding at both ends.
+  box-sizing: border-box;
+  justify-content: center;
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+  // At full width the side padding no longer holds the button off the
+  // label — it only decides where the label is allowed to wrap. At
+  // the narrow end of the side column the card has 255px to give and
+  // the label measures 227, so the variant's 12px left just 2px of
+  // headroom; 8px makes that 10.
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  // And if a wider system font takes even that, two lines should look
+  // deliberate rather than collided. The base class sets 1.
+  line-height: 1.25;
 }
 
 // Listed date, and the deadline when there is one, sitting under the
@@ -195,10 +295,10 @@ h3.contentHeading {
   padding: 0;
   margin: 0 0 3.75rem 0;
   // The same global `.container section` rule that supplies the padding
-  // above also sets `position: relative`. That is meant for the
-  // page-level sections; here it put every block into the positioned
-  // paint layer, so a later section rendered ABOVE the floated apply
-  // card and silently swallowed every click on the button.
+  // above also sets `position: relative`, which is meant for the
+  // page-level sections it was written for. These are inner blocks with
+  // nothing positioned against them, and putting every one of them into
+  // the positioned paint layer has caused trouble before.
   position: static;
 }
 
@@ -250,6 +350,27 @@ h3.contentHeading {
   }
 }
 
+// The one Details value that is a link. Underlined, because among a
+// column of plain facts the link colour alone does not read as
+// "clickable" — and the green rule is the same understatement the
+// footer note uses.
+//
+// `overflow-wrap: anywhere` so a long host breaks inside the column
+// instead of widening it: it is the one value here that is not a word
+// the browser knows how to hyphenate.
+.factLink {
+  text-decoration: underline;
+  text-decoration-color: #b7ddc8;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+  overflow-wrap: anywhere;
+}
+
+.factLink:hover,
+.factLink:focus {
+  text-decoration-color: currentColor;
+}
+
 // Field marker on each Details row. Deliberately inline-with-baseline
 // rather than a flex child: making <dt> a flex container would re-centre
 // its text inside the row box and undo the line-height alignment above.
@@ -261,6 +382,47 @@ h3.contentHeading {
   vertical-align: -0.16em;
   color: #999;
   stroke-width: 1.8;
+}
+
+// A Details row narrow enough that the label has to stack on top of its
+// value. The icon steps out of the label's line and centres itself
+// against the pair, so it marks the row rather than bulleting the
+// label.
+//
+// A mixin rather than one more selector because the two places this
+// happens — the side column on desktop, and the phone layout — sit in
+// different media queries and so cannot share a rule. The <dt> keeps
+// the icon as a child, where it is valid markup; only its painting
+// moves.
+@mixin stacked-fact-row {
+  position: relative;
+  grid-template-columns: 1fr;
+  gap: 0.15rem 0;
+  // Left padding clears the positioned icon: 1rem of icon, then the
+  // 0.75rem of air its `margin-right` used to supply inline.
+  padding: 0.7rem 0 0.7rem 1.75rem;
+
+  dt {
+    font-size: var(--font-size-sm);
+  }
+
+  .factIcon {
+    position: absolute;
+    left: 0;
+    // Centred on the row box rather than sitting on the label's
+    // baseline, which is the whole point of this treatment. The row's
+    // top and bottom padding match, so the border box centres exactly
+    // where its two lines of content do.
+    top: 50%;
+    transform: translateY(-50%);
+    // An explicit size: `1em` tracked the label's font-size, and the
+    // label is no longer what it sits beside.
+    width: 1rem;
+    height: 1rem;
+    // Inline-flow trim that stops applying once it is positioned.
+    margin-right: 0;
+    vertical-align: baseline;
+  }
 }
 
 // Related-role lists. Rows come from RelatedJobRow, which uses the
@@ -331,7 +493,10 @@ h3.contentHeading {
   display: flex;
   align-items: flex-start;
   gap: 0.85rem;
-  margin: 3rem 0 3.5rem 0;
+  // 3.75rem, matching the page's rhythm, because it is now the whole
+  // gap: the columns above end flush, where the sections used to
+  // collapse their own 3.75rem bottom margin into this one.
+  margin: 3.75rem 0 3.5rem 0;
   padding: 1rem 1.25rem;
   background: lemonchiffon;
   border-left: 1px solid #e8c200;
@@ -370,23 +535,81 @@ h3.contentHeading {
   }
 }
 
-// On desktop the apply block becomes a bordered card floated to the
-// right, so the description text runs alongside it instead of being
-// interrupted by it. Breakpoint matches the site's own desktop
-// breakpoint; below it the block stays full width and in flow.
+// Desktop: the page splits into a reading column and a side column
+// holding the apply card with the Details table under it. Breakpoint
+// matches the site's own desktop breakpoint.
+//
+// This replaces a right-floated apply card. The float kept the prose
+// full width below it, but it could only ever sit where it fell in the
+// text, which left the facts you actually weigh — the apply button,
+// the deadline, the Details table — scattered down the page instead of
+// collected in one place.
 @media only screen and (min-width: 1000px) {
+  // Room for the second column. At 760px a sidebar would have left the
+  // description about 430px wide, narrower than anything else on the
+  // site; this keeps the reading measure near where it was and spends
+  // the empty desktop margins on the column instead. Still well inside
+  // the 1400px `.main` cap.
+  .job {
+    max-width: 1140px;
+  }
+
+  .columns {
+    // minmax(0, 1fr) rather than a bare 1fr: 1fr is floored at
+    // min-content, so one unbreakable string in a description — a long
+    // URL, a hyphen-free compound — would widen the reading column past
+    // its share and squeeze the sidebar.
+    //
+    // The side column is a share of the page rather than a fixed width,
+    // between 18 and 24rem. It holds a two-line table, not just the
+    // card, so at the top of the range it has room for a value and its
+    // label without either going to three lines; at the bottom — around
+    // the 1000px breakpoint, where the page has 864px to divide — a
+    // fixed 24rem would have cut the description to about 430px, which
+    // is narrower than this site sets text anywhere.
+    grid-template-columns: minmax(0, 1fr) clamp(18rem, 36%, 24rem);
+    column-gap: 3rem;
+    // Each column is as tall as its own contents. Without this the
+    // shorter one stretches to the row height, and the Details table's
+    // bottom rule would hang in space under the last fact.
+    align-items: start;
+  }
+
+  // Real boxes now, so each column flows and sizes independently —
+  // which is the point. The table sits under the card at the card's
+  // height, not level with whatever the prose is doing at that point.
+  .mainCol,
+  .sideCol {
+    display: block;
+  }
+
+  // Back in normal flow, so the blocks carry their own rhythm again
+  // rather than the grid's row gap.
+  .job .mainCol section.block,
+  .job .sideCol section.block {
+    margin-bottom: 3.75rem;
+  }
+
+  // The card and the table read as one unit, so they sit closer
+  // together than two sections of the page do.
+  .job .sideCol .applyRow {
+    margin-bottom: 2.5rem;
+  }
+
+  // Nothing hangs below the last block in either column: the gap down
+  // to the note is set once, by the note itself. Last, so it also
+  // flattens the card's margin on a job with no Details to follow it.
+  .job .mainCol > :last-child,
+  .job .sideCol > :last-child {
+    margin-bottom: 0;
+  }
+
+  // The card itself. It fills the side column, so none of the float's
+  // own machinery survives: no width, no side margin, and no
+  // `position: relative` to lift it over the paragraphs that used to
+  // wrap around it and swallow every click on the button.
   .job .applyRow {
-    float: right;
-    // Positioned so the box is hit-testable. The float escapes its own
-    // section, so the paragraphs of the NEXT section overlap it: their
-    // line boxes wrap around it, but their block boxes still cover that
-    // area, and in-flow inline content paints above floats. The result
-    // was a card that looked right and swallowed every click on the
-    // button. `position: relative` lifts it above that content.
-    position: relative;
-    width: 18rem;
-    margin: 2.5rem 0 2.75rem 2.5rem;
-    padding: 2.25rem 1.25rem 1.1rem;
+    padding: 2.5rem 1.75rem 1.5rem;
     // The background defines the card, so no border — the two would be
     // the same hue anyway.
     background: var(--color-light-green);
@@ -394,15 +617,6 @@ h3.contentHeading {
     gap: 0.5rem;
     align-items: center;
     text-align: center;
-  }
-
-  // The box is a <p> and is the last child of its section, so
-  // `.block p:last-child { margin-bottom: 0 }` (0,2,1) outranks the rule
-  // above (0,2,0) and flattens the bottom margin. One more class wins it
-  // back. Kept separate so the box styling still applies in the rare
-  // placement outside a .block, where that rule never matches.
-  .job .block .applyRow {
-    margin-bottom: 2.75rem;
   }
 
   // Inside the box the supporting text is dark green rather than grey,
@@ -423,15 +637,11 @@ h3.contentHeading {
     font-weight: 600;
   }
 
-  // The float is taller than a short "Why this work matters" summary, so
-  // it can reach into the blocks below. These establish their own
-  // formatting contexts (a grid, and bordered lists), which means they
-  // would sit alongside the float at a squeezed width rather than
-  // wrapping around it — clear them instead.
-  .job .facts,
-  .job .relatedList,
-  .job .footerNote {
-    clear: right;
+  // The Details table in the side column. 230px of label would leave
+  // almost nothing for the value, so the rows stack — the same shape,
+  // for the same reason, as the phone layout at the foot of this file.
+  .job .sideCol .facts > div {
+    @include stacked-fact-row;
   }
 }
 
@@ -439,11 +649,6 @@ h3.contentHeading {
   // Stack label over value — 230px of label leaves too little room for
   // the value at phone widths.
   .facts > div {
-    grid-template-columns: 1fr;
-    gap: 0.15rem 0;
-  }
-
-  .facts dt {
-    font-size: var(--font-size-sm);
+    @include stacked-fact-row;
   }
 }
