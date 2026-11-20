@@ -19,6 +19,13 @@ export const coworkingTeams: CoworkingTeam[] = [
     image: '/images/coworking/abuela.jpg'
   },
   {
+    name: 'Access Now',
+    href: 'https://www.accessnow.org/',
+    description:
+      'Defending the digital rights of people and communities at risk.',
+    image: '/images/coworking/access-now.jpg'
+  },
+  {
     name: 'Blute',
     href: 'https://www.blute.co.uk/',
     description: 'Giving healthcare students a voice on clinical placements.',
@@ -45,6 +52,13 @@ export const coworkingTeams: CoworkingTeam[] = [
     image: '/images/coworking/elyfia.jpg'
   },
   {
+    name: 'Forest',
+    href: 'https://exploreforest.ai/',
+    description:
+      'Polling and socioeconomic data modelled to every constituency.',
+    image: '/images/coworking/forest.jpg'
+  },
+  {
     name: 'Grene',
     href: 'https://grene.co.uk/',
     description:
@@ -62,6 +76,18 @@ export const coworkingTeams: CoworkingTeam[] = [
     href: 'https://www.askjoeynow.com/',
     description: "Your child's GP on Whatsapp.",
     image: '/images/coworking/joey.jpg'
+  },
+  {
+    name: 'Kestrix',
+    href: 'https://www.kestrix.io/',
+    description: 'Mapping heat loss from buildings with drones.',
+    image: '/images/coworking/kestrix.jpg'
+  },
+  {
+    name: 'Latte Labs',
+    href: 'https://www.lattehealth.co.uk/',
+    description: 'AI tools for clinicians, starting with clinician notes.',
+    image: '/images/coworking/latte-labs.jpg'
   },
   {
     name: 'Minimum Viable Narrative',
