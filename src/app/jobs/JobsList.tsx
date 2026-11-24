@@ -47,9 +47,10 @@ type ClickSource = 'title' | 'company' | 'favicon';
 
 // Pretty-print a role name for the UI. The internal value (used for filter
 // matching and URL params) stays as the raw sheet value so data lookups
-// still work.
+// still work — which is why this maps the label only and the sheet keeps
+// saying "Copywriter".
 function displayRole(role: string): string {
-  if (role.toLowerCase() === 'copywriter') return 'Copywriting';
+  if (role.toLowerCase() === 'copywriter') return 'Content design/writing';
   return role;
 }
 
