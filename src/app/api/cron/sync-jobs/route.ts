@@ -103,20 +103,28 @@ export async function GET(request: Request) {
   // No cache-busting argument any more: the Sheets API read is an
   // authenticated no-store request, so the Data Cache staleness that
   // this endpoint was built to defeat cannot recur through it.
-  const rows = await fetchSheetRows();
-  if (rows === null) {
+  const read = await fetchSheetRows();
+  if (read.rows === null) {
     // Leave the existing snapshot in place — a stale board beats an
     // empty one, and the TTL gives us hours of runway to notice.
     //
     // `configured` separates "the credentials are missing" from "the
-    // read failed", which are very different things to go and fix.
+    // read failed", and `reason` says which read failure it was: a 403
+    // from sheets.googleapis.com (sheet unshared, or API disabled), a
+    // 403 from iamcredentials (missing workloadIdentityUser), a 400
+    // from sts (issuer/audience mismatch), a 400 from sheets (the tab
+    // was renamed) — or a transient 5xx from Google, which needs
+    // nothing done at all. Without it the alert cannot tell the one
+    // that needs no action from the three that need a fix, and the
+    // answer is only in the runtime log.
     return syncFailed(
       'sheet-fetch-failed',
       'could not read the Google Sheet, keeping the previous snapshot',
       502,
-      { configured: sheetsApiConfigured() }
+      { configured: sheetsApiConfigured(), reason: read.reason }
     );
   }
+  const rows = read.rows;
 
   const parsed = parseJobsRows(rows);
   if (parsed.length === 0) {

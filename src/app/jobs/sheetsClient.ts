@@ -104,7 +104,8 @@ function authClient(
   });
 
   if (!created) {
-    console.warn('[sheets] could not build the federated credential client');
+    // The caller turns this into the reason it reports; no warn here, or
+    // the same sentence lands in the log twice.
     return null;
   }
 
@@ -115,19 +116,43 @@ function authClient(
   return client;
 }
 
+/**
+ * The outcome of a read: the rows, or null plus why.
+ *
+ * The reason is carried rather than only logged because the log line it
+ * used to be lived in Vercel's runtime logs and nowhere else, while the
+ * Slack alert that actually reaches a person said only
+ * `configured: true`. That rules out "nobody set this up" and leaves
+ * every other cause — the four below — indistinguishable, three of
+ * which need a fix and one of which needs nothing. On 2026-11-23 a
+ * single 03:30 failure took a dig through the logs to classify, and the
+ * logs are the one place a 3am alert cannot be read from.
+ *
+ * Safe to put in an alert: it comes from describe(), which deliberately
+ * drops the response headers and so the bearer token.
+ */
+export type SheetReadResult =
+  { rows: string[][]; reason: null } | { rows: null; reason: string };
+
 // The sheet as rows of strings, shaped like the CSV parser's output used
-// to be. Returns null on any failure, which callers treat as "keep what
+// to be. `rows: null` on any failure, which callers treat as "keep what
 // you already have" rather than "the sheet is empty" — see the
 // zero-length guards in sync-jobs and loadJobs.
-export async function fetchSheetRowsViaApi(): Promise<string[][] | null> {
+export async function fetchSheetRowsViaApi(): Promise<SheetReadResult> {
   const config = federationConfig();
   if (!config) {
-    console.warn('[sheets] federation env vars are not set');
-    return null;
+    const reason = 'federation env vars are not set';
+    console.warn(`[sheets] ${reason}`);
+    return { rows: null, reason };
   }
 
   const auth = authClient(config);
-  if (!auth) return null;
+  if (!auth) {
+    return {
+      rows: null,
+      reason: 'could not build the federated credential client'
+    };
+  }
 
   // No valueRenderOption: the default, FORMATTED_VALUE, returns each
   // cell as displayed, which is exactly what the CSV export gave. Asking
@@ -144,18 +169,20 @@ export async function fetchSheetRowsViaApi(): Promise<string[][] | null> {
     const res = await auth.request<{ values?: unknown[][] }>({ url });
 
     if (!res.data?.values) {
-      console.warn('[sheets] values.get returned no values');
-      return null;
+      const reason = 'values.get returned no values';
+      console.warn(`[sheets] ${reason}`);
+      return { rows: null, reason };
     }
 
     // The API omits trailing empty cells, so rows arrive ragged — which
     // readCell() already handles. Coerce each cell: FORMATTED_VALUE is
     // documented to return strings, and this costs nothing if it does.
-    return res.data.values.map((row) =>
+    const rows = res.data.values.map((row) =>
       row.map((cell) =>
         cell === null || cell === undefined ? '' : String(cell)
       )
     );
+    return { rows, reason: null };
   } catch (err) {
     // The common failures are all configuration, and they are easy to
     // confuse with each other, so the host and status are logged rather
@@ -170,8 +197,9 @@ export async function fetchSheetRowsViaApi(): Promise<string[][] | null> {
     //                                   mapping does not match the token
     //   400 from sheets.googleapis.com  SHEET_RANGE names a tab that no
     //                                   longer exists
-    console.warn('[sheets] sheet read failed:', describe(err));
-    return null;
+    const reason = describe(err);
+    console.warn('[sheets] sheet read failed:', reason);
+    return { rows: null, reason };
   }
 }
 
@@ -196,5 +224,11 @@ function describe(err: unknown): string {
     e.response?.data === undefined
       ? ''
       : ` ${JSON.stringify(e.response.data).slice(0, 300)}`;
-  return `${status} from ${host}${body} (${e.message ?? 'no message'})`;
+  // Collapsed to one line: this string is now the body of a Slack alert
+  // as well as a log line, and Google's messages run to several lines —
+  // which would break the alert's sentence across the channel and split
+  // the log entry into fragments that no longer grep as one.
+  return `${status} from ${host}${body} (${e.message ?? 'no message'})`
+    .replace(/\s+/g, ' ')
+    .trim();
 }

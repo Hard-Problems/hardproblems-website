@@ -5,7 +5,7 @@ import {
   type SnapshotVariant
 } from './jobsSnapshot';
 import { buildJobSlugs, jobKey } from './jobSlug';
-import { fetchSheetRowsViaApi } from './sheetsClient';
+import { fetchSheetRowsViaApi, type SheetReadResult } from './sheetsClient';
 
 // Sanitize a raw URL string from the sheet into either a valid,
 // normalized URL or an empty string. Empty is safe for every consumer
@@ -129,10 +129,12 @@ function parseDate(s: string): Date | null {
 // used to fall back to only answers while the document is link-shared,
 // which is the exposure the service account exists to close.
 //
-// Returns null when the read failed — distinct from an empty sheet, and
+// `rows: null` when the read failed — distinct from an empty sheet, and
 // callers treat it as "keep the previous snapshot". Missing credentials
-// land here too, logged by sheetsClient.
-export async function fetchSheetRows(): Promise<string[][] | null> {
+// land here too. The failure carries its own `reason` so the sync's
+// Slack alert can say which of the four configuration faults it hit
+// rather than leaving that in the runtime log; see SheetReadResult.
+export async function fetchSheetRows(): Promise<SheetReadResult> {
   return fetchSheetRowsViaApi();
 }
 
@@ -455,9 +457,14 @@ async function loadJobs(
   // `next build`, local dev without Supabase, or a database problem).
   // Pull the sheet directly — the pre-existing behaviour, kept so none
   // of those cases produce an empty board.
-  const fresh = await fetchSheetRows();
+  const read = await fetchSheetRows();
+  const fresh = read.rows;
   if (fresh === null && lastGoodRows !== null) {
-    console.warn('[fetchJobs] serving last known good sheet rows');
+    // The reason comes along now, so this line says why we are on the
+    // last known good rows rather than only that we are.
+    console.warn(
+      `[fetchJobs] serving last known good sheet rows: ${read.reason}`
+    );
   }
   const rows = fresh ?? lastGoodRows;
   if (rows === null) return [];
