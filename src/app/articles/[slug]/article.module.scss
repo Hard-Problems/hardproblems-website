@@ -854,6 +854,43 @@
     margin-bottom: 0;
   }
 
+  // An image leading a grid cell — e.g. the small line illustrations
+  // above each heading in the "What's needed?" grid. The article-wide
+  // rules would bleed it past the cell and add 2rem of padding under
+  // it, so both are cancelled: inside a cell the illustration sits at
+  // its natural size, left-aligned, with a modest gap before the
+  // heading. Repeats the base rule's :not()s to win the cascade.
+  :global(.content-cell) img:not(:global(.float-right)):not(.authorAvatar) {
+    width: auto;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    transform: none;
+  }
+
+  // An illustration introduces the heading under it, so the two should
+  // read as one unit: the breathing room goes ABOVE the picture, not
+  // between the picture and the title. The h3's usual 4rem top margin
+  // would otherwise push the heading well clear of the image it belongs
+  // to — it keeps that margin elsewhere in the article.
+  :global(.content-cell) > p:first-child {
+    margin: 2rem 0 0.75rem 0;
+  }
+
+  :global(.content-cell) > p:first-child + h3 {
+    margin-top: 0;
+  }
+
+  // Illustrations drawn at different aspect ratios line up badly when
+  // each sits at its own size, so pin the height and let the width
+  // follow — the row then reads as one band rather than four steps.
+  // Opt in per image with `{.cell-illustration}`.
+  :global(.content-cell)
+    img:global(.cell-illustration):not(:global(.float-right)):not(.authorAvatar) {
+    height: 169px;
+    width: auto;
+  }
+
   // Media row — a thumbnail beside the copy about it, used for list
   // articles where every entry has a screenshot (the websites digest).
   // Authors wrap the image and a `<div class="media-body">` inside
