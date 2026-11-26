@@ -34,8 +34,10 @@ export const revalidate = 3600;
 // past the first three serve as backfill when the current article is
 // itself one of the picks (so the rail always shows three cards).
 const TOP_ARTICLE_SLUGS = [
+  'who-do-designers-admire',
   'books-designers-hard-problems',
-  'hard-problems-explained',
+  'fellowships-design-for-impact',
+  'explain-hard-problems',
   'use-a-spreadsheet-to-choose-your-next-role',
   'join-nonprofit-board-or-advisory-group',
   'hard-problems-job-board',
